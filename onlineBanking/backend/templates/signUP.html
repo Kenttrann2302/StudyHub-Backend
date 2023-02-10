@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <form action = "{{ url_for('addRecord') }}" method = 'POST'>
+      <h1>CIBC SIGN UP FORM</h1>
+
+      First Name(*):<br>
+      <input type="text" name = "fname"/><br>
+      <p>Maximum of 100 characters!</p>
+
+      Last Name(*):<br>
+      <input type="text" name = "lname"/><br>
+      <p>Maximum of 100 characters!</p>
+
+      Middle Name:<br>
+      <input type="text" name = "mname"/><br>
+      <p>Maximum of 100 characters!</p>
+
+      Age(*): <br>
+      <input type="text" name = "age"/><br>
+      <p>You must be at least 18 to register for online banking account!</p>
+
+      Date Of Birth(*):
+      <p>(yyyy-mm-dd)</p><br>
+      <input type="text" name="birthday"/><br>
+
+      Address Line 1(*): <br>
+      <textarea name = "address1"></textarea><br>
+      
+      Address Line 2: <br>
+      <p>Please indicates any buiding</p>
+      <textarea name = "address2"></textarea><br>
+
+      City(*): <br>
+      <input type="text" name="city"/><br>
+
+      Country(*): <br>
+      <input type="text" name="country"/><br>
+
+      Postal Code(*): <br>
+      <input type="text" name="postal_code"/><br>
+      
+      <!-- Get the gender options boxes -->
+      <form method="post">
+        <label>Please select your gender: </label>
+        <select name="gender_id">
+          {% for option in gender_options %} 
+          <option value="{{ option[0] }}">{{ option[1] }}</option>
+          {% endfor %} 
+        </select>
+      </form>
+
+      Religion: <br>
+      <input type="text" name="religion"/><br>
+      
+      <!-- Get the identification options boxes -->
+      <form method="post">
+        <label>Please choose either passport or driver license.
+        If passport, please enter the 9-digits passport number.
+        If driver license, please enter the 5-digits driver license number.
+        </label>
+        <select name="identification_id">
+          {% for option in identification_options %} 
+          <option value="{{ option[0] }}">{{ option[1] }}</option>
+          {% endfor %}
+        </select>
+      </form>
+
+      
+      
+        
+    </form>
+  </body>
+</html>

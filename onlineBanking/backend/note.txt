@@ -1,0 +1,13 @@
+MINI PROJECT ONLINE BANKING SYSTEM 
+
+LANGUAGE USING: HTML, CSS, JS, FLASK + SQLALCHEMY + POSTGRESQL
+
+TEMPLATES + ROUTES:
+1. Homepage where users can choose which page to go
+2. Signup page for users to sign up
+3. Homepage which associate with a specific user
+4. A session for users to be log out 
+5. Users then have to sign it again
+
+LIST TO IMPROVE:
+1. Do the image upload for either passport or driver license
