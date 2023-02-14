@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="{{ url_for('serve_static', filename = 'identification.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('serve_static', filename = 'ageCalculation.js') }}"></script>
+  </head>
   <body>
-    <form action = "{{ url_for('addRecord') }}" method = 'POST'>
+    <form id="signupform" action = "{{ url_for('createAccount') }}" method = 'POST'>
       <h1>CIBC SIGN UP FORM</h1>
 
       First Name(*):<br>
@@ -16,13 +21,14 @@
       <input type="text" name = "mname"/><br>
       <p>Maximum of 100 characters!</p>
 
-      Age(*): <br>
-      <input type="text" name = "age"/><br>
-      <p>You must be at least 18 to register for online banking account!</p>
-
-      Date Of Birth(*):
+      Date Of Birth(*):<br>
       <p>(yyyy-mm-dd)</p><br>
-      <input type="text" name="birthday"/><br>
+      <p>Note: You must be at least 18 to register for an online banking account!</p><br>
+      <input type="date" name="birthday" id="birthday" required onchange="calculateAge()"/><br>
+
+      Age(*):
+      <p>Your age is: <span id="age" name="age"></span></p>
+      <input type="hidden" id="hidden-age" name="age"/>
 
       Address Line 1(*): <br>
       <textarea name = "address1"></textarea><br>
@@ -41,34 +47,35 @@
       <input type="text" name="postal_code"/><br>
       
       <!-- Get the gender options boxes -->
-      <form method="post">
-        <label>Please select your gender: </label>
-        <select name="gender_id">
-          {% for option in gender_options %} 
-          <option value="{{ option[0] }}">{{ option[1] }}</option>
-          {% endfor %} 
-        </select>
-      </form>
-
+      <label>Please select your gender: </label>
+      <select name="gender_id">
+        {% for option in gender_options %} 
+        <option value="{{ option[0] }}">{{ option[1] }}</option>
+        {% endfor %} 
+      </select><br>
+    
       Religion: <br>
       <input type="text" name="religion"/><br>
       
       <!-- Get the identification options boxes -->
-      <form method="post">
-        <label>Please choose either passport or driver license.
-        If passport, please enter the 9-digits passport number.
-        If driver license, please enter the 5-digits driver license number.
-        </label>
-        <select name="identification_id">
-          {% for option in identification_options %} 
-          <option value="{{ option[0] }}">{{ option[1] }}</option>
-          {% endfor %}
-        </select>
-      </form>
+      <label>Please choose either passport or driver license.
+      If passport, please enter the 9-digits passport number.
+      If driver license, please enter the 5-digits driver license number.
+      </label>
+      <select name="identification_id" id="id_type">
+        {% for option in identification_options %} 
+        <option value="{{ option[0] }}"
+          {% if option[0] == default_value %} selected
+          {% endif %}>
+          {{ option[1] }}
+        </option>
+        {% endfor %}
+      </select><br> 
+      <p id="message"></p><br>
+      <input type="text" id="id_number" name="id_number" style="display: none;"/><br>
 
-      
-      
-        
+      <!-- Submit button for user to submit the form  -->
+      <input type="submit" value="Submit"/><br>
     </form>
   </body>
 </html>
