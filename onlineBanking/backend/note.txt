@@ -1,6 +1,6 @@
 MINI PROJECT ONLINE BANKING SYSTEM 
 
-LANGUAGE USING: HTML, CSS, JS, FLASK + SQLALCHEMY + POSTGRESQL
+LANGUAGE USING: HTML(should be replaced by react later), CSS, JS, FLASK + SQLALCHEMY(Start with sqlite) + POSTGRESQL
 
 TEMPLATES + ROUTES:
 1. Homepage where users can choose which page to go
@@ -14,10 +14,11 @@ LIST TO IMPROVE:
 2. Create the logic between fields in the database
 3. Make the signup form looks nice using html and css
 
-SOME BUGS ENCOUTERED:
-1. The identifcation_number when doing the request.form to get the number of either the passport or driver license from the users, cannot be get => 400 bad request => *solved
+SOME BUGS ENCOUTERED (WORK LOG):
+1. Feb 12th, 2023: The identifcation_number when doing the request.form to get the number of either the passport or driver license from the users, cannot be get => 400 bad request => *solved
 2. Some static files such as javascript or css cannot be accessed => *solved
-3. When calculate the age from the users birthday input, the age is being displayed as <span> element, therefore, we cannot retrieve the data and send to the backend => only 2 ways to do this:
+3. Feb 14th, 2023: When calculate the age from the users birthday input, the age is being displayed as <span> element, therefore, we cannot retrieve the data and send to the backend => only 2 ways to do this:
     1. Send the age to the server using an AJAX request. => *chosen
     2. Submitting the value as part of the form
-4. The age element is hidden!!!! Need to fix
+4.Feb 14th, 2023: The age element is hidden!!!! Need to fix (*solved by setting the value of the hidden input = the value of the span element
+5. Feb 15th, 2023: Create an API request to prompt the user's current location and check if the address, city, country entered are acceptable

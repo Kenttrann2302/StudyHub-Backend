@@ -213,8 +213,14 @@ class signUpForm:
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
           '''
           
+          # after getting the address, check for the validation using Googl Maps Geocoding API before execute the insert the element
+          # if the address is not valid 
+          if not is_valid_address(firstAddress, secondAddress, city, country, postalCode):
+            return redirect(url_for('signup'))
 
-          cursor.execute(insert_users_statement, (firstName, midName, lastName, age, birthDay, firstAddress, secondAddress, city, country, postalCode, gender, religion, identification, identification_number))
+          # if the address is valid
+          else:
+            cursor.execute(insert_users_statement, (firstName, midName, lastName, age, birthDay, firstAddress, secondAddress, city, country, postalCode, gender, religion, identification, identification_number))
 
           connection.commit()
           if cursor.rowcount > 0:
