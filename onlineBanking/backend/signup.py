@@ -6,6 +6,9 @@ from flask_sqlalchemy import SQLAlchemy
 import psycopg2
 import pdb
 
+# import other files
+from API.locationAPI import checkAddress
+
 # connect flask to postgres database using SQLALCHEMY
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://kenttran@localhost:5432/userdatabase'
 # db = SQLAlchemy(app)
@@ -112,6 +115,7 @@ class signUpForm:
         address_line_1 VARCHAR(500) NOT NULL,
         address_line_2 VARCHAR(500),
         city VARCHAR(50) NOT NULL,
+        province VARCHAR(50) NOT NULL,
         country VARCHAR(50) NOT NULL,
         postal_code VARCHAR(10) NOT NULL,
         gender_id INT NOT NULL,
@@ -173,7 +177,6 @@ class signUpForm:
       if request.method == 'POST':
         # get the users inputs
         try:
-          pdb.set_trace()
           firstName = request.form['fname']
           lastName = request.form['lname']
           midName = request.form['mname']
@@ -182,6 +185,7 @@ class signUpForm:
           firstAddress = request.form['address1']
           secondAddress = request.form['address2']
           city = request.form['city']
+          province = request.form['province']
           country = request.form['country']
           postalCode = request.form['postal_code']
           gender = request.form['gender_id']
@@ -203,6 +207,7 @@ class signUpForm:
               address_line_1,
               address_line_2,
               city,
+              province,
               country,
               postal_code,
               gender_id,
@@ -210,17 +215,19 @@ class signUpForm:
               identification_id,
               identification_number
             )
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
           '''
           
           # after getting the address, check for the validation using Googl Maps Geocoding API before execute the insert the element
           # if the address is not valid 
-          if not is_valid_address(firstAddress, secondAddress, city, country, postalCode):
+          addressChecking = checkAddress(firstAddress, city, province, country, postalCode, secondAddress)
+          if not addressChecking.is_valid_address():
+            print("Hello World")
             return redirect(url_for('signup'))
 
           # if the address is valid
           else:
-            cursor.execute(insert_users_statement, (firstName, midName, lastName, age, birthDay, firstAddress, secondAddress, city, country, postalCode, gender, religion, identification, identification_number))
+            cursor.execute(insert_users_statement, (firstName, midName, lastName, age, birthDay, firstAddress, secondAddress, city, province, country, postalCode, gender, religion, identification, identification_number))
 
           connection.commit()
           if cursor.rowcount > 0:

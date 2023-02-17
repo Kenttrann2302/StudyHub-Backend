@@ -1,5 +1,7 @@
 MINI PROJECT ONLINE BANKING SYSTEM 
 
+****** REQUEEST CHANGING THE PROJECT SCOPE
+
 LANGUAGE USING: HTML(should be replaced by react later), CSS, JS, FLASK + SQLALCHEMY(Start with sqlite) + POSTGRESQL
 
 TEMPLATES + ROUTES:
@@ -13,6 +15,7 @@ LIST TO IMPROVE:
 1. Do the image upload for either passport or driver license
 2. Create the logic between fields in the database
 3. Make the signup form looks nice using html and css
+4. Apply restrictions for the fist API key that request google maps to check the validation of the location
 
 SOME BUGS ENCOUTERED (WORK LOG):
 1. Feb 12th, 2023: The identifcation_number when doing the request.form to get the number of either the passport or driver license from the users, cannot be get => 400 bad request => *solved
@@ -21,4 +24,6 @@ SOME BUGS ENCOUTERED (WORK LOG):
     1. Send the age to the server using an AJAX request. => *chosen
     2. Submitting the value as part of the form
 4.Feb 14th, 2023: The age element is hidden!!!! Need to fix (*solved by setting the value of the hidden input = the value of the span element
-5. Feb 15th, 2023: Create an API request to prompt the user's current location and check if the address, city, country entered are acceptable
+5. Feb 15th, 2023: Create an API request to prompt the user's current location and check if the address, city, country entered are acceptable (API and Service Google Cloud)
+6. Feb 16th, 2023: Building API for location checked
+7. Feb 17th, 2023: By using Geocoding API from google, it converts the addresses to longtitude and latitude in order to check for validation of the address, if return longtitude and latitude, this means the addresses entered is correct. Today, the problem with the Geocoding API from google cloud is solved, however, I need to see if they require enable billing to maintain the API, if they do not, we can keep using it, if they do then we have to use Geocoding API Free Service.
