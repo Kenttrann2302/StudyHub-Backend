@@ -27,3 +27,8 @@ SOME BUGS ENCOUTERED (WORK LOG):
 5. Feb 15th, 2023: Create an API request to prompt the user's current location and check if the address, city, country entered are acceptable (API and Service Google Cloud)
 6. Feb 16th, 2023: Building API for location checked
 7. Feb 17th, 2023: By using Geocoding API from google, it converts the addresses to longtitude and latitude in order to check for validation of the address, if return longtitude and latitude, this means the addresses entered is correct. Today, the problem with the Geocoding API from google cloud is solved, however, I need to see if they require enable billing to maintain the API, if they do not, we can keep using it, if they do then we have to use Geocoding API Free Service.
+8. Feb 17th, 2023: 
+    + Today, the geocoding API works, we can validate the users address input
+    + The error messages are showing for each of the invalid fields after the users submit the form, moreover, the signup page is re-rendered for the users to resubmit the form before sending all the data to the backend.
+    + Tomorrow task will be on adding the validation for the identification_id and the identification_number checked, then we will working on Figma, UI/UX design and CSS for the main homepage!
+
