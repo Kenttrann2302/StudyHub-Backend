@@ -46,7 +46,7 @@ class signUpForm:
     print(" Gender Table created successfully!")
 
     # create a list of tuple values to add to the rows:
-    gender_list = [(1, 'MALE'), (2, 'FEMALE'), (3, 'OTHERS'), (4, 'PREFER NOT TO TELL')]
+    gender_list = [(1, '--select--'), (2, 'MALE'), (3, 'FEMALE'), (4, 'OTHERS'), (5, 'PREFER NOT TO TELL')]
 
     # CHECK IF THE ROWS EXIST BEFORE INSERTING INTO THE ROWS
     for gender_id, gender_name in gender_list:
@@ -55,7 +55,7 @@ class signUpForm:
       '''
       cursor.execute(select_gender_sql, (gender_id,))
       row = cursor.fetchone()
-      # if the row not exist -> add row
+      # if the row does not exist -> add row
       if row is None:
         insert_gender_id = '''
           INSERT INTO gender (id, gender_options)
@@ -92,7 +92,7 @@ class signUpForm:
       '''
       cursor.execute(select_identification_sql, (identification_id,))
       row = cursor.fetchone()
-      # if the row exists -> add row
+      # if the row doesn't exist -> add row
       if row is None:
         insert_identification_id = '''
           INSERT INTO identification (id, identification_options)
@@ -167,7 +167,7 @@ class signUpForm:
       cursor.execute("SELECT * FROM identification;")
       identifications = cursor.fetchall()
 
-      return render_template('signUP.html', gender_options = genders, identification_options = identifications)
+      return render_template('signup.html', gender_options = genders, identification_options = identifications)
 
   # perform action on the createaccount url 
   def createAccount(self):
@@ -192,11 +192,38 @@ class signUpForm:
           religion = request.form['religion']
           identification = request.form['identification_id']
           identification_number = request.form['id_number']
+          # Initialize the errors dictionary:
+          errors = {}
 
-          # Check the constraint for the age and birthday of 
+          # Validate the form data, if not -> send the error messages to the front-end
+          # first name and last name validation
+          if not firstName or not lastName:
+            errors['fname'] = f'Please enter your first name!'
+            errors['lname'] = f'Please enter your last name!'
+
+          # age and birthday validation
+          if not age or not birthDay:
+            errors['age'] = f'Please enter your age!'
+            errors['birthday'] = f'Please enter your birthday!'
+          elif int(age) < 18:
+            errors['age'] = f'Sorry! You must be at least 18 to register for this service!!!'
+            errors['birthday'] = f'Sorry! You must be at least 18 to register for this service!!!'
           
-          # Validate the data and send it into the database
-          ########!!!!!!! FIND A WAY TO VALIDATE THE DATA DEPEND ON THE REQUIREMENTS OF THE DATABASE OF EACH FIELD BEFORE SENDING TO THE DATABASE !!!!!!#########
+          # gender validation
+          if int(gender) == 1:
+            errors['gender_id'] = f'Please select your gender!'
+          
+          # identification validation
+          if identification_number == 1:
+            errors['identification_id'] = f'Please choose one of the following method to verify your identification!'
+
+          elif identification == 2:
+            if len(identification_number) < 9:
+              errors['id_number'] = f'Please enter a valid 9 digits of your passport number!'
+          else:
+            if len(identification_number) < 5:
+              errors['id_number'] = f'Please enter a valid 5 digits of your driver license number!'
+          
           insert_users_statement = '''
             INSERT INTO users (
               first_name,
@@ -217,33 +244,56 @@ class signUpForm:
             )
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
           '''
+          # if there is any invalid field is being caught
+          if errors:
+            pass
           
           # after getting the address, check for the validation using Googl Maps Geocoding API before execute the insert the element
           # if the address is not valid 
           addressChecking = checkAddress(firstAddress, city, province, country, postalCode, secondAddress)
           if not addressChecking.is_valid_address():
-            print("Hello World")
-            return redirect(url_for('signup'))
-
-          # if the address is valid
+            # If the address is invalid or the response came back false
+            pass
+            
+          # if all the fields are valid
           else:
             cursor.execute(insert_users_statement, (firstName, midName, lastName, age, birthDay, firstAddress, secondAddress, city, province, country, postalCode, gender, religion, identification, identification_number))
 
           connection.commit()
           if cursor.rowcount > 0:
             print("Data inserted successfully")
+            return render_template("successful.html")
+
           else:
             print("Error inserting data")
-          
-
-        except Exception as e:  
-          connection.rollback()
-          print("Error: ", e)
-          # rendering the form again to let the users to sign up again -> front-end
+            pass
         
-        finally:
-          # render the successful page which gives the users their bank account information, check for register online banking and ask whether the users want to register for the online banking account
-          return render_template("successful.html")
+        # catch the error if the address is invalid
+        except ValueError:
+          # Handle the case when the address is invalid
+          # Render the form again and show an error message
+          # get all of the gender options
+          # pdb.set_trace()
+          errors['address1'] = f'Please enter a valid address!'
+          connection.rollback()
+          cursor.execute("SELECT * FROM gender;")
+          genders = cursor.fetchall()
+
+          # get all of the identification options
+          cursor.execute("SELECT * FROM identification;")
+          identifications = cursor.fetchall()
+
+          return render_template('signup.html', error_message=errors, gender_options = genders, identification_options = identifications)
+        
+        try:
+          # close the cursor
+          cursor.close()
+        except:
+          pass # do nothing if cursor is already closed or invalid
+        try:
+          # close the connection
           connection.close()
+        except:
+          pass # do nothing if connection is already closed or invalid
       
           

@@ -4,6 +4,7 @@
 # pylint: disable=unused-import
 from flask import Flask, request
 import requests
+import json
 import pdb
 
 class checkAddress:
@@ -23,8 +24,8 @@ class checkAddress:
    address_string += f', {self.address_line_2}'
   address_string += f', {self.city}, {self.province}, {self.country}'
 
+
   # construct the URL for the Geocoding API request
-  pdb.set_trace()
   url = 'https://maps.googleapis.com/maps/api/geocode/json'
   # need to implement the api key
   params = {'address': address_string, 'key': 'AIzaSyDEDVXK_Xadoj4tr3qx6GNxGRF8n35R51E'}
@@ -39,9 +40,10 @@ class checkAddress:
     if location['lat'] != 0 and location['lng'] != 0:
      print(f"Latitude: {location['lat']}, Longtitude: {location['lng']}")
      return True
-    else:
+   else:
      print("Sorry! No results found!")
-  
+     raise ValueError("This address is invalid")
+     
   # if the Geocoding API didn't return any results or returned an invalid address, return False
   print(f"Request failed with status code {response.status_code}.")
   return False

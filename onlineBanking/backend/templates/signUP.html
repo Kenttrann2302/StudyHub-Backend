@@ -7,76 +7,131 @@
   </head>
   <body>
     <form id="signupform" action = "{{ url_for('createAccount') }}" method = 'POST'>
-      <h1>CIBC SIGN UP FORM</h1>
-
-      First Name(*):<br>
-      <input type="text" name = "fname"/><br>
-      <p>Maximum of 100 characters!</p>
-
-      Last Name(*):<br>
-      <input type="text" name = "lname"/><br>
-      <p>Maximum of 100 characters!</p>
-
-      Middle Name:<br>
-      <input type="text" name = "mname"/><br>
-      <p>Maximum of 100 characters!</p>
-
-      Date Of Birth(*):<br>
-      <p>(yyyy-mm-dd)</p><br>
-      <p>Note: You must be at least 18 to register for an online banking account!</p><br>
-      <input type="date" name="birthday" id="birthday" required onchange="calculateAge()"/><br>
-
-      Age(*):
-      <p>Your age is: <span id="age" name="age"></span></p>
-      <input type="hidden" id="age-input" name="age"/>
-
-      Address Line 1(*): <br>
-      <textarea name = "address1"></textarea><br>
+      <h1>CAMPUSCASH SIGN UP FORM</h1>
       
-      Address Line 2: <br>
-      <p>Please indicates any buiding</p>
-      <textarea name = "address2"></textarea><br>
+      <div>
+        <label for="fname">First Name(*):</label><br>
+        <input type="text" name = "fname"/><br>
+        <p>Maximum of 100 characters!</p>
+        {% if request.method == 'POST' and error_message.get('fname') %}
+          <span class="error" style="color:red;">{{ error_message['fname'] }}</span>
+        {% endif %}
 
-      City(*): <br>
-      <input type="text" name="city"/><br>
+        <label for="mname">Middle Name:</label><br>
+        <input type="text" name = "mname"/><br>
+        <p>Maximum of 100 characters!</p>
 
-      Province/State(*): <br>
-      <input type="text" name="province"/><br>
-
-      Country(*): <br>
-      <input type="text" name="country"/><br>
-
-      Postal Code(*): <br>
-      <input type="text" name="postal_code"/><br>
+        <label for="lname">Last Name(*):</label><br>
+        <input type="text" name = "lname"/><br>
+        <p>Maximum of 100 characters!</p>
+        {% if request.method == 'POST' and error_message.get('lname') %} 
+          <span class="error" style="color:red">{{ error_message['lname'] }}</span>
+        {% endif %}
+      </div>
       
-      <!-- Get the gender options boxes -->
-      <label>Please select your gender: </label>
-      <select name="gender_id">
-        {% for option in gender_options %} 
-        <option value="{{ option[0] }}">{{ option[1] }}</option>
-        {% endfor %} 
-      </select><br>
+      <div>
+        <label for="age">Age(*):</label><br>
+        <p>Your age is: <span id="age" name="age"></span></p>
+        <input type="hidden" id="age-input" name="age"/>
+        {% if request.method == 'POST' and error_message.get('age-input') %} 
+          <span class="error" style="color:red;">{{ error_message['age'] }}</span>
+        {% endif %}
+
+        <label for="birthday">Date Of Birth(*):</label><br>
+        <p>Format: (yyyy-mm-dd)</p><br>
+        <p>Note: You must be at least 18 to register for an online banking account!</p><br>
+        <input type="date" name="birthday" id="birthday" required onchange="calculateAge()"/><br>
+        {% if request.method == 'POST' and error_message.get('birthday') %} 
+          <span class="error">{{ error_message['birthday'] }}</span>
+        {% endif %}
+      </div>
+
+      <div>
+        <label for="address1">Address Line 1(*):</label><br>
+        <textarea name = "address1"></textarea><br>
+
+        {% if request.method == 'POST' and error_message.get('address1') %} 
+          <p style="color:red;">{{ error_message['address1'] }}</p>
+        {% endif %}
+        
+        <label for="address2">Address Line 2:</label><br>
+        <p>Please indicates any buiding</p>
+        <textarea name = "address2"></textarea><br>
+
+        {% if request.method == 'POST' and error_message.get('address1') %} 
+          <p style="color:red;">{{ error_message['address1'] }}</p>
+        {% endif %}
+  
+        <label for="city">City(*):</label><br>
+        <input type="text" name="city"/><br>
+
+        {% if request.method == 'POST' and error_message.get('address1') %} 
+          <p style="color:red;">{{ error_message['address1'] }}</p>
+        {% endif %}
+  
+        <label for-="province">Province/State(*):</label><br>
+        <input type="text" name="province"/><br>
+
+        {% if request.method == 'POST' and error_message.get('address1') %} 
+          <p style="color:red;">{{ error_message['address1'] }}</p>
+        {% endif %}
+  
+        <label for="country">Country(*):</label><br>
+        <input type="text" name="country"/><br>
+
+        {% if request.method == 'POST' and error_message.get('address1') %} 
+          <p style="color:red;">{{ error_message['address1'] }}</p>
+        {% endif %}
+  
+        <label for="postal_code">Postal Code(*):</label><br>
+        <input type="text" name="postal_code"/><br>
+
+        {% if request.method == 'POST' and error_message.get('address1') %} 
+          <p style="color:red;">{{ error_message['address1'] }}</p>
+        {% endif %}
+      </div>
     
-      Religion: <br>
+      <!-- Get the gender options boxes -->
+      <div>
+        <label for="gender_id">Please select your gender: </label>
+        <select name="gender_id">
+          {% for option in gender_options %} 
+          <option value="{{ option[0] }}"
+            {% if option[0] == default_value %} selected
+            {% endif %}>
+            {{ option[1] }}
+          </option>
+          {% endfor %}   
+        </select><br>
+        {% if request.method == 'POST' and error_message.get('gender_id') %} 
+            <span style="color:red;">{{ error_message['gender_id'] }}</span>
+          {% endif %}
+      </div>
+      
+    
+      <label>Religion:</label><br>
       <input type="text" name="religion"/><br>
       
       <!-- Get the identification options boxes -->
-      <label>Please choose either passport or driver license.
-      If passport, please enter the 9-digits passport number.
-      If driver license, please enter the 5-digits driver license number.
-      </label>
-      <select name="identification_id" id="id_type">
-        {% for option in identification_options %} 
-        <option value="{{ option[0] }}"
-          {% if option[0] == default_value %} selected
-          {% endif %}>
-          {{ option[1] }}
-        </option>
-        {% endfor %}
-      </select><br> 
-      <p id="message"></p><br>
-      <input type="text" id="id_number" name="id_number" style="display: none;"/><br>
-
+      <div>
+        <label for="identification_id">Please choose either passport or driver license.
+          If passport, please enter the 9-digits passport number.
+          If driver license, please enter the 5-digits driver license number.
+          </label>
+          <select name="identification_id" id="id_type">
+            {% for option in identification_options %} 
+            <option value="{{ option[0] }}"
+              {% if option[0] == default_value %} selected
+              {% endif %}>
+              {{ option[1] }}
+            </option>
+            {% endfor %}
+          </select><br> 
+          
+          <p id="message"></p><br>
+          <input type="text" id="id_number" name="id_number" style="display: none;"/><br>
+      </div>
+      
       <!-- Submit button for user to submit the form  -->
       <input type="submit" value="Submit"/><br>
     </form>
