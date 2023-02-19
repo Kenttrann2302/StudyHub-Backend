@@ -1,12 +1,35 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <title>ScholarSavings Banking System</title>
+    <script type="text/javascript" src="{{ url_for('serve_static_js', filename = 'homepage.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('serve_static_css', filename='main_homepage.css') }}">
+  </head>
   <body>
-    <h1>
-      Welcome to the CIBC Online Banking
-    </h1>
-    <p>
-      If you want to sign up:
-    </p>
-    <a href="http://127.0.0.1:5000/hcm/signup/">Sign up with us!</a>
+    <!-- Creating a primary navbar -->
+    {% block content %}
+    <nav class="primary-navigation white-nav" aria-label="Full Navigation Bar" style="opacity: 1; visibility: 1;">
+      <!-- Top navigation bar -->
+      <nav class="top-bar" aria-label="Top Navigation Bar">
+        <div class="content-wrap">
+          <!-- Logo and header -->
+          <div class="logo" onclick="goToHomePage()" style="cursor: pointer;">
+            <a class="" aria-current="page" aria-label="main_homepage" hreflang="en" href="{{ url_for('mainHomePage') }}"></a>
+              <div class="header">
+                <h1>
+                  ScholarSavings
+                </h1>
+              </div>
+          </div>
+          <!-- Link and search  -->
+          <div class="link">
+            <div class="search">
+              <a aria-label="Search" hreflang="en" href=""></a>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </nav>
+    {% endblock %}
   </body>
 </html>

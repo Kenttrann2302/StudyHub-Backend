@@ -1,5 +1,5 @@
 MINI PROJECT CAMPUS UNIVERSITY ONLINE BANKING SYSTEM 
-
+SCHOLARSAVINGS BANKING SYSTEM
 ****** REQUEST CHANGING THE PROJECT SCOPE
 
 LANGUAGE USING: HTML(should be replaced by react later), CSS, JS, FLASK + SQLALCHEMY(Start with sqlite) + POSTGRESQL
@@ -31,4 +31,10 @@ SOME BUGS ENCOUTERED (WORK LOG):
     + Today, the geocoding API works, we can validate the users address input
     + The error messages are showing for each of the invalid fields after the users submit the form, moreover, the signup page is re-rendered for the users to resubmit the form before sending all the data to the backend.
     + Tomorrow task will be on adding the validation for the identification_id and the identification_number checked, then we will working on Figma, UI/UX design and CSS for the main homepage!
-
+9. Feb 18th, 2023:
+    + Today task will mainly be focusing on adding css styling and figma design for the main homepage
+    + Tomorrow task will be finishing the homepage html and css and the searching engine for the users to look for keywords and move to the websites faster:
+        - What we have for today is navbar with a heading on it and a searching url -> try to connect the searching url when the users clicked the search icon on the homepage.
+10. Feb 19th, 2023:
+    + Today task will be mainly working on the search engine for the page and finishing the css for the main homepage
+    

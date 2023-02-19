@@ -214,10 +214,10 @@ class signUpForm:
             errors['gender_id'] = f'Please select your gender!'
           
           # identification validation
-          if identification_number == 1:
+          if int(identification) == 1:
             errors['identification_id'] = f'Please choose one of the following method to verify your identification!'
 
-          elif identification == 2:
+          elif int(identification) == 2:
             if len(identification_number) < 9:
               errors['id_number'] = f'Please enter a valid 9 digits of your passport number!'
           else:

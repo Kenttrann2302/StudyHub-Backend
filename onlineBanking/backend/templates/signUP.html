@@ -2,12 +2,12 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <script type="text/javascript" src="{{ url_for('serve_static', filename = 'identification.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('serve_static', filename = 'ageCalculation.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('serve_static_js', filename = 'identification.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('serve_static_js', filename = 'ageCalculation.js') }}"></script>
   </head>
   <body>
     <form id="signupform" action = "{{ url_for('createAccount') }}" method = 'POST'>
-      <h1>CAMPUSCASH SIGN UP FORM</h1>
+      <h1>SCHOLARSAVINGS SIGN UP FORM</h1>
       
       <div>
         <label for="fname">First Name(*):</label><br>
@@ -30,20 +30,20 @@
       </div>
       
       <div>
-        <label for="age">Age(*):</label><br>
-        <p>Your age is: <span id="age" name="age"></span></p>
-        <input type="hidden" id="age-input" name="age"/>
-        {% if request.method == 'POST' and error_message.get('age-input') %} 
-          <span class="error" style="color:red;">{{ error_message['age'] }}</span>
-        {% endif %}
-
         <label for="birthday">Date Of Birth(*):</label><br>
         <p>Format: (yyyy-mm-dd)</p><br>
         <p>Note: You must be at least 18 to register for an online banking account!</p><br>
         <input type="date" name="birthday" id="birthday" required onchange="calculateAge()"/><br>
         {% if request.method == 'POST' and error_message.get('birthday') %} 
-          <span class="error">{{ error_message['birthday'] }}</span>
+          <span class="error" style="color:red;">{{ error_message['birthday'] }}</span>
         {% endif %}
+
+        <label for="age">Age(*):</label><br>
+        <p>Your age is: <span id="age" name="age"></span></p>
+        <input type="hidden" id="age-input" name="age"/>
+        {% if request.method == 'POST' and error_message.get('age-input') %} 
+          <span class="error" style="color:red;">{{ error_message['age'] }}</span>
+        {% endif %}   
       </div>
 
       <div>
@@ -51,7 +51,7 @@
         <textarea name = "address1"></textarea><br>
 
         {% if request.method == 'POST' and error_message.get('address1') %} 
-          <p style="color:red;">{{ error_message['address1'] }}</p>
+          <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
         {% endif %}
         
         <label for="address2">Address Line 2:</label><br>
@@ -59,35 +59,35 @@
         <textarea name = "address2"></textarea><br>
 
         {% if request.method == 'POST' and error_message.get('address1') %} 
-          <p style="color:red;">{{ error_message['address1'] }}</p>
+          <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
         {% endif %}
   
         <label for="city">City(*):</label><br>
         <input type="text" name="city"/><br>
 
         {% if request.method == 'POST' and error_message.get('address1') %} 
-          <p style="color:red;">{{ error_message['address1'] }}</p>
+          <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
         {% endif %}
   
         <label for-="province">Province/State(*):</label><br>
         <input type="text" name="province"/><br>
 
         {% if request.method == 'POST' and error_message.get('address1') %} 
-          <p style="color:red;">{{ error_message['address1'] }}</p>
+          <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
         {% endif %}
   
         <label for="country">Country(*):</label><br>
         <input type="text" name="country"/><br>
 
         {% if request.method == 'POST' and error_message.get('address1') %} 
-          <p style="color:red;">{{ error_message['address1'] }}</p>
+          <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
         {% endif %}
   
         <label for="postal_code">Postal Code(*):</label><br>
         <input type="text" name="postal_code"/><br>
 
         {% if request.method == 'POST' and error_message.get('address1') %} 
-          <p style="color:red;">{{ error_message['address1'] }}</p>
+          <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
         {% endif %}
       </div>
     
@@ -104,8 +104,8 @@
           {% endfor %}   
         </select><br>
         {% if request.method == 'POST' and error_message.get('gender_id') %} 
-            <span style="color:red;">{{ error_message['gender_id'] }}</span>
-          {% endif %}
+          <span class="error" style="color:red;">{{ error_message['gender_id'] }}</span>
+        {% endif %}
       </div>
       
     
@@ -127,10 +127,16 @@
             </option>
             {% endfor %}
           </select><br> 
-          
-          <p id="message"></p><br>
-          <input type="text" id="id_number" name="id_number" style="display: none;"/><br>
+          {% if request.method == 'POST' and error_message.get('identification_id') %} 
+            <span class="error" style="color:red;">{{ error_message['identification_id'] }}</span>
+          {% endif %}
       </div>
+
+      <p id="message"></p>
+      <input type="text" id="id_number" name="id_number" style="display: none;"/><br>
+      {% if request.method == 'POST' and error_message.get('id_number') %}
+        <span class="error" style="color:red;">{{ error_message['id_number'] }}</span>
+      {% endif %} 
       
       <!-- Submit button for user to submit the form  -->
       <input type="submit" value="Submit"/><br>
