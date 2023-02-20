@@ -10,3 +10,10 @@ document.addEventListener("DOMContentLoaded", function(event) {
   goToHomePage();
  });
 });
+
+// function redirect the users to the search url when the event is being detected
+const searchIcon = document.getElementsByClassName("search");
+
+searchIcon.addEventListener("click", () => {
+ window.location.href = "http://127.0.0.1:5000/hcm/search";
+});
