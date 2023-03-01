@@ -2,14 +2,16 @@
 # import libraries 
 from flask import Flask, redirect, url_for, render_template, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import inspect
+from sqlalchemy import create_engine
+from sqlalchemy.engine.reflection import Inspector
 import psycopg2
 import pdb
 from datetime import datetime
 
 # import other files
 from API.locationAPI import checkAddress
-from database.models import db, Gender, Identification, Users
+from database.users_models import db, Gender, Identification, Users
+from helper_functions.formValidations import validate_users_input
 
 app = Flask(__name__)
 app.config['SERVER_NAME'] = 'localhost:5000'
@@ -18,27 +20,34 @@ app.config['PREFERRED_URL_SCHEME'] = 'http'
 
 # connect flask to postgres database using SQLALCHEMY
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://kenttran@localhost:5432/userdatabase'
+engine = create_engine('postgresql://kenttran@localhost:5432/userdatabase')
+inspector = Inspector.from_engine(engine)
 
 # Create the SQLAlchemy database object
 db.init_app(app)
 
 # create table if they don't exist
-with app.app_context():
-  inspector = inspect(db.engine)
-  if not inspector.has_table('gender') and not inspector.has_table('identification') and not inspector.has_table('users'):
-    db.create_all()
-    # Check if the constraint already exists on the 'users' table
-    constraints = inspector.get_check_constraints('users')
-    for constraint in constraints:
-      if constraint['name'] == 'age_check':
-        print(f"The 'age_check' constraint already exits on the 'users' table")
-        break
-      else: 
-        # Add the constraint if it does not already exist
-        db.engine.execute('ALTER TABLE users ADD CONSTRAINT age_check CHECK(age >=18)')
-        db.engine.execute('ALTER TABLE users ADD CONSTRAINT age_check CHECK (age = extract(year from age(date_of_birth)))')
-        print(f"Added the 'age_check' constraint to the 'users' table.")
-    print(f"Tables created successfully!")
+def create_tables() -> None:
+  with app.app_context():
+    # get all the table in the database
+    table_names = inspector.get_table_names()
+    if 'gender' not in table_names or 'identification' not in table_names or not 'users' in table_names:
+      db.create_all()
+      # Check if the constraint already exists on the 'users' table
+      constraints = inspector.get_check_constraints('users')
+      for constraint in constraints:
+        if constraint['name'] == 'age_check':
+          print(f"The 'age_check' constraint already exits on the 'users' table")
+          break
+        else: 
+          # Add the constraint if it does not already exist
+          db.engine.execute('ALTER TABLE users ADD CONSTRAINT age_check CHECK(age >=18)')
+          db.engine.execute('ALTER TABLE users ADD CONSTRAINT age_check CHECK (age = extract(year from age(date_of_birth)))')
+          print(f"Added the 'age_check' constraint to the 'users' table.")
+      print(f"Tables created successfully!")
+
+# create all the tables
+create_tables()
 
 class signUpForm:
   def __init__(self) -> None:
@@ -121,50 +130,25 @@ class signUpForm:
           postalCode = request.form['postal_code']
           gender = request.form['gender_id']
           religion = request.form['religion']
-          identification = request.form['identification_id']
-          identification_number = request.form['id_number']
+          verification = request.form['identification_id']
+          verification_material = request.form['id_number']
           # Initialize the errors dictionary:
           errors = {}
 
           # Validate the form data, if not -> send the error messages to the front-end
-          # first name and last name validation
-          if not firstName or not lastName:
-            errors['fname'] = f'Please enter your first name!'
-            errors['lname'] = f'Please enter your last name!'
-
-          # age and birthday validation
-          if not age or not birthDay:
-            errors['age'] = f'Please enter your age!'
-            errors['birthday'] = f'Please enter your birthday!'
-          elif int(age) < 18:
-            errors['age'] = f'Sorry! You must be at least 18 to register for this service!!!'
-            errors['birthday'] = f'Sorry! You must be at least 18 to register for this service!!!'
-          
-          # gender validation
-          if int(gender) == 1:
-            errors['gender_id'] = f'Please select your gender!'
-          
-          # identification validation
-          if int(identification) == 1:
-            errors['identification_id'] = f'Please choose one of the following method to verify your identification!'
-
-          elif int(identification) == 2:
-            if len(identification_number) < 9:
-              errors['id_number'] = f'Please enter a valid 9 digits of your passport number!'
-          else:
-            if len(identification_number) < 5:
-              errors['id_number'] = f'Please enter a valid 5 digits of your driver license number!'
+          # validate the users input before insert the data into the database
+          validate_users_input(errors, firstName, lastName, age, birthDay, gender, verification, verification_material)
 
           # create a list of new user instance
           new_users = [
-            Users(first_name=firstName, middle_name=midName, last_name=lastName, age=age, date_of_birth=birthDay, address_line_1=firstAddress, address_line_2=secondAddress, city=city, province=province, country=country, postal_code=postalCode, gender_id=gender, religion=religion, identification_id=identification, identification_number=identification_number)
-          ]
+            Users(first_name=firstName, middle_name=midName, last_name=lastName, age=age, date_of_birth=birthDay, address_line_1=firstAddress, address_line_2=secondAddress, city=city, province=province, country=country, postal_code=postalCode, gender_id=gender, religion=religion, identification_id=verification, identification_material=verification_material)
+          ] 
 
           # if there is any invalid field is being caught
           if errors:
             pass
           
-          # after getting the address, check for the validation using Googl Maps Geocoding API before execute the insert the element
+          # after getting the address, check for the validation using Google Maps Geocoding API before execute the insert the element
           # if the address is not valid 
           addressChecking = checkAddress(firstAddress, city, province, country, postalCode, secondAddress)
           if not addressChecking.is_valid_address():
@@ -192,19 +176,15 @@ class signUpForm:
           else:
             print(f"Error inserting data")
             pass
-        
         # catch the error if the address is invalid
         except ValueError:
           # Handle the case when the address is invalid
           # Render the form again and show an error message
           # get all of the gender options
           errors['address1'] = f'Please enter a valid address!'
-
           db.session.rollback()
           genders = Gender.query.all()
-        
           identifications = Identification.query.all()
-
           return render_template('signup.html', error_message=errors, gender_options = genders, identification_options = identifications)
         
       

@@ -114,22 +114,20 @@
       
       <!-- Get the identification options boxes -->
       <div>
-        <label for="identification_id">Please choose either passport or driver license.
-          If passport, please enter the 9-digits passport number.
-          If driver license, please enter the 5-digits driver license number.
-          </label>
-          <select name="identification_id" id="id_type">
-            {% for option in identification_options %} 
-            <option value="{{ option.id }}"
-              {% if option.id == default_value %} selected
-              {% endif %}>
-              {{ option.identification_options }}
-            </option>
-            {% endfor %}
-          </select><br> 
-          {% if request.method == 'POST' and error_message.get('identification_id') %} 
-            <span class="error" style="color:red;">{{ error_message['identification_id'] }}</span>
-          {% endif %}
+        <label for="identification_id">Please choose one of the following options for verification:</label>
+        <label>All documents must be official and unaltered. If we detect any tampering or alteration of the documents, your verification will be denied.</label>
+        <select name="identification_id" id="id_type">
+          {% for option in identification_options %} 
+          <option value="{{ option.id }}"
+            {% if option.id == default_value %} selected
+            {% endif %}>
+            {{ option.identification_options }}
+          </option>
+          {% endfor %}
+        </select><br> 
+        {% if request.method == 'POST' and error_message.get('identification_id') %} 
+          <span class="error" style="color:red;">{{ error_message['identification_id'] }}</span>
+        {% endif %}
       </div>
 
       <p id="message"></p>
@@ -137,7 +135,6 @@
       {% if request.method == 'POST' and error_message.get('id_number') %}
         <span class="error" style="color:red;">{{ error_message['id_number'] }}</span>
       {% endif %} 
-      
       <!-- Submit button for user to submit the form  -->
       <input type="submit" value="Submit"/><br>
     </form>

@@ -1,8 +1,15 @@
-MINI PROJECT CAMPUS UNIVERSITY ONLINE BANKING SYSTEM 
-SCHOLARSAVINGS BANKING SYSTEM
-****** REQUEST CHANGING THE PROJECT SCOPE
+PERSONAL SIDE PROJECT: SCHOLARSAVINGS WEB APPLICATION
 
-LANGUAGE USING: HTML(should be replaced by react later), CSS, JS, FLASK + SQLALCHEMY(Start with sqlite) + POSTGRESQL
+* BRIEF DESCRIPTION ABOUT THIS PROJECT:
++ Scholarsavings is a software application that is written in html, css and javascript (front-end) and flask + sqlalchemy + postgresql (back-end). 
+
++ Scholar Savings project is a personal finance management tool for students. The app provides students with the ability to set saving goals, track their expenses and budget, and search for deals and offers in their local area, such as school appliances, meal plans, and restaurants.
+
++ The app likely uses APIs to pull in data about deals and offers from various sources and presents them in an easy-to-use format for students. Additionally, the app may provide educational resources or tips on personal finance management to help students make informed decisions about their money.
+
++ Overall, the Scholar Savings app aims to empower students to take control of their finances, save money, and make smarter purchasing decisions.
+
+LANGUAGE USING: HTML, CSS, JS, FLASK + SQLALCHEMY + POSTGRESQL
 
 TEMPLATES + ROUTES:
 1. Homepage where users can choose which page to go
@@ -16,6 +23,9 @@ LIST TO IMPROVE:
 2. Create the logic between fields in the database
 3. Make the signup form looks nice using html and css
 4. Apply restrictions for the fist API key that request google maps to check the validation of the location
+5. The email verification in identification must be unique
+6. For login page, username + password must be unique, check for existing and handle appropriate responses
+7. For css, adding an errors methods when the fields are invalid
 
 SOME BUGS ENCOUTERED (WORK LOG):
 1. Feb 12th, 2023: The identifcation_number when doing the request.form to get the number of either the passport or driver license from the users, cannot be get => 400 bad request => *solved
@@ -37,4 +47,14 @@ SOME BUGS ENCOUTERED (WORK LOG):
         - What we have for today is navbar with a heading on it and a searching url -> try to connect the searching url when the users clicked the search icon on the homepage.
 10. Feb 19th, 2023:
     + Today task will be mainly working on the search engine for the page and finishing the css for the main homepage
-    
+11. Feb 26th, 2023:
+    + Today I was focusing on fixing the sign up page from sqlite to sqlalchemy in order to make things more secured and easier to read.
+    + The plan for this project is still being developed, first of on, I am focusing on developing a user-friendly landing page and style the sign up page for users.
+12. Feb 27th, 2023:
+    + Today I am going to work on adding fields for users to verify themselves as a university students.
+    + For example, if the users choose email address as a verification then it will be a string input, if the users choose other
+    + fields such as enrollment letter then it will be image upload.
+13. Feb 28th, 2023:
+    + Today I'm fixing the image fields and handle the requests from the client when they upload the image for verification
+    + The problem that I encountered today and I need to fix tomorrow is the server sent back the response of status 400 Bad Request for the image
+    + Some notes are the field of verification material in the database is a LARGE BINARY field which means it can either accept a string or an image/file.
