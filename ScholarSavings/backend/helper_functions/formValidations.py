@@ -1,5 +1,6 @@
 # import neccessary libraries
 import re
+import pdb
 
 # function to validate if the string input is an email address
 def is_email(email):
@@ -35,7 +36,7 @@ def validate_files_size(file) -> bool:
   return False
 
 # function to validate all the fields of the users input
-def validate_users_input(errors, fname, lname, age, birthDay, gender, verification, verification_material) -> None:
+def validate_users_input(errors, fname, lname, age, birthDay, gender, verification, verification_material) -> list:
   # check if the users input the username and password
   if not fname or not lname:
     errors[fname] = f"Please enter your first name!"
@@ -54,20 +55,29 @@ def validate_users_input(errors, fname, lname, age, birthDay, gender, verificati
     errors['gender_id'] = f'Please select your gender!'
   
   # identification validation
+  # initialize a list of errors for verification
+  verification_errors = {}
+
   if int(verification) == 1:
     errors['identification_id'] = f'Please choose one of the following method to verify your identification!'
 
   # users choose student email to verify
   elif int(verification) == 2:
     if not is_email(verification_material):
-     errors['verification_material'] = f'Please enter an appropriate email (name@example.com)'
+     verification_errors['verification_material'] = f'Please enter an appropriate email (name@example.com)'
+    #  raise ValueError('Please enter an appropriate email (name@example.com)')
     
   # users choose to upload an image or file
   else:
    # check if any file is uploaded 
    if verification_material.filename == '':
-    errors['verification_material'] = f'No selected file!'
+    verification_errors['verification_material'] = f'No selected file!'
+    # raise ValueError('No selected file!')
    if not validate_files_upload(verification_material):
-    errors['verification_material'] = f'Invalid file. Allowed file types are .png, .jpg, .jpeg, .pdf!'
+    verification_errors['verification_material'] = f'Invalid file. Allowed file types are .png, .jpg, .jpeg, .pdf!'
+    # raise ValueError('Invalid file. Allowed file types are .png, .jpg, .jpeg, .pdf!')
    if not validate_files_size(verification_material):
-    errors['verification_material'] = f'File is too large! Please try again! The maximum size allowed is 10MB!'
+    verification_errors['verification_material'] = f'File is too large! Please try again! The maximum size allowed is 10MB!'
+    # raise ValueError('File is too large! Please try again! The maximum size allowed is 10MB!')
+
+  return verification_errors

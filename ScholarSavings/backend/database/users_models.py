@@ -31,7 +31,6 @@ class Identification(db.Model):
   created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
   updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-
   def __repr__(self):
     return '<Identification %r>' % self.identification_options
 

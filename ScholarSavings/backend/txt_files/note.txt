@@ -58,3 +58,5 @@ SOME BUGS ENCOUTERED (WORK LOG):
     + Today I'm fixing the image fields and handle the requests from the client when they upload the image for verification
     + The problem that I encountered today and I need to fix tomorrow is the server sent back the response of status 400 Bad Request for the image
     + Some notes are the field of verification material in the database is a LARGE BINARY field which means it can either accept a string or an image/file.
+
+14. Fix the user's input for email -> encode it to convert str to binary.

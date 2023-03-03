@@ -132,8 +132,8 @@
 
       <p id="message"></p>
       <input type="text" id="id_number" name="id_number" style="display: none;"/><br>
-      {% if request.method == 'POST' and error_message.get('id_number') %}
-        <span class="error" style="color:red;">{{ error_message['id_number'] }}</span>
+      {% if request.method == 'POST' and validated_errors.get('id_number') %}
+        <span class="error" style="color:red;">{{ validated_errors['id_number'] }}</span>
       {% endif %} 
       <!-- Submit button for user to submit the form  -->
       <input type="submit" value="Submit"/><br>

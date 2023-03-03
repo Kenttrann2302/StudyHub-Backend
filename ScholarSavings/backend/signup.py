@@ -137,7 +137,7 @@ class signUpForm:
 
           # Validate the form data, if not -> send the error messages to the front-end
           # validate the users input before insert the data into the database
-          validate_users_input(errors, firstName, lastName, age, birthDay, gender, verification, verification_material)
+          validated_errors = validate_users_input(errors, firstName, lastName, age, birthDay, gender, verification, verification_material)
 
           # create a list of new user instance
           new_users = [
@@ -145,7 +145,8 @@ class signUpForm:
           ] 
 
           # if there is any invalid field is being caught
-          if errors:
+          pdb.set_trace()
+          if errors or validated_errors:
             pass
           
           # after getting the address, check for the validation using Google Maps Geocoding API before execute the insert the element
@@ -168,14 +169,17 @@ class signUpForm:
                 db.session.rollback()
                 print(f"User {user.first_name} {user.last_name} already exists!")
 
-          result = Users.query.filter_by(name=firstName).first()
+          result = Users.query.filter_by(first_name=firstName).first()
 
           if result:
             print(f"Data has been inserted successfully")
             return render_template("successful.html")
           else:
             print(f"Error inserting data")
-            pass
+            db.session.rollback()
+            genders = Gender.query.all()
+            identifications = Identification.query.all()
+            return render_template('signup.html', error_message=errors, validated_errors = validated_errors, gender_options = genders, identification_options = identifications)
         # catch the error if the address is invalid
         except ValueError:
           # Handle the case when the address is invalid
@@ -185,7 +189,7 @@ class signUpForm:
           db.session.rollback()
           genders = Gender.query.all()
           identifications = Identification.query.all()
-          return render_template('signup.html', error_message=errors, gender_options = genders, identification_options = identifications)
+          return render_template('signup.html', error_message=errors, validated_errors = validated_errors, gender_options = genders, identification_options = identifications)
         
       
           
