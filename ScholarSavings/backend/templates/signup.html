@@ -11,18 +11,18 @@
         
       <div>
         <label for="fname">First Name(*):</label><br>
-        <input type="text" name = "fname"/><br>
+        <input type="text" name = "fname" value="{{ validated_fields.get('firstName', '') }}" required/><br>
         <p>Maximum of 100 characters!</p>
         {% if request.method == 'POST' and error_message.get('fname') %}
           <span class="error" style="color:red;">{{ error_message['fname'] }}</span>
         {% endif %}
 
         <label for="mname">Middle Name:</label><br>
-        <input type="text" name = "mname"/><br>
+        <input type="text" name = "mname" value="{{ validated_fields.get('midName', '') }}" required/><br>
         <p>Maximum of 100 characters!</p>
 
         <label for="lname">Last Name(*):</label><br>
-        <input type="text" name = "lname"/><br>
+        <input type="text" name = "lname" value="{{ validated_fields.get('lastName', '') }}" required/><br>
         <p>Maximum of 100 characters!</p>
         {% if request.method == 'POST' and error_message.get('lname') %} 
           <span class="error" style="color:red">{{ error_message['lname'] }}</span>
@@ -33,14 +33,14 @@
         <label for="birthday">Date Of Birth(*):</label><br>
         <p>Format: (yyyy-mm-dd)</p><br>
         <p>Note: You must be at least 18 to register for an online banking account!</p><br>
-        <input type="date" name="birthday" id="birthday" required onchange="calculateAge()"/><br>
+        <input type="date" name="birthday" id="birthday" required onchange="calculateAge()" value="{{ validated_fields.get('birthDay', '') }}" required/><br>
         {% if request.method == 'POST' and error_message.get('birthday') %} 
           <span class="error" style="color:red;">{{ error_message['birthday'] }}</span>
         {% endif %}
 
         <label for="age">Age(*):</label><br>
         <p>Your age is: <span id="age" name="age"></span></p>
-        <input type="hidden" id="age-input" name="age"/>
+        <input type="hidden" id="age-input" name="age" value="{{ validated_fields.get('age', '') }}" required/>
         {% if request.method == 'POST' and error_message.get('age-input') %} 
           <span class="error" style="color:red;">{{ error_message['age'] }}</span>
         {% endif %}   
@@ -48,7 +48,7 @@
 
       <div>
         <label for="address1">Address Line 1(*):</label><br>
-        <textarea name = "address1"></textarea><br>
+        <textarea name = "address1" value="{{ validated_fields.get('firstAddress', '') }}" required></textarea><br>
 
         {% if request.method == 'POST' and error_message.get('address1') %} 
           <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
@@ -56,35 +56,35 @@
         
         <label for="address2">Address Line 2:</label><br>
         <p>Please indicates any buiding</p>
-        <textarea name = "address2"></textarea><br>
+        <textarea name = "address2" value="{{ validated_fields.get('secondAddress', '') }}" required></textarea><br>
 
         {% if request.method == 'POST' and error_message.get('address1') %} 
           <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
         {% endif %}
   
         <label for="city">City(*):</label><br>
-        <input type="text" name="city"/><br>
+        <input type="text" name="city" value="{{ validated_fields.get('city', '') }}" required/><br>
 
         {% if request.method == 'POST' and error_message.get('address1') %} 
           <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
         {% endif %}
   
         <label for-="province">Province/State(*):</label><br>
-        <input type="text" name="province"/><br>
+        <input type="text" name="province" value="{{ validated_fields.get('province', '') }}" required/><br>
 
         {% if request.method == 'POST' and error_message.get('address1') %} 
           <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
         {% endif %}
   
         <label for="country">Country(*):</label><br>
-        <input type="text" name="country"/><br>
+        <input type="text" name="country" value="{{ validated_fields.get('country', '') }}" required/><br>
 
         {% if request.method == 'POST' and error_message.get('address1') %} 
           <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
         {% endif %}
   
         <label for="postal_code">Postal Code(*):</label><br>
-        <input type="text" name="postal_code"/><br>
+        <input type="text" name="postal_code" value="{{ validated_fields.get('postalCode', '') }}" required/><br>
 
         {% if request.method == 'POST' and error_message.get('address1') %} 
           <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
@@ -97,7 +97,7 @@
         <select name="gender_id">
           {% for option in gender_options %} 
           <option value="{{ option.id }}"
-            {% if option.id == default_value %} selected
+            {% if option.id == gender_id %} selected
             {% endif %}>
             {{ option.gender_options }}
           </option>
@@ -110,7 +110,7 @@
       
     
       <label>Religion:</label><br>
-      <input type="text" name="religion"/><br>
+      <input type="text" name="religion" value="{{ validated_fields.get('religion', '') }}" required/><br>
       
       <!-- Get the identification options boxes -->
       <div>
@@ -119,21 +119,21 @@
         <select name="identification_id" id="id_type">
           {% for option in identification_options %} 
           <option value="{{ option.id }}"
-            {% if option.id == default_value %} selected
+            {% if option.id == identification_id %} selected
             {% endif %}>
             {{ option.identification_options }}
           </option>
           {% endfor %}
         </select><br> 
         {% if request.method == 'POST' and error_message.get('identification_id') %} 
-          <span class="error" style="color:red;">{{ error_message['identification_id'] }}</span>
+          <span class="error" style="color:red;">{{ error_message['identification_id'] }}</span><br>
         {% endif %}
       </div>
 
       <p id="message"></p>
-      <input type="text" id="id_number" name="id_number" style="display: none;"/><br>
-      {% if request.method == 'POST' and validated_errors.get('id_number') %}
-        <span class="error" style="color:red;">{{ validated_errors['id_number'] }}</span>
+      <input type="text" id="id_number" name="id_number" style="display: none;" value="{{ validated_fields.get('verification_material', '') }}" required/><br>
+      {% if request.method == 'POST' and validated_errors.get('verification_material') %}
+        <span class="error" style="color:red;">{{ validated_errors['verification_material'] }}</span><br>
       {% endif %} 
       <!-- Submit button for user to submit the form  -->
       <input type="submit" value="Submit"/><br>

@@ -108,7 +108,7 @@ class signUpForm:
       # query all the identification options from the identification table
       identifications = Identification.query.all()
 
-      return render_template('signup.html', gender_options = genders, identification_options = identifications)
+      return render_template('signup.html', validated_fields = validated_fields, gender_options = genders, identification_options = identifications)
 
   # perform action on the createaccount url 
   def createAccount(self):
@@ -138,26 +138,38 @@ class signUpForm:
           # Validate the form data, if not -> send the error messages to the front-end
           # validate the users input before insert the data into the database
           validated_errors = validate_users_input(errors, firstName, lastName, age, birthDay, gender, verification, verification_material)
+          # create a dictionary to store the validated fields
+          validated_fields = {
+            'firstName' : firstName,
+            'midName' : midName,
+            'lastName' : lastName,
+            'age' : age,
+            'birthDay' : birthDay,
+            'firstAddress' : firstAddress,
+            'secondAddress' : secondAddress,
+            'city' : city,
+            'province' : province,
+            'country' : country,
+            'postalCode' : postalCode,
+            'gender' : gender,
+            'religion' : religion,
+            'verification' : verification,
+            'verification_material' : verification_material,
+          }
 
-          # create a list of new user instance
-          new_users = [
-            Users(first_name=firstName, middle_name=midName, last_name=lastName, age=age, date_of_birth=birthDay, address_line_1=firstAddress, address_line_2=secondAddress, city=city, province=province, country=country, postal_code=postalCode, gender_id=gender, religion=religion, identification_id=verification, identification_material=verification_material)
-          ] 
-
-          # if there is any invalid field is being caught
-          pdb.set_trace()
-          if errors or validated_errors:
-            pass
-          
           # after getting the address, check for the validation using Google Maps Geocoding API before execute the insert the element
           # if the address is not valid 
           addressChecking = checkAddress(firstAddress, city, province, country, postalCode, secondAddress)
-          if not addressChecking.is_valid_address():
-            # If the address is invalid or the response came back false
-            pass
-            
+          # pdb.set_trace()
           # if all the fields are valid
-          else:
+          if not errors and not validated_errors and addressChecking.is_valid_address():
+            # encode the verification materials from string to binary
+            new_verification_material = verification_material.encode('utf-8')
+            # create a list of new user instance
+            new_users = [
+              Users(first_name=firstName, middle_name=midName, last_name=lastName, age=age, date_of_birth=birthDay, address_line_1=firstAddress, address_line_2=secondAddress, city=city, province=province, country=country, postal_code=postalCode, gender_id=gender, religion=religion, identification_id=verification, identification_material=new_verification_material)
+            ] 
+
             # add new user into users model
             for user in new_users:
               try:
@@ -169,6 +181,11 @@ class signUpForm:
                 db.session.rollback()
                 print(f"User {user.first_name} {user.last_name} already exists!")
 
+          # if there is any invalid field is being caught (including verification materials and address)
+          else:
+            pass
+
+          # query the database to check if the data has been inserted successfully
           result = Users.query.filter_by(first_name=firstName).first()
 
           if result:
@@ -179,17 +196,19 @@ class signUpForm:
             db.session.rollback()
             genders = Gender.query.all()
             identifications = Identification.query.all()
-            return render_template('signup.html', error_message=errors, validated_errors = validated_errors, gender_options = genders, identification_options = identifications)
+            return render_template('signup.html', error_message=errors, validated_fields = validated_fields, validated_errors = validated_errors, gender_options = genders, identification_options = identifications)
+            
         # catch the error if the address is invalid
         except ValueError:
           # Handle the case when the address is invalid
           # Render the form again and show an error message
           # get all of the gender options
           errors['address1'] = f'Please enter a valid address!'
+
           db.session.rollback()
           genders = Gender.query.all()
           identifications = Identification.query.all()
-          return render_template('signup.html', error_message=errors, validated_errors = validated_errors, gender_options = genders, identification_options = identifications)
+          return render_template('signup.html', error_message=errors, validated_fields=validated_fields, validated_errors = validated_errors, gender_options = genders, identification_options = identifications)
         
       
           

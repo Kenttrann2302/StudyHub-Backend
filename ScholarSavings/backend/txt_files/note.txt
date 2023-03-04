@@ -59,4 +59,12 @@ SOME BUGS ENCOUTERED (WORK LOG):
     + The problem that I encountered today and I need to fix tomorrow is the server sent back the response of status 400 Bad Request for the image
     + Some notes are the field of verification material in the database is a LARGE BINARY field which means it can either accept a string or an image/file.
 
-14. Fix the user's input for email -> encode it to convert str to binary.
+14. March 3rd, 2023: Fix the user's input for email -> encode it to convert str to binary.
+15. March 4th, 2023: Today I was working on debugging the user's input for the verification material for email only (not files). 
+    + Things need to be done: create a validated users input for fields that are not included in the errors or verification_errors dictionary so we can use them to when we refill the form if there are any errors.
+    -> The users don't have to rewrite the fields that were already corrected!
+
+    Plan for March 5th, 2023: 
+    + Continue with optimizing validation the user signup form.
+    + Work on handle files upload.
+    + Plan for this project: features, designs,...
