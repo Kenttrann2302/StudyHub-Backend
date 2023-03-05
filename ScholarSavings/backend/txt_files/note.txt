@@ -26,6 +26,7 @@ LIST TO IMPROVE:
 5. The email verification in identification must be unique
 6. For login page, username + password must be unique, check for existing and handle appropriate responses
 7. For css, adding an errors methods when the fields are invalid
+8. Instead of storing the path to the files that the users uploaded using psql, try AWS or Google Cloud Platform
 
 SOME BUGS ENCOUTERED (WORK LOG):
 1. Feb 12th, 2023: The identifcation_number when doing the request.form to get the number of either the passport or driver license from the users, cannot be get => 400 bad request => *solved
@@ -68,3 +69,34 @@ SOME BUGS ENCOUTERED (WORK LOG):
     + Continue with optimizing validation the user signup form.
     + Work on handle files upload.
     + Plan for this project: features, designs,...
+
+16. March 4th, 2023: validate_verification_material -> raw materials || verification_material -> encoded materials
+    + The sign up form is done with all the fields needed to verify the users. Next step, design an API to send a confirmation email towards the email that the users want to use for verification. 
+    
+    + Create an endpoint towards the login page where users can log in (work for March 5th, 2023), the login database need to be associated with the users information in the users table. 
+    + Some features for login: 
+        * Username:
+            - If the users use their universities email for verification -> this email will be their username
+            - If not then the users need to create their own username
+        * Password:
+            - Design their own password, using password validation algorithm to check for the constraints and common password
+        * Phone number:
+            - This is required if the users didn't use their school email for verification
+    
+    + Create sessions for users to log in and log out.
+    
+    + APIs infrastructure:
+        * If the username == email:
+            + Send email OTP verification to the email everytime the users log into the session (their secret key for session)
+        * Else if the username == username:
+            + Send phone OTP verification to the phone number everytime the users log into the session.
+    
+    4 standard pages so far:
+        1. Main_homepage (landing page when the users didn't login yet)
+        2. Sign up form (for users to register and verify themselves as a university students)
+        3. Search engine (Endpoint for searching pages) (***** Notes: Need to scrap the whole website for keywords dictionary)
+        4. Successful page after register
+
+    + Query all the users that haven't register for the username and password to prompt them for login info
+    + Design the landing page (Main_homepage) for ScholarSavings.
+

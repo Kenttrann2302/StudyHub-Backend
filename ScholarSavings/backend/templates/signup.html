@@ -6,7 +6,7 @@
     <script type="text/javascript" src="{{ url_for('serve_static_js', filename = 'ageCalculation.js') }}"></script>
   </head>
   <body>
-    <form id="signupform" action = "{{ url_for('createAccount') }}" method = 'POST'>
+    <form enctype="multipart/form-data" id="signupform" action = "{{ url_for('createAccount') }}" method = 'POST'>
       <h1></h1>
         
       <div>
@@ -18,7 +18,7 @@
         {% endif %}
 
         <label for="mname">Middle Name:</label><br>
-        <input type="text" name = "mname" value="{{ validated_fields.get('midName', '') }}" required/><br>
+        <input type="text" name = "mname" value="{{ validated_fields.get('midName', '') }}"/><br>
         <p>Maximum of 100 characters!</p>
 
         <label for="lname">Last Name(*):</label><br>
@@ -56,7 +56,7 @@
         
         <label for="address2">Address Line 2:</label><br>
         <p>Please indicates any buiding</p>
-        <textarea name = "address2" value="{{ validated_fields.get('secondAddress', '') }}" required></textarea><br>
+        <textarea name = "address2" value="{{ validated_fields.get('secondAddress', '') }}"></textarea><br>
 
         {% if request.method == 'POST' and error_message.get('address1') %} 
           <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
@@ -110,7 +110,7 @@
       
     
       <label>Religion:</label><br>
-      <input type="text" name="religion" value="{{ validated_fields.get('religion', '') }}" required/><br>
+      <input type="text" name="religion" value="{{ validated_fields.get('religion', '') }}"/><br>
       
       <!-- Get the identification options boxes -->
       <div>

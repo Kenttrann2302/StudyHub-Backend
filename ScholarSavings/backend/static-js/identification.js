@@ -12,7 +12,9 @@ window.onload = function() {
   idType.addEventListener('change', function() {
     // if the option is student email address
     if(this.value === "2"){
-      idNumber.setAttribute('maxlength', 50);
+      idNumber.setAttribute("type", "text");
+      idNumber.setAttribute("name", "id_number");
+      idNumber.setAttribute("max-length", 50);
       idNumber.style.display = 'inline-block';
       message.innerHTML = "To verify using your student email address, enter your school email address into the provided input field. This email address should be an official school email address that ends in .edu or .ac (depending on your school). Once you submit the email address, we will send you a verification email to confirm that you are a student at your school."
     }

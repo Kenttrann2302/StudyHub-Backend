@@ -12,11 +12,15 @@ from datetime import datetime
 from API.locationAPI import checkAddress
 from database.users_models import db, Gender, Identification, Users
 from helper_functions.formValidations import validate_users_input
+from helper_functions.validate_fields import create_validated_fields_dict, get_verification_material
 
 app = Flask(__name__)
 app.config['SERVER_NAME'] = 'localhost:5000'
 app.config['APPLICATION_ROOT'] = '/'
 app.config['PREFERRED_URL_SCHEME'] = 'http'
+
+# change the size for accepting files in the requests
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 megabytes
 
 # connect flask to postgres database using SQLALCHEMY
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://kenttran@localhost:5432/userdatabase'
@@ -108,6 +112,9 @@ class signUpForm:
       # query all the identification options from the identification table
       identifications = Identification.query.all()
 
+      # call the helper function to get the validated fields with empty strings for each field
+      validated_fields = create_validated_fields_dict(firstName='', midName='', lastName='', age='', birthDay='', firstAddress='', secondAdress='', city='', province='', country='', postalCode='', gender='', religion='', verification='', verification_material='')
+
       return render_template('signup.html', validated_fields = validated_fields, gender_options = genders, identification_options = identifications)
 
   # perform action on the createaccount url 
@@ -131,31 +138,17 @@ class signUpForm:
           gender = request.form['gender_id']
           religion = request.form['religion']
           verification = request.form['identification_id']
-          verification_material = request.form['id_number']
+          # call the helper function to send the approriate requests to get either an email string or binary files
+          verification_material, validate_verification_material = get_verification_material(verification_id=verification)
           # Initialize the errors dictionary:
           errors = {}
 
           # Validate the form data, if not -> send the error messages to the front-end
           # validate the users input before insert the data into the database
-          validated_errors = validate_users_input(errors, firstName, lastName, age, birthDay, gender, verification, verification_material)
-          # create a dictionary to store the validated fields
-          validated_fields = {
-            'firstName' : firstName,
-            'midName' : midName,
-            'lastName' : lastName,
-            'age' : age,
-            'birthDay' : birthDay,
-            'firstAddress' : firstAddress,
-            'secondAddress' : secondAddress,
-            'city' : city,
-            'province' : province,
-            'country' : country,
-            'postalCode' : postalCode,
-            'gender' : gender,
-            'religion' : religion,
-            'verification' : verification,
-            'verification_material' : verification_material,
-          }
+          validated_errors = validate_users_input(errors, firstName, lastName, age, birthDay, gender, verification, verification_material, validate_verification_material)
+
+          # create a dictionary to store the validated fields by calling the helper function
+          validated_fields = create_validated_fields_dict(firstName=firstName, midName=midName, lastName=lastName, age=age, birthDay=birthDay, firstAddress=firstAddress, secondAdress=secondAddress, city=city, province=province, country=country, postalCode=postalCode, gender=gender, religion=religion, verification=verification, verification_material=verification_material)
 
           # after getting the address, check for the validation using Google Maps Geocoding API before execute the insert the element
           # if the address is not valid 
@@ -163,16 +156,16 @@ class signUpForm:
           # pdb.set_trace()
           # if all the fields are valid
           if not errors and not validated_errors and addressChecking.is_valid_address():
-            # encode the verification materials from string to binary
-            new_verification_material = verification_material.encode('utf-8')
+            
             # create a list of new user instance
             new_users = [
-              Users(first_name=firstName, middle_name=midName, last_name=lastName, age=age, date_of_birth=birthDay, address_line_1=firstAddress, address_line_2=secondAddress, city=city, province=province, country=country, postal_code=postalCode, gender_id=gender, religion=religion, identification_id=verification, identification_material=new_verification_material)
+              Users(first_name=firstName, middle_name=midName, last_name=lastName, age=age, date_of_birth=birthDay, address_line_1=firstAddress, address_line_2=secondAddress, city=city, province=province, country=country, postal_code=postalCode, gender_id=gender, religion=religion, identification_id=verification, identification_material=verification_material)
             ] 
 
             # add new user into users model
             for user in new_users:
               try:
+                pdb.set_trace()
                 db.session.add(user)
                 # commit the change to the database
                 db.session.commit()

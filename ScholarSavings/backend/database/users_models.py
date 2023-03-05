@@ -55,7 +55,7 @@ class Users(db.Model):
   religion = db.Column(db.String(100), nullable=True)
   identification_id = db.Column(db.Integer, db.ForeignKey('identification.id'), nullable=False)
   identification = db.relationship('Identification', backref='users')
-  identification_material = db.Column(db.LargeBinary, nullable=False)
+  identification_material = db.Column(db.String(500), nullable=False)
   isRegister = db.Column(db.Boolean, nullable=False, default=False)
   created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
   updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
