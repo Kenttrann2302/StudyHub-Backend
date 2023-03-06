@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <title>
+   ScholarSavings Registration
+  </title>
+ </head>
+ <body>
+  <div class="header">
+   <h1 id="first-header">
+    Welcome to ScholarSavings - "Unlock Your Financial Potential with ScholarSavings"!
+   </h1>
+   <h2 id="second-header">
+    New User? Want to become one of the ScholarSaver?
+   </h2>
+   <h3 id="third-header">
+    Please fill in the form to join us!
+   </h3>
+  </div>
+  <div class="content-block">
+   <form action="{{ url_for('register') }}" methods="POST">
+    <label for="username">Username:</label><br>
+    <input type="text" name="username" id="username"/>
+    <label for="password">Password:</label><br>
+    <input type="text" name="password" id="password"/><br>
+    <label for="email">Email:</label><br>
+    <input type="text" name="email" id="email"/><br>
+    <label>Phone Number:</label><br>
+    <input type="text" name="phone-number" id="phone-number"/><br>
+   </form>
+  </div>
+ </body>
+</html>

@@ -55,9 +55,9 @@ def signup():
 
 # add the user data input into the database to create an account for the user
 ################################## CREATE ACCOUNT FOR USERS AFTER SIGNING UP ###############################
-@app.route('/scholarsavings/createaccount/', methods = ['POST'])
+@app.route('/scholarsavings/savingchallenges/', methods = ['POST'])
 # perform action on the createaccount url 
-def createAccount():
+def savingChallengesInput():
   return signUP.createAccount()
     
 if __name__ == '__main__':

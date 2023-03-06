@@ -1,6 +1,6 @@
-########## SIGN UP PAGE #########
+########## SIGN UP PAGE FOR USERS INPUT FOR MACHINE LEARNING ALGORITHM FOR SAVING STRATEGIES #########
 # import libraries 
-from flask import Flask, redirect, url_for, render_template, jsonify, request
+from flask import Flask, redirect, url_for, render_template, jsonify, request, flash, abort
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine
 from sqlalchemy.engine.reflection import Inspector
@@ -13,6 +13,7 @@ from API.locationAPI import checkAddress
 from database.users_models import db, Gender, Identification, Users
 from helper_functions.formValidations import validate_users_input
 from helper_functions.validate_fields import create_validated_fields_dict, get_verification_material
+from helper_functions.users_tables_create import create_users_tables
 
 app = Flask(__name__)
 app.config['SERVER_NAME'] = 'localhost:5000'
@@ -30,28 +31,8 @@ inspector = Inspector.from_engine(engine)
 # Create the SQLAlchemy database object
 db.init_app(app)
 
-# create table if they don't exist
-def create_tables() -> None:
-  with app.app_context():
-    # get all the table in the database
-    table_names = inspector.get_table_names()
-    if 'gender' not in table_names or 'identification' not in table_names or not 'users' in table_names:
-      db.create_all()
-      # Check if the constraint already exists on the 'users' table
-      constraints = inspector.get_check_constraints('users')
-      for constraint in constraints:
-        if constraint['name'] == 'age_check':
-          print(f"The 'age_check' constraint already exits on the 'users' table")
-          break
-        else: 
-          # Add the constraint if it does not already exist
-          db.engine.execute('ALTER TABLE users ADD CONSTRAINT age_check CHECK(age >=18)')
-          db.engine.execute('ALTER TABLE users ADD CONSTRAINT age_check CHECK (age = extract(year from age(date_of_birth)))')
-          print(f"Added the 'age_check' constraint to the 'users' table.")
-      print(f"Tables created successfully!")
-
-# create all the tables
-create_tables()
+# create 3 tables: Gender, Identification and Users according to the class models in users_models
+create_users_tables(app=app, inspector=inspector, db=db)
 
 class signUpForm:
   def __init__(self) -> None:
@@ -117,8 +98,8 @@ class signUpForm:
 
       return render_template('signup.html', validated_fields = validated_fields, gender_options = genders, identification_options = identifications)
 
-  # perform action on the createaccount url 
-  def createAccount(self):
+  # handle the POST request from the form data from signup.html
+  def savings_challenge_signup(self):
     with app.app_context(): 
       # get the request method
       if request.method == 'POST':
@@ -153,10 +134,21 @@ class signUpForm:
           # after getting the address, check for the validation using Google Maps Geocoding API before execute the insert the element
           # if the address is not valid 
           addressChecking = checkAddress(firstAddress, city, province, country, postalCode, secondAddress)
-          # pdb.set_trace()
+
           # if all the fields are valid
           if not errors and not validated_errors and addressChecking.is_valid_address():
+            # query the database to check if there is any user that already exists with the same information
+            result = Users.query.filter_by(first_name=firstName, middle_name=midName, last_name=lastName, age=age, date_of_birth=birthDay, address_line_1=firstAddress, address_line_2=secondAddress, city=city, province=province, country=country, postal_code=postalCode, gender_id=gender, religion=religion, identification_id=verification, identification_material=verification_material).first()
+
+            # check if there is a user with the same info already in the database
+            if result:
+              flash(f"This user already exists in our system! Please register with a different user!")
+              db.session.rollback()
+              genders = Gender.query.all()
+              identifications = Identification.query.all()
+              return render_template('signup.html', error_message=errors, validated_fields = validated_fields, validated_errors = validated_errors, gender_options = genders, identification_options = identifications)
             
+            # if the users information didn't exist in the database yet
             # create a list of new user instance
             new_users = [
               Users(first_name=firstName, middle_name=midName, last_name=lastName, age=age, date_of_birth=birthDay, address_line_1=firstAddress, address_line_2=secondAddress, city=city, province=province, country=country, postal_code=postalCode, gender_id=gender, religion=religion, identification_id=verification, identification_material=verification_material)
@@ -169,35 +161,30 @@ class signUpForm:
                 db.session.add(user)
                 # commit the change to the database
                 db.session.commit()
-                print(f"User {user.first_name} {user.last_name} added successful!")
+                flash(f"User {user.first_name} {user.last_name} added successful!")
+
+                # query the database to check if the users already register for an account
+                if result is not None and result.isRegister == False:
+                  return render_template('sign_up_successful.html')
+
               except:
                 db.session.rollback()
-                print(f"User {user.first_name} {user.last_name} already exists!")
+                flash(f"User {user.first_name} {user.last_name} cannot be added!")
+                abort(406)
 
           # if there is any invalid field is being caught (including verification materials and address)
           else:
-            pass
-
-          # query the database to check if the data has been inserted successfully
-          result = Users.query.filter_by(first_name=firstName).first()
-
-          if result:
-            print(f"Data has been inserted successfully")
-            return render_template("successful.html")
-          else:
-            print(f"Error inserting data")
             db.session.rollback()
             genders = Gender.query.all()
             identifications = Identification.query.all()
             return render_template('signup.html', error_message=errors, validated_fields = validated_fields, validated_errors = validated_errors, gender_options = genders, identification_options = identifications)
-            
+
         # catch the error if the address is invalid
         except ValueError:
           # Handle the case when the address is invalid
           # Render the form again and show an error message
           # get all of the gender options
           errors['address1'] = f'Please enter a valid address!'
-
           db.session.rollback()
           genders = Gender.query.all()
           identifications = Identification.query.all()
