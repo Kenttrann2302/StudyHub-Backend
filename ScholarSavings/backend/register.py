@@ -1,6 +1,6 @@
 ############### REGISTER PAGE FOR USERS TO CREATE THEIR USERNAME AND PASSWORD FOR THE APPLICATION
 # import libraries
-from flask import Flask, redirect, url_for, session, render_template
+from flask import Flask, redirect, url_for, session, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine
 from sqlalchemy.engine.reflection import Inspector
@@ -39,5 +39,18 @@ class Registration:
  # this is a function to handle the POST request from the registration form and insert the registration fields into the database
  def createAccount(self) -> None:
   with app.app_context():
-   pass
+   if request.method == 'POST':
+    # get the form data and validate them before inserting into the database
+    username = request.form['username']
+    password = request.form['password']
+    password_confirmation = request.form['password-confirmation']
+    email = request.form['email']
+    phone_number = request.form['phone-number']
+
+    # initialize the errors dictionary in order to store the errors for each input fields
+    register_errors = {}
+
+    # validate the form data, if not -> send error messages to the website
+    # validate the users registration input before inserting the data into the database
+    
 

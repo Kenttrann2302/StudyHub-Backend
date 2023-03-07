@@ -103,3 +103,5 @@ SOME BUGS ENCOUTERED (WORK LOG):
 17. March 5th, 2023: The plan for this project is done. Today I will be working on the login database and register page for users to login into the service.
     + A little bit change on the scope of work, the signup form will be used for prompting users input for machine learning algorithm.
     + The registration will replaced sign up form for users to register for the service.
+
+18. March 6th, 2023: Today I will work on finishing the register page and schema so that the users

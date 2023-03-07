@@ -18,11 +18,13 @@
    </h3>
   </div>
   <div class="content-block">
-   <form action="{{ url_for('register') }}" methods="POST">
+   <form action="{{ url_for('createAccount') }}" methods="POST">
     <label for="username">Username:</label><br>
     <input type="text" name="username" id="username"/>
     <label for="password">Password:</label><br>
     <input type="text" name="password" id="password"/><br>
+    <label for="re-enter-password">Re-enter password:</label>
+    <input type="text" name="password-confirmation" id="password-confirmation"/><br>
     <label for="email">Email:</label><br>
     <input type="text" name="email" id="email"/><br>
     <label>Phone Number:</label><br>

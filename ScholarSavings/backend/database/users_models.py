@@ -44,6 +44,7 @@ class Registration(db.Model):
   password = db.Column(db.String(500), nullable=False, unique=True)
   email = db.Column(db.String(500), nullable=False, unique=True)
   phone_number = db.Column(db.String(15), unique=True, index=True)
+  account_verified = db.Column(db.Boolean, nullable=False, default=False)
   created_at = db.Column(db.DateTime, default = datetime.utcnow, nullable=False)
   updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
   saving_challenges_signup = db.Column(db.Boolean, nullable=False, default=False) # indicate whether the users have registered for saving challenges algorithm

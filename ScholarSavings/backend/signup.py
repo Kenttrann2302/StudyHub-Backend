@@ -11,8 +11,7 @@ from datetime import datetime
 # import other files
 from API.locationAPI import checkAddress
 from database.users_models import db, Gender, Identification, Users
-from helper_functions.formValidations import validate_users_input
-from helper_functions.validate_fields import create_validated_fields_dict, get_verification_material
+from helper_functions.signupformValidations import validate_users_input, create_validated_fields_dict, get_verification_material
 from helper_functions.users_tables_create import create_users_tables
 
 app = Flask(__name__)
