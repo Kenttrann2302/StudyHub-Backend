@@ -130,11 +130,14 @@
         {% endif %}
       </div>
 
-      <p id="message"></p>
-      <input type="text" id="id_number" name="id_number" style="display: none;" value="{{ validated_fields.get('verification_material', '') }}" required/><br>
-      {% if request.method == 'POST' and validated_errors.get('verification_material') %}
-        <span class="error" style="color:red;">{{ validated_errors['verification_material'] }}</span><br>
-      {% endif %} 
+      <div>
+        <p id="message"></p>
+        <input type="text" id="id_number" name="id_number" style="display: none;" value="{{ validated_fields.get('verification_material', '') }}" required/><br>
+        {% if request.method == 'POST' and validated_errors.get('verification_material') %}
+          <span class="error" style="color:red;">{{ validated_errors['verification_material'] }}</span><br>
+        {% endif %} 
+      </div>
+      
       <!-- Submit button for user to submit the form  -->
       <input type="submit" value="Submit"/><br>
     </form>

@@ -31,7 +31,7 @@ inspector = Inspector.from_engine(engine)
 db.init_app(app)
 
 # create 3 tables: Gender, Identification and Users according to the class models in users_models
-create_users_tables(app=app, inspector=inspector, db=db)
+create_users_tables(app=app, inspector=inspector, db=db, engine=engine)
 
 class signUpForm:
   def __init__(self) -> None:
@@ -43,10 +43,10 @@ class signUpForm:
       # create a list of new gender instance
       new_genders = [
         Gender(id=1, gender_options='--select--'),
-        Gender(id=2, gender_options='MALE'),
-        Gender(id=3, gender_options='FEMALE'),
-        Gender(id=4, gender_options='OTHERS'),
-        Gender(id=5, gender_options='PREFER NOT TO TELL')
+        Gender(id=2, gender_options='Male'),
+        Gender(id=3, gender_options='Female'),
+        Gender(id=4, gender_options='Others'),
+        Gender(id=5, gender_options='Prefer not to tell')
       ]
 
       # add the new gender to the session
@@ -66,10 +66,10 @@ class signUpForm:
       # create a list of new identifications instance
       new_identifications = [
         Identification(id=1, identification_options='--select--'),
-        Identification(id=2, identification_options='STUDENT EMAIL ADDRESS'),
-        Identification(id=3, identification_options='STUDENT ID CARD'),
-        Identification(id=4, identification_options='ENROLLMENT VERIFICATION LETTER'),
-        Identification(id=5, identification_options='TRANSCRIPT')
+        Identification(id=2, identification_options='Student Email Address'),
+        Identification(id=3, identification_options='Student ID Card'),
+        Identification(id=4, identification_options='Enrollment Verification Letter'),
+        Identification(id=5, identification_options='Transcript')
       ]
 
       # add new identification to the session
@@ -139,9 +139,12 @@ class signUpForm:
             # query the database to check if there is any user that already exists with the same information
             result = Users.query.filter_by(first_name=firstName, middle_name=midName, last_name=lastName, age=age, date_of_birth=birthDay, address_line_1=firstAddress, address_line_2=secondAddress, city=city, province=province, country=country, postal_code=postalCode, gender_id=gender, religion=religion, identification_id=verification, identification_material=verification_material).first()
 
-            # check if there is a user with the same info already in the database
+            # check if user info already exists in the database
             if result:
-              flash(f"This user already exists in our system! Please register with a different user!")
+              flash(f"You have already registered for this feauture! If you want to update your information, please use this link to update your profile!")
+
+              # please work on handle the put request for users to update their profile
+              # instead of checking if the result has already exist, please using JWTs for access token
               db.session.rollback()
               genders = Gender.query.all()
               identifications = Identification.query.all()
@@ -156,15 +159,10 @@ class signUpForm:
             # add new user into users model
             for user in new_users:
               try:
-                pdb.set_trace()
                 db.session.add(user)
                 # commit the change to the database
                 db.session.commit()
                 flash(f"User {user.first_name} {user.last_name} added successful!")
-
-                # query the database to check if the users already register for an account
-                if result is not None and result.isRegister == False:
-                  return render_template('sign_up_successful.html')
 
               except:
                 db.session.rollback()

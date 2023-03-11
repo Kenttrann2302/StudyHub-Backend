@@ -1,25 +1,31 @@
+import pdb
 # This is a helper function that helps create the registration table for users to register their email, username, password and phone number to become a diligent ScholarSaver!!!!!!
-def create_registration_table(app, inspector, db) -> None:
+def create_registration_table(app, inspector, db, engine) -> None:
  with app.app_context():
   try:
    # get all the tables in the database
+   db.metadata.bind = engine
    table_names = inspector.get_table_names()
    # check first if the registration table is already existed
-   if 'registration' not in table_names:
+   if 'registration' not in table_names or 'verification_methods' not in table_names:
+    db.metadata.tables['verification_methods'].create()
     db.metadata.tables['registration'].create()
-    print(f"Registration table has been created successfully!")
+    print(f"Registration tables have been created successfully!")
     return
   except:
-   print(f"Registration table already existed in the database!")
+   print(f"Registration tables already existed in the database!")
 
 # This is a helper function that helps to create 3 tables when the users choose to use machine learning algorithm for making saving challenges and strategies
-def create_users_tables(app, inspector, db) -> None:
+def create_users_tables(app, inspector, db, engine) -> None:
  with app.app_context():
   try:
    # get all the tables in the database
+   db.metadata.bind = engine
    table_names = inspector.get_table_names()
    if 'gender' not in table_names or 'identification' not in table_names or not 'users' in table_names:
-     db.metadata.tables['users', 'identification', 'gender'].create()
+     db.metadata.tables['gender'].create()
+     db.metadata.tables['identification'].create()
+     db.metadata.tables['user'].create()
      # Check if the constraint already exists on the 'users' table
      constraints = inspector.get_check_constraints('users')
      for constraint in constraints:

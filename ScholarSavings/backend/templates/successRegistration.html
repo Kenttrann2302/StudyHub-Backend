@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <title>
+   ScholarSavings account confirm
+  </title>
+ </head>
+ <body>
+  <div class="heading">
+   <h1>
+    Congratulations! You have become one of the ScholarSaver Warrior! 
+   </h1>
+   <h2>
+    Welcome {{ username }} to ScholarSavings community! Thank you for joining us!
+   </h2>
+   <h3>
+    {% if int(verification_id) == 2 %} 
+    A confirmation email has been sent to your email inbox, please follow the instructions to confirm your account.
+    <p>Note: The confirmation email might be sent to your trunk email, make sure to check all inboxes!</p>
+    {% elif int(verification_id) == 3 %} 
+    A confirmation text message has been sent to your phone number, please follow the instructions to confirm your account.
+    {% endif %} 
+   </h3>
+  </div>
+ </body>
+</html>

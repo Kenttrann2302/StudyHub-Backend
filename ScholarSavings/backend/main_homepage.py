@@ -1,9 +1,13 @@
+# import libraries
 from flask import Flask, url_for, render_template, redirect, request, send_from_directory
-from signup import signUpForm
-from search import searchItems
 import psycopg2
 import pdb
 import os
+
+# import files from directories
+from signup import signUpForm
+from search import searchItems
+from register import RegistrationResource, VerificationMethodsResource
 
 app = Flask(__name__)
 app.debug = True
@@ -40,9 +44,23 @@ def search():
   search = searchItems()
   return search.search_results()
 
-# get the signup form
-# create an object to signup
-################################## SIGN UP FORM (/hcm/signup/) ###################################
+################################## REGISTER FORM for users account ('/scholarsavings/register/) ##########################
+registration_resource = RegistrationResource()
+verification_methods_resource = VerificationMethodsResource()
+
+# rendering the registration form (username, password, email and phone number)
+@app.route('/scholarsavings/register/')
+def registration():
+  # insert into verification table
+  verification_methods_resource.insert_verification_table()
+  return verification_methods_resource.registration()
+
+# call an api to handle the post request from the form
+@app.route('/scholarsavings/createaccount/', methods=['POST'])
+def createAccount():
+  return registration_resource.createAccount()
+
+################################## SIGN UP FORM for saving strategy algorithm ('/scholarsavings/signup/)###################################
 signUP = signUpForm()
 
 @app.route('/scholarsavings/signup/')
@@ -53,12 +71,10 @@ def signup():
   signUP.insert_identification_table()
   return signUP.render_signup()
 
-# add the user data input into the database to create an account for the user
-################################## CREATE ACCOUNT FOR USERS AFTER SIGNING UP ###############################
 @app.route('/scholarsavings/savingchallenges/', methods = ['POST'])
 # perform action on the createaccount url 
 def savingChallengesInput():
-  return signUP.createAccount()
+  return signUP.savings_challenge_signup()
     
 if __name__ == '__main__':
   app.run(debug=True)
