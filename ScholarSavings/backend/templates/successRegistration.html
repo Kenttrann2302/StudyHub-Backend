@@ -14,13 +14,24 @@
     Welcome {{ username }} to ScholarSavings community! Thank you for joining us!
    </h2>
    <h3>
-    {% if int(verification_id) == 2 %} 
+    {% if verification_id == "2" %} 
     A confirmation email has been sent to your email inbox, please follow the instructions to confirm your account.
-    <p>Note: The confirmation email might be sent to your trunk email, make sure to check all inboxes!</p>
-    {% elif int(verification_id) == 3 %} 
+    <p style="color: red;">Note: The confirmation email might be sent to your trunk email, make sure to check all inboxes!</p>
+    {% elif verification_id == "3" %} 
     A confirmation text message has been sent to your phone number, please follow the instructions to confirm your account.
     {% endif %} 
    </h3>
+  </div>
+  <div class="content-block">
+   <ul>
+    <li>
+     <a href="{{ url_for('mainHomePage') }}">Home</a><br>
+    </li>
+    <li>
+     <p>Already a user? Complete a sign up form to unlock supreme saving strategies with thousands of interesting challenges and gifts!</p>
+     <a href="{{ url_for('signup') }}">Treasure Hunt Signup</a>
+    </li>
+   </ul>
   </div>
  </body>
 </html>

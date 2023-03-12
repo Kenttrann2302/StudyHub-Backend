@@ -1,19 +1,33 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>ScholarSavings BANKING SYSTEM</title>
+    <title>ScholarSavings</title>
     <script type="text/javascript" src="{{ url_for('serve_static_js', filename = 'homepage.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('serve_static_css', filename='main_homepage.css') }}">
   </head>
   <body>
+    <div class="header">
+      <h1>
+        Welcome to ScholarSavings!
+      </h1>
+      <h2>
+        Do you want to set your foot on an interesting adventure with millions of gifts and challenges are waiting for us?
+      </h2>
+      <h2>
+        Are you struggling with finding the best way to save your finance?
+      </h2>
+      <h3>
+        Let's become a ScholarSaver Warrior and find out thousands of wonderful things!!!
+      </h3>
+    </div>
     <div>
       <ul>
         <li>
-          <span>Already a user? Complete a sign up form to unlock supreme saving strategies with thousands of interesting challenges and gifts!</span>
-          <a href="{{ url_for('signup') }}">Treasure Hunt</a>
+          <p>Already a user? Complete a sign up form to unlock supreme saving strategies with thousands of interesting challenges and gifts!</p>
+          <a href="{{ url_for('signup') }}">Treasure Hunt Signup</a>
         </li>  
         <li>
-          <span>New user? Sign up with us to become a diligent saver!</span>
+          <p>New user? Sign up with us to become a diligent saver!</p>
           <a href="{{ url_for('registration') }}">Register</a>
         </li>
       </ul>

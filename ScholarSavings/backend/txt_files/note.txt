@@ -104,4 +104,5 @@ SOME BUGS ENCOUTERED (WORK LOG):
     + A little bit change on the scope of work, the signup form will be used for prompting users input for machine learning algorithm.
     + The registration will replaced sign up form for users to register for the service.
 
-18. March 6th, 2023: Today I will work on finishing the register page and schema so that the users
+18. March 6th, 2023: Today I will work on finishing the register page and schema so that the users can register for their account
+19. March 11th, 2023: Today I am working on register page, most of them are finished and ready for authentication procedure!

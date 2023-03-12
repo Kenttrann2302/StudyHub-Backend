@@ -133,6 +133,11 @@ def create_validated_fields_dict(*args, **kwargs):
    'religion' : '',
    'verification' : '',
    'verification_material' : '',
+   'username' : '',
+   'password' : '',
+   'password_confirmation' : '',
+   'verification_id' : '',
+   'verification_method' : ''
  }
 
  for i, arg in enumerate(args):

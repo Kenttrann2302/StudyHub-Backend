@@ -5,15 +5,16 @@ import pdb
 import os
 
 # import files from directories
-from signup import signUpForm
-from search import searchItems
-from register import RegistrationResource, VerificationMethodsResource
+from signup import signUpFormResource, SavingChallengesResource
+from register import VerificationMethodsResource, RegistrationResource
+from search import searchItemsResource
 
 app = Flask(__name__)
 app.debug = True
 app.config['SERVER_NAME'] = '127.0.0.1:5000'
 app.config['APPLICATION_ROOT'] = '/'
 app.config['PREFERRED_URL_SCHEME'] = 'http'
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 # include some static files for javascript
 @app.route('/static-js/<path:filename>')
@@ -41,8 +42,9 @@ def mainHomePage():
 @app.route('/scholarsavings/search/')
 def search():
   # create an object for searching class
-  search = searchItems()
+  search = searchItemsResource()
   return search.search_results()
+
 
 ################################## REGISTER FORM for users account ('/scholarsavings/register/) ##########################
 registration_resource = RegistrationResource()
@@ -56,14 +58,16 @@ def registration():
   return verification_methods_resource.registration()
 
 # call an api to handle the post request from the form
-@app.route('/scholarsavings/createaccount/', methods=['POST'])
-def createAccount():
+@app.route('/scholarsavings/createaccount/', methods = ['POST'])
+def registerNewUser():
   return registration_resource.createAccount()
 
-################################## SIGN UP FORM for saving strategy algorithm ('/scholarsavings/signup/)###################################
-signUP = signUpForm()
 
-@app.route('/scholarsavings/signup/')
+################################## SIGN UP FORM for saving strategy algorithm ('/scholarsavings/signup/)###################################
+signUP = signUpFormResource()
+savingChallenges = SavingChallengesResource()
+
+@app.route('/scholarsavings/treasurehunt/signup/')
 def signup():
   # add the gender table
   signUP.insert_gender_table()
@@ -71,10 +75,10 @@ def signup():
   signUP.insert_identification_table()
   return signUP.render_signup()
 
-@app.route('/scholarsavings/savingchallenges/', methods = ['POST'])
-# perform action on the createaccount url 
+@app.route('/scholarsavings/treasurehunt/signup/process/', methods = ['POST'])
+# perform action on the url for treasure hunting game 
 def savingChallengesInput():
-  return signUP.savings_challenge_signup()
+  return savingChallenges.savings_challenge_signup()
     
 if __name__ == '__main__':
   app.run(debug=True)

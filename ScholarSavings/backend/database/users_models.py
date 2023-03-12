@@ -6,7 +6,7 @@ from sqlalchemy.schema import CheckConstraint
 from datetime import datetime
 from sqlalchemy import inspect
 import pdb
-
+import pytz
 
 db = SQLAlchemy()
 
@@ -29,8 +29,8 @@ class Identification(db.Model):
 
   id = db.Column(db.Integer, primary_key=True, autoincrement=True)
   identification_options = db.Column(db.String(100), unique=True, nullable=False) # new non-null column
-  created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-  updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+  created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), nullable=False)
+  updated_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), onupdate=datetime.now(pytz.timezone('EST')), nullable=False)
 
   def __repr__(self):
     return '<Identification %r>' % self.identification_options
@@ -58,8 +58,8 @@ class Users(db.Model):
   identification_id = db.Column(db.Integer, db.ForeignKey('identification.id'), nullable=False)
   identification = db.relationship('Identification', backref='users')
   identification_material = db.Column(db.String(500), nullable=False)
-  created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-  updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+  created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), nullable=False)
+  updated_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), onupdate=datetime.now(pytz.timezone('EST')), nullable=False)
 
   # add age constraint
   # __table_args__ = (
@@ -76,8 +76,8 @@ class Verification(db.Model):
 
   id = db.Column(db.Integer, primary_key=True, autoincrement=True)
   verification_options = db.Column(db.String(100), unique=True, nullable=False) # new non-null column for 2 factors authentication
-  created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-  updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+  created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), nullable=False)
+  updated_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), onupdate=datetime.now(pytz.timezone('EST')), nullable=False)
 
   def __repr__(self):
     return '<Verification %r>' % self.verification_options
@@ -90,16 +90,17 @@ class Registration(db.Model):
   username = db.Column(db.String(500), nullable=False, unique=True)
   password = db.Column(db.String(500), nullable=False, unique=True)
   verification_id = db.Column(db.Integer, db.ForeignKey('verification_methods.id'), nullable=False)
-  verification_method = db.relationship('Verification', backref='registration')
+  verification = db.relationship('Verification', backref='registration')
+  verification_method = db.Column(db.String(500), nullable=False, unique=True)
   account_verified = db.Column(db.Boolean, nullable=False, default=False)
-  created_at = db.Column(db.DateTime, default = datetime.utcnow, nullable=False)
-  updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+  created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), nullable=False)
+  updated_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), onupdate=datetime.now(pytz.timezone('EST')), nullable=False)
   saving_challenges_signup = db.Column(db.Boolean, nullable=False, default=False) # indicate whether the users have registered for saving challenges algorithm
 
   # validate all the fields constraints on front-end before sending them to backend
 
   def __repr__(self) -> str:
-    return '<Users %r>' % self.username 
+    return '<Users %r>' % self.user_id % self.username
 
 # Add a foreign key constraint to the gender_id field in the User model
 db.ForeignKeyConstraint(['gender_id'], ['gender_id'])
@@ -109,6 +110,3 @@ db.ForeignKeyConstraint(['identification_id'], ['identification_id'])
 
 # Add a foreign key constraint to the verification_id fields in the Registration model
 db.ForeignKeyConstraint(['verification_id'], ['verification_id'])
-
-
-  

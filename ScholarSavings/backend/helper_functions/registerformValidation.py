@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 # This is a helper function to validate the registration form
 # new_user = [username, password, password_confirmation, email, phone_number]
-def validate_registration_form(new_user, errors, verification_id) -> list:
+def validate_registration_form(new_user, errors, verification_id, areacode_id) -> list:
  # create an empty list for users fields that are already validated
  validated_new_user = []
  for i, data in enumerate(new_user):
@@ -13,7 +13,7 @@ def validate_registration_form(new_user, errors, verification_id) -> list:
    0: lambda: checkusername(username=data, errors=errors, validate_new_user=validated_new_user),
    1: lambda: checkpassword(username=new_user[0], password=data, errors=errors, validate_new_user=validated_new_user),
    2: lambda: checkpasswordconfirm(confirmed_password=data, password=new_user[1], errors=errors, validate_new_user=validated_new_user),
-   3: lambda: check_verification(verification_method=data, verification_id=verification_id, errors=errors, validated_new_user=validated_new_user),
+   3: lambda: check_verification(verification_method=data, verification_id=verification_id, errors=errors, validate_new_user=validated_new_user, areaCodeID=areacode_id),
   }
   case[i]()
 
@@ -68,7 +68,7 @@ def checkpasswordconfirm(confirmed_password, password, errors, validate_new_user
     validate_new_user.append(confirmed_password)
 
 # function check the email input to see if the email is valid to the constraints database
-def check_verification(verification_method, verification_id, errors, validate_new_user) -> None:
+def check_verification(verification_method, verification_id, errors, validate_new_user, areaCodeID) -> None:
  # Case 0: user don't choose any method for authentication
  if (int(verification_id) == 1):
   errors['verification_id'] = f"Please choose one of the following methods to confirm your account!"
@@ -98,7 +98,7 @@ def check_verification(verification_method, verification_id, errors, validate_ne
   elif not verification_method.isdigit():
     errors['verification-input'] = f"Phone number must contain only digits!"
   else:
-    validate_new_user.append(verification_method)
+    validate_new_user.append('(' + areaCodeID + ')' + ' ' + verification_method)
 
 
 

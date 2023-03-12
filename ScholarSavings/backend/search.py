@@ -1,6 +1,9 @@
 # THIS FILE WILL TRIGGER THE SEARCH URL WHEN THE USERS CLICK ON THE SEARCH ICON IN THE MAIN HOME PAGE
 # find all the keywords in the website so the users can search easier
 from flask import Flask, url_for, render_template, redirect, request, send_from_directory
+from flask_restful import Api, Resource, reqparse
+from flask_bcrypt import Bcrypt
+from flask_migrate import Migrate
 import pdb
 
 app = Flask(__name__)
@@ -8,6 +11,8 @@ app.debug = True
 app.config['SERVER_NAME'] = '127.0.0.1:5000'
 app.config['APPLICATION_ROOT'] = '/'
 app.config['PREFERRED_URL_SCHEME'] = 'http'
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+api = Api(app)
 
 # Global dictionary mapping search result items to their URLs
 item_urls = {
@@ -16,8 +21,8 @@ item_urls = {
  'home page': '/home/',
  'home': '/home/',
  'Home': '/home/',
- 'signup': '/hcm/signup/',
- 'register': '/hcm/signup/',
+ 'signup': '/scholarsavings/treasurehunt/signup/',
+ 'register': '/scholarsavings/register/',
  'Signup': '/hcm/signup/',
  'sign up': '/hcm/signup/',
  'SIGN UP': '/hcm/signup/',
@@ -32,9 +37,9 @@ def search(query, items) -> list:
    matches.append(item)
  return matches
 
-class searchItems:
+class searchItemsResource(Resource):
  def __init__(self) -> None:
-  pass
+  super().__init__()
 
  def search_results(self) -> None:
   with app.app_context():
@@ -52,3 +57,5 @@ class searchItems:
 
    # Render search results in HTML
    return render_template('search.html', query=query, unique_links=url_title_dict)
+
+api.add_resource(searchItemsResource, '/scholarsavings/search/')

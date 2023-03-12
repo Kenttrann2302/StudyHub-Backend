@@ -2,6 +2,9 @@
 # import libraries 
 from flask import Flask, redirect, url_for, render_template, jsonify, request, flash, abort
 from flask_sqlalchemy import SQLAlchemy
+from flask_restful import Api, Resource, reqparse
+from flask_bcrypt import Bcrypt
+from flask_migrate import Migrate
 from sqlalchemy import create_engine
 from sqlalchemy.engine.reflection import Inspector
 import psycopg2
@@ -18,6 +21,9 @@ app = Flask(__name__)
 app.config['SERVER_NAME'] = 'localhost:5000'
 app.config['APPLICATION_ROOT'] = '/'
 app.config['PREFERRED_URL_SCHEME'] = 'http'
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+api = Api(app)
+migrate = Migrate(app, db)
 
 # change the size for accepting files in the requests
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 megabytes
@@ -33,9 +39,9 @@ db.init_app(app)
 # create 3 tables: Gender, Identification and Users according to the class models in users_models
 create_users_tables(app=app, inspector=inspector, db=db, engine=engine)
 
-class signUpForm:
+class signUpFormResource(Resource):
   def __init__(self) -> None:
-    pass
+    super().__init__()
 
   # insert rows into the gender model
   def insert_gender_table(self) -> None:
@@ -93,9 +99,13 @@ class signUpForm:
       identifications = Identification.query.all()
 
       # call the helper function to get the validated fields with empty strings for each field
-      validated_fields = create_validated_fields_dict(firstName='', midName='', lastName='', age='', birthDay='', firstAddress='', secondAdress='', city='', province='', country='', postalCode='', gender='', religion='', verification='', verification_material='')
+      validated_fields = create_validated_fields_dict(firstName='', midName='', lastName='', age='', birthDay='', firstAddress='', secondAdress='', city='', province='', country='', postalCode='', gender='', religion='', verification='', verification_material='', username='', password='', password_confirmation='', verification_id='', verification_method='')
 
       return render_template('signup.html', validated_fields = validated_fields, gender_options = genders, identification_options = identifications)
+
+class SavingChallengesResource(Resource):
+  def __init__(self) -> None:
+    super().__init__()
 
   # handle the POST request from the form data from signup.html
   def savings_challenge_signup(self):
@@ -128,7 +138,7 @@ class signUpForm:
           validated_errors = validate_users_input(errors, firstName, lastName, age, birthDay, gender, verification, verification_material, validate_verification_material)
 
           # create a dictionary to store the validated fields by calling the helper function
-          validated_fields = create_validated_fields_dict(firstName=firstName, midName=midName, lastName=lastName, age=age, birthDay=birthDay, firstAddress=firstAddress, secondAdress=secondAddress, city=city, province=province, country=country, postalCode=postalCode, gender=gender, religion=religion, verification=verification, verification_material=verification_material)
+          validated_fields = create_validated_fields_dict(firstName=firstName, midName=midName, lastName=lastName, age=age, birthDay=birthDay, firstAddress=firstAddress, secondAdress=secondAddress, city=city, province=province, country=country, postalCode=postalCode, gender=gender, religion=religion, verification=verification, verification_material=verification_material, username='', password='', password_confirmation='', verification_id='', verification_method='')
 
           # after getting the address, check for the validation using Google Maps Geocoding API before execute the insert the element
           # if the address is not valid 
@@ -187,5 +197,5 @@ class signUpForm:
           identifications = Identification.query.all()
           return render_template('signup.html', error_message=errors, validated_fields=validated_fields, validated_errors = validated_errors, gender_options = genders, identification_options = identifications)
         
-      
-          
+api.add_resource(signUpFormResource, '/scholarsavings/treasurehunt/signup/') 
+api.add_resource(SavingChallengesResource, '/scholarsavings/treasurehunt/signup/process/')   

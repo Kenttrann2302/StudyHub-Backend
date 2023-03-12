@@ -1,4 +1,4 @@
-// Create the logic to render the box for identification number depends on the option of the user: Passport or Driver License
+// Create the logic to render the box for identification number depends on the option of the user
 
 window.onload = function() {
   const default_value = "1";
