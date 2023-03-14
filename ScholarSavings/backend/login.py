@@ -4,7 +4,7 @@ from flask import Flask, redirect, url_for, session, render_template, request, a
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_restful import Api, Resource, reqparse
-from flask_bcrypt import Bcrypt
+import bcrypt
 from werkzeug.security import check_password_hash
 from sqlalchemy import create_engine
 import pdb
@@ -34,7 +34,6 @@ login_app.config['TESTING'] = True
 login_app.config['WTF_CSRF_ENABLED'] = False
 
 migrate = Migrate(login_app, db)
-bcrypt = Bcrypt(login_app)
 
 # connect to the userdatabase where storing all the username, password, email and phone number
 login_app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://kenttran@localhost:5432/userdatabase'
@@ -89,7 +88,7 @@ class SignInResource(Resource):
  def login(self) -> None:
   with login_app.app_context():
    if request.method == 'POST':
-    try:
+    try: 
      # get the form data include username and password and validate them against the database
      signIn_username = request.form['signIn_username']
      signIn_password = request.form['signIn_password']
@@ -105,11 +104,11 @@ class SignInResource(Resource):
 
      # Validate user credentials
      if user:
-      hashed_signin_password = bcrypt.generate_password_hash(signIn_password)
       # if the username and password is correct
-      if check_password_hash(user.password, hashed_signin_password):
+      if bcrypt.checkpw(signIn_password.encode('utf-8'), user.password.encode('utf-8')):
        # User credentials are valid
        # Generate JWT token and store in cookies
+
        # Redirect to the main page or some restricted resource
        return render_template('dashboard.html', name=signIn_username)
 
@@ -132,6 +131,5 @@ class SignInResource(Resource):
 api.add_resource(SignInRenderResource, '/scholarsavings/login/')
 api.add_resource(SignInResource, '/scholarsavings/validateuser/')
 
-     
-
+# add login_routes to test the rest api
 

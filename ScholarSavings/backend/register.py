@@ -1,10 +1,14 @@
 ############### REGISTER PAGE FOR USERS TO CREATE THEIR USERNAME AND PASSWORD FOR THE APPLICATION
 # import libraries
-from flask import Flask, redirect, url_for, session, render_template, request, abort, Blueprint
+from flask import Flask, redirect, url_for, session, render_template, request, abort, Blueprint, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_restful import Api, Resource, reqparse
-from flask_bcrypt import Bcrypt
+import bcrypt
+import boto3
+import os
+import jwt
+from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 from sqlalchemy.engine.reflection import Inspector
 import pdb
@@ -23,6 +27,11 @@ register_app.config['APPLICATION_ROOT'] = '/'
 register_app.config['PREFERRED_URL_SCHEME'] = 'http'
 register_app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
+# configure the app to work with boto3 AWS SNS Service
+register_app.config['SECRET_KEY'] =  'SWEAWS2302'
+register_app.config['CONFIRMATION_TOKEN_EXPIRATION'] = 900 # 15 minutes
+sns_client = boto3.client('sns', region_name='us-east-1')
+
 # set up the app for testing api
 api = Api(register_app)
 
@@ -34,7 +43,6 @@ register_app.config['TESTING'] = True
 register_app.config['WTF_CSRF_ENABLED'] = False
 
 migrate = Migrate(register_app, db)
-bcrypt = Bcrypt(register_app)
 
 # connect to the userdatabase where will store all the users data
 register_app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://kenttran@localhost:5432/userdatabase'
@@ -141,8 +149,13 @@ class RegistrationResource(Resource):
 
       # handle appropriate validated_registration
       if len(validated_registration) == 4 and len(register_errors) == 0:
+        # genrate the salt for the hashed_password
+        salt = bcrypt.gensalt()
         # hash the password using bcrypt hashing algorithm 
-        hashed_password = bcrypt.generate_password_hash(password)
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+
+        decoded_salt = salt.decode('utf-8')
+        decoded_hashed_password = hashed_password.decode('utf-8')
 
         # query each field to make sure each of them is unique
         username_taken = Registration.query.filter(
@@ -150,7 +163,7 @@ class RegistrationResource(Resource):
         ).first() is not None
 
         password_taken = Registration.query.filter(
-          Registration.password == hashed_password
+          Registration.password == decoded_hashed_password
         ).first() is not None
 
         verification_method_taken = Registration.query.filter(
@@ -180,7 +193,7 @@ class RegistrationResource(Resource):
         else:
           # create an instance to add the new user into the database
           add_new_users = [
-            Registration(username=validated_registration[0], password=hashed_password, verification_id=int(verification_id), verification_method=validated_registration[3])
+            Registration(username=validated_registration[0], password=decoded_hashed_password, password_salt=decoded_salt , verification_id=int(verification_id), verification_method=validated_registration[3])
           ]
 
           # add new user to the registration model
@@ -196,6 +209,9 @@ class RegistrationResource(Resource):
               db.session.rollback()
               print(f"User {user.user_id} cannot be added! There might be some external errors with the server! Please reload the webpage!")
               abort(406)
+
+          # Connect with AWS SNS using AWS SDKs to send either an email confirmation or SMS verification to the user's email
+          
         
       else:
         raise ValueError(f'There is an error in the form data!')

@@ -89,6 +89,7 @@ class Registration(db.Model):
   user_id = db.Column(db.Integer, primary_key=True, autoincrement=True, unique=True)
   username = db.Column(db.String(500), nullable=False, unique=True)
   password = db.Column(db.String(500), nullable=False, unique=True)
+  password_salt = db.Column(db.String(500), nullable=False, unique=True)
   verification_id = db.Column(db.Integer, db.ForeignKey('verification_methods.id'), nullable=False)
   verification = db.relationship('Verification', backref='registration')
   verification_method = db.Column(db.String(500), nullable=False, unique=True)
