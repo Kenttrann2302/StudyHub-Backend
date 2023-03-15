@@ -15,6 +15,7 @@ import pdb
 
 # import the users models from the models.py
 from database.users_models import db, Registration, Verification
+from AWS.aws_sns_helper_function import AWS_SNS_SDKs_setup
 
 # import other files
 from helper_functions.users_tables_create import create_registration_table
@@ -130,6 +131,7 @@ class RegistrationResource(Resource):
   with register_app.app_context():
    if request.method == 'POST':
     try: 
+      pdb.set_trace()
       # get the form data and validate them before inserting into the database
       username = request.form['username']
       password = request.form['password']
@@ -196,6 +198,8 @@ class RegistrationResource(Resource):
             Registration(username=validated_registration[0], password=decoded_hashed_password, password_salt=decoded_salt , verification_id=int(verification_id), verification_method=validated_registration[3])
           ]
 
+          
+
           # add new user to the registration model
           for user in add_new_users:
             try:
@@ -203,15 +207,19 @@ class RegistrationResource(Resource):
               # commit the change to the database
               db.session.commit()
               print(f"User {user.user_id} added successfully!")
+              # Connect with AWS SNS using AWS SDKs to send either an email confirmation or SMS verification to the user's email
+              aws_sns_model = AWS_SNS_SDKs_setup()
+              # email
+              if int(verification_id) == 2:
+                response_message = aws_sns_model.send_email_confirmation(email=verification_method)
+              else:
+                response_message = aws_sns_model.send_sms_confirmation(phone_number=verification_method)
               return render_template('successRegistration.html', username=username, verification_id=verification_id)
             except:
               # handle the problem while inserting user registration into the database
               db.session.rollback()
               print(f"User {user.user_id} cannot be added! There might be some external errors with the server! Please reload the webpage!")
               abort(406)
-
-          # Connect with AWS SNS using AWS SDKs to send either an email confirmation or SMS verification to the user's email
-          
         
       else:
         raise ValueError(f'There is an error in the form data!')

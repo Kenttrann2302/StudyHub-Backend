@@ -93,6 +93,7 @@ class Registration(db.Model):
   verification_id = db.Column(db.Integer, db.ForeignKey('verification_methods.id'), nullable=False)
   verification = db.relationship('Verification', backref='registration')
   verification_method = db.Column(db.String(500), nullable=False, unique=True)
+  aws_token = db.Column(db.String(1000), nullable=True, unique=True)
   account_verified = db.Column(db.Boolean, nullable=False, default=False)
   created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), nullable=False)
   updated_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), onupdate=datetime.now(pytz.timezone('EST')), nullable=False)

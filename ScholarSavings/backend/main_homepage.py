@@ -11,6 +11,7 @@ from login import SignInRenderResource, SignInResource
 from search import searchItemsResource
 # import the users models from the models.py
 from database.users_models import db, Registration, Verification
+from AWS.aws_sns_helper_function import Email_Confirmation, SMS_Confirmation
 
 app = Flask(__name__)
 app.debug = True
@@ -67,6 +68,25 @@ def registration():
 def registerNewUser():
   return registration_resource.createAccount()
 
+
+
+################################## EMAIL CONFIRMATION HANDLER URL #####################################
+email_confirmation_model = Email_Confirmation()
+
+# render the template after the user successfully confirm the email
+@app.route('/scholarsavings/confirm/email/', methods=['GET'])
+def confirm_email_handler():
+  response_message = email_confirmation_model.confirm_email()
+  return response_message
+
+################################# SMS CONFIRMATION HANDLER URL ################################
+sms_confirmation_model = SMS_Confirmation()
+
+# render the template after the user successfully confirm the sms
+@app.route('/scholarsavings/confirm/sms/', methods=['GET'])
+def confirm_sms_handler():
+  response_message = sms_confirmation_model.confirm_sms()
+  return response_message
 
 ################################## LOG IN FORM for users to sign into their account, this is where authentication takes place #########################
 signin_render_resource = SignInRenderResource()
