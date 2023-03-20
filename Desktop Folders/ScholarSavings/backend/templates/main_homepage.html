@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ScholarSavings</title>
+    <script type="text/javascript" src="{{ url_for('serve_static_js', filename = 'homepage.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('serve_static_css', filename='main_homepage.css') }}">
+  </head>
+  <body>
+    <div class="header">
+      <h1>
+        Welcome to ScholarSavings!
+      </h1>
+      <h2>
+        Do you want to set your foot on an interesting adventure with millions of gifts and challenges are waiting for us?
+      </h2>
+      <h2>
+        Are you struggling with finding the best way to save your finance?
+      </h2>
+      <h3>
+        Let's become a ScholarSaver Warrior and find out thousands of wonderful things!!!
+      </h3>
+    </div>
+    <div>
+      <ul>
+        <li>
+          <p>Already a user? Sign in to view your account and unlock thousands of presents and interesting features!</p>
+          <a href="{{ url_for('signin') }}">Login</a>
+        </li>
+        <li>
+          <p>Complete a sign up form to unlock supreme saving strategies with thousands of interesting challenges and gifts!</p>
+          <a href="{{ url_for('signup') }}">Treasure Hunt Signup</a>
+        </li>  
+        <li>
+          <p>New user? Sign up with us to become a diligent saver!</p>
+          <a href="{{ url_for('registration') }}">Register</a>
+        </li>
+      </ul>
+    </div>
+  </body>
+</html>
