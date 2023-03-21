@@ -14,10 +14,9 @@ from sqlalchemy.engine.reflection import Inspector
 import pdb
 
 # load in the sensitive data from .env
-if(os.environ.get("DB_TYPE") == None):
-  from dotenv import load_dotenv
-  from config.definitions import ROOT_DIR
-  load_dotenv(os.path.join(ROOT_DIR, 'config', 'conf', '.env'))
+from dotenv import load_dotenv
+# Load the configuration data from the .env file
+load_dotenv()
 
 # import the users models from the models.py
 from database.users_models import db, Users, Verification
@@ -35,12 +34,12 @@ register_app.config['PREFERRED_URL_SCHEME'] = 'http'
 register_app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 # get the database connection information
-database_type = os.environ.get("DB_TYPE")
-database_host = os.environ.get("DB_HOST")
-database_username = os.environ.get("DB_USER")
-database_password = os.environ.get("DB_PASS")
-database_port = os.environ.get("PORT")
-database_name = os.environ.get("DB_NAME")
+database_type = os.getenv("DB_TYPE")
+database_host = os.getenv("DB_HOST")
+database_username = os.getenv("DB_USER")
+database_password = os.getenv("DB_PASS")
+database_port = os.getenv("PORT")
+database_name = os.getenv("DB_NAME")
 
 # set up the app for testing api
 api = Api(register_app)
@@ -55,8 +54,8 @@ register_app.config['WTF_CSRF_ENABLED'] = False
 migrate = Migrate(register_app, db)
 
 # connect to the userdatabase where will store all the users data
-register_app.config['SQLALCHEMY_DATABASE_URI'] = '{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}'
-engine = create_engine('{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}')
+register_app.config['SQLALCHEMY_DATABASE_URI'] = f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
+engine = create_engine(f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}")
 inspector = Inspector.from_engine(engine)
 
 # create the sqlalchemy database object 
@@ -231,7 +230,7 @@ class RegistrationResource(Resource):
               # handle the problem while inserting user registration into the database
               db.session.rollback()
               print(f"Cannot send a confirmation to user {user.user_id}'s {user.verification_method}! There might be some external errors with the server!")
-              abort(406)
+              return jsonify({'message' : 'Error with AWS Client!'}), 400
         
       else:
         raise ValueError(f'There is an error in the form data!')

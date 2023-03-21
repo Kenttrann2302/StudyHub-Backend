@@ -22,21 +22,29 @@ from database.users_models import db, Users
 # import a granting permission helper function to grant access to users who have verified their account
 from helper_functions.grant_permission import grant_permission_to_verified_users
 
-aws_sns_app = Flask(__name__)
+aws_sns_app = Flask(__name__, template_folder='../templates/')
 aws_sns_app.config['SERVER_NAME'] = 'localhost:5000'
 aws_sns_app.config['APPLICATION_ROOT'] = '/'
 aws_sns_app.config['PREFERRED_URL_SCHEME'] = 'http'
 aws_sns_app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
-# configure the app to work with boto3 AWS SNS Service by entering the credentials of IAM user which is given the access to AWS SNS Service
+# load in the sensitive data from .env
 from dotenv import load_dotenv
-from config.definitions import ROOT_DIR
-load_dotenv(os.path.join(ROOT_DIR, 'config', 'conf', '.env'))
+# Load the configuration data from the .env file
+load_dotenv()
 
-aws_access_key_id = os.environ.get('AWS_ACCESS_KEY_ID')
-aws_secret_access_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
-aws_default_region = os.environ.get('AWS_DEFAULT_REGION')
-aws_confirmation_token_expiration = os.environ.get('CONFIRMATION_TOKEN_EXPIRATION')
+# get the database connection information
+database_type = os.getenv("DB_TYPE")
+database_host = os.getenv("DB_HOST")
+database_username = os.getenv("DB_USER")
+database_password = os.getenv("DB_PASS")
+database_port = os.getenv("PORT")
+database_name = os.getenv("DB_NAME")
+
+aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
+aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+aws_default_region = os.getenv('AWS_DEFAULT_REGION')
+aws_confirmation_token_expiration = os.getenv('CONFIRMATION_TOKEN_EXPIRATION')
 
 sns_client = boto3.client('sns', region_name=aws_default_region)
 sns_resource = boto3.resource('sns', region_name=aws_default_region)
@@ -54,7 +62,7 @@ if not os.environ.get('AWS_SESSION_TOKEN'):
   print('AWS_SESSION_TOKEN is missing!')
 
 # database connection
-aws_sns_app.config['SQLALCHEMY_DATABASE_URI'] = '{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}'
+aws_sns_app.config['SQLALCHEMY_DATABASE_URI'] = f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
 
 db.init_app(aws_sns_app)
 api = Api(aws_sns_app)
@@ -106,7 +114,7 @@ class AWS_SNS_SDKs_setup(Resource):
  def send_email_confirmation(self, email):
   with aws_sns_app.app_context():
    # Generate a random JWT Token with expiration time of 15 minutes
-   expiration_time = datetime.utcnow() + timedelta(seconds=aws_confirmation_token_expiration)
+   expiration_time = datetime.utcnow() + timedelta(seconds=int(aws_confirmation_token_expiration))
    payload = {
     'email' : email,
     'exp' : expiration_time
@@ -119,7 +127,6 @@ class AWS_SNS_SDKs_setup(Resource):
    # store the decoded_token into the user database
    row = Users.query.filter_by(verification_method=email).first()
    try:
-    pdb.set_trace()
     if row:
      row.aws_token = token
      db.session.commit()
@@ -173,7 +180,7 @@ class AWS_SNS_SDKs_setup(Resource):
     'exp' : expiration_time
    }
 
-   token = jwt.encode(payload, aws_secret_access_key, algorithm='HS256')
+   token = jwt.encode(payload, aws_secret_access_key, algorithms=['HS256'])
    # decode the token and store it into the database
    # decoded_token = token.decode('utf-8')
 
@@ -226,7 +233,7 @@ class Email_Confirmation(Resource):
    try:
     # get the message
     # encrypted the token using hash256 algorithm
-    payload = jwt.decode(token, aws_secret_access_key, algorithm='HS256')
+    payload = jwt.decode(token, aws_secret_access_key, algorithms=['HS256'])
    # if the token is expired
    except jwt.ExpiredSignatureError:
     return jsonify({'error' : 'Token has expired.'}), 401
@@ -254,7 +261,7 @@ class Email_Confirmation(Resource):
    db.session.commit()
 
    # later on, fix this to render a email_confirmation template
-   return render_template('account_verification.html', name=user.username, verification_id=user.verification_id)
+   return render_template('verifiedAccount.html', name=user.username, verification_id=user.verification_id)
 
 # Resource to handle sms confirm request
 class SMS_Confirmation(Resource):
@@ -268,7 +275,7 @@ class SMS_Confirmation(Resource):
    try:
     # get the sms message
     # encrypted the token using HASH256 Algorithm
-    payload = jwt.decode(token, aws_secret_access_key, algorithm='HS256')
+    payload = jwt.decode(token, aws_secret_access_key, algorithms=['HS256'])
    # if the token is expired
    except jwt.ExpiredSignatureError:
     return jsonify({'error' : 'Token has expired.'}), 401
@@ -296,7 +303,7 @@ class SMS_Confirmation(Resource):
    db.session.commit()
 
    # later on, fix this to render a sms_confirmation template
-   return render_template('account_verification.html', name=user.username, verification_id=user.verification_id)
+   return render_template('verifiedAccount.html', name=user.username, verification_id=user.verification_id)
 
 # add all the resources to the rest api
 api.add_resource(AWS_SNS_SDKs_setup, '/scholarsavings/createaccount/')

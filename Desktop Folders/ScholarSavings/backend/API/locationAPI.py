@@ -5,7 +5,16 @@
 from flask import Flask, request
 import requests
 import json
+import os
 import pdb
+
+# load in the sensitive data from .env
+from dotenv import load_dotenv
+# Load the configuration data from the .env file
+load_dotenv()
+
+# get the geolocation api access key from the .env file
+google_api_secret_key = os.getenv('GOOGLE_GEOLOCATION_API')
 
 class checkAddress:
  def __init__(self, address_line_1, city, province, country, postalCode, address_line_2 = None) -> None:
@@ -28,7 +37,7 @@ class checkAddress:
   # construct the URL for the Geocoding API request
   url = 'https://maps.googleapis.com/maps/api/geocode/json'
   # need to implement the api key
-  params = {'address': address_string, 'key': 'AIzaSyDEDVXK_Xadoj4tr3qx6GNxGRF8n35R51E'}
+  params = {'address': address_string, 'key': google_api_secret_key}
   response = requests.get(url, params=params)
 
   # check if the Geocoding API returned any results

@@ -18,18 +18,17 @@ from AWS.aws_sns_helper_function import Email_Confirmation, SMS_Confirmation
 from helper_functions.middleware_functions import token_required
 
 # load in the sensitive data from .env
-if(os.environ.get("DB_TYPE") == None):
-  from dotenv import load_dotenv
-  from config.definitions import ROOT_DIR
-  load_dotenv(os.path.join(ROOT_DIR, 'config', 'conf', '.env'))
+from dotenv import load_dotenv
+# Load the configuration data from the .env file
+load_dotenv()
 
 # get the database connection information
-database_type = os.environ.get("DB_TYPE")
-database_host = os.environ.get("DB_HOST")
-database_username = os.environ.get("DB_USER")
-database_password = os.environ.get("DB_PASS")
-database_port = os.environ.get("PORT")
-database_name = os.environ.get("DB_NAME")
+database_type = os.getenv("DB_TYPE")
+database_host = os.getenv("DB_HOST")
+database_username = os.getenv("DB_USER")
+database_password = os.getenv("DB_PASS")
+database_port = os.getenv("PORT")
+database_name = os.getenv("DB_NAME")
 
 app = Flask(__name__)
 app.debug = True
@@ -37,7 +36,7 @@ app.config['SERVER_NAME'] = '127.0.0.1:5000'
 app.config['APPLICATION_ROOT'] = '/'
 app.config['PREFERRED_URL_SCHEME'] = 'http'
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-app.config['SQLALCHEMY_DATABASE_URI'] = '{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}'
+app.config['SQLALCHEMY_DATABASE_URI'] = f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
 db.init_app(app)
 # app.register_blueprint('registration_routes')
 
@@ -129,7 +128,7 @@ permission_list = ['can_view_dashboard', 'can_register_saving_challenges', 'can_
 def user_dashboard():
   # decode the token and get the username
   token = request.cookies.get['token']
-  user_id = jwt.decode(token, app.config['SECRET_KEY'], algorithm='HS256')['id']
+  user_id = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])['id']
   return dashboard_obj.render_dashboard(user_id)
   
 ################################## SIGN UP FORM for saving strategy algorithm ('/scholarsavings/signup/)###################################

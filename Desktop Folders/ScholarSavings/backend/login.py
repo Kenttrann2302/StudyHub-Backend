@@ -18,18 +18,17 @@ from database.users_models import db, Users, Verification
 from helper_functions.signupformValidations import create_validated_fields_dict
 
 # load in the sensitive data from .env
-if(os.environ.get("DB_TYPE") == None):
-  from dotenv import load_dotenv
-  from config.definitions import ROOT_DIR
-  load_dotenv(os.path.join(ROOT_DIR, 'config', 'conf', '.env'))
+from dotenv import load_dotenv
+# Load the configuration data from the .env file
+load_dotenv()
 
 # get the database connection information
-database_type = os.environ.get("DB_TYPE")
-database_host = os.environ.get("DB_HOST")
-database_username = os.environ.get("DB_USER")
-database_password = os.environ.get("DB_PASS")
-database_port = os.environ.get("PORT")
-database_name = os.environ.get("DB_NAME")
+database_type = os.getenv("DB_TYPE")
+database_host = os.getenv("DB_HOST")
+database_username = os.getenv("DB_USER")
+database_password = os.getenv("DB_PASS")
+database_port = os.getenv("PORT")
+database_name = os.getenv("DB_NAME")
 
 # login app configuration
 login_app = Flask(__name__)
@@ -56,8 +55,8 @@ login_app.config['WTF_CSRF_ENABLED'] = False
 migrate = Migrate(login_app, db)
 
 # connect to the userdatabase where storing all the username, password, email and phone number
-login_app.config['SQLALCHEMY_DATABASE_URI'] = '{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}'
-engine = create_engine('{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}')
+login_app.config['SQLALCHEMY_DATABASE_URI'] = f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
+engine = create_engine(f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}")
 
 # global variables
 # initialize all the a dictionary of validated fields for user inputs
@@ -131,11 +130,11 @@ class SignInResource(Resource):
        # query the permissions list in the user table with the user id
        permissions= [permission.name for permission in user.permissions]
        token = jwt.encode({'id' : user.user_id, 'username': user.username, 'exp': datetime.utcnow() + timedelta(minutes=30), 'permissions': permissions}, login_app.config['SECRET_KEY'], algorithm='HS256')
-
+       pdb.set_trace()
        # Store the token in a cookie
        response = make_response(jsonify({'message': 'Login successful'}))
        response.set_cookie('token', value=token, expires=datetime.utcnow() + timedelta(minutes=30), httponly=True)
-
+       print(response)
        # Redirect to the dashboard and some restricted resource
        return redirect(url_for('user_dashboard'))
 

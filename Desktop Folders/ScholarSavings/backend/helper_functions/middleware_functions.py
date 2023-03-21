@@ -2,12 +2,15 @@
 from functools import wraps
 from flask import request, jsonify, current_app
 import jwt
+import pdb
 
 def token_required(permissions_list):
  def decorator(f):
   @wraps(f)
   def decorated_function(*args, **kwargs):
+   pdb.set_trace()
    token = request.cookies.get('token')
+   print(token)
    if not token:
     return jsonify({'message' : 'Token is missing!'}), 401
    try:
