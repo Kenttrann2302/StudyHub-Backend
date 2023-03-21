@@ -17,13 +17,27 @@ from AWS.aws_sns_helper_function import Email_Confirmation, SMS_Confirmation
 # middleware function to verify users permission
 from helper_functions.middleware_functions import token_required
 
+# load in the sensitive data from .env
+if(os.environ.get("DB_TYPE") == None):
+  from dotenv import load_dotenv
+  from config.definitions import ROOT_DIR
+  load_dotenv(os.path.join(ROOT_DIR, 'config', 'conf', '.env'))
+
+# get the database connection information
+database_type = os.environ.get("DB_TYPE")
+database_host = os.environ.get("DB_HOST")
+database_username = os.environ.get("DB_USER")
+database_password = os.environ.get("DB_PASS")
+database_port = os.environ.get("PORT")
+database_name = os.environ.get("DB_NAME")
+
 app = Flask(__name__)
 app.debug = True
 app.config['SERVER_NAME'] = '127.0.0.1:5000'
 app.config['APPLICATION_ROOT'] = '/'
 app.config['PREFERRED_URL_SCHEME'] = 'http'
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://kenttran@localhost:5432/userdatabase'
+app.config['SQLALCHEMY_DATABASE_URI'] = '{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}'
 db.init_app(app)
 # app.register_blueprint('registration_routes')
 

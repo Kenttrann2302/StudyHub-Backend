@@ -29,36 +29,32 @@ aws_sns_app.config['PREFERRED_URL_SCHEME'] = 'http'
 aws_sns_app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 # configure the app to work with boto3 AWS SNS Service by entering the credentials of IAM user which is given the access to AWS SNS Service
-aws_sns_app.config['AWS_ACCESS_KEY_ID'] = 'AKIA4GBM4ARGVCZUNKEY'
-aws_sns_app.config['AWS_SECRET_ACCESS_KEY'] =  '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'
-aws_sns_app.config['AWS_DEFAULT_REGION'] = 'us-east-1'
-aws_sns_app.config['CONFIRMATION_TOKEN_EXPIRATION'] = 900 # 15 minutes
+from dotenv import load_dotenv
+from config.definitions import ROOT_DIR
+load_dotenv(os.path.join(ROOT_DIR, 'config', 'conf', '.env'))
 
-# create a session with aws sns client
-# session = boto3.Session(
-#   aws_access_key_id = aws_sns_app.config['AWS_ACCESS_KEY_ID'],
-#   aws_secret_access_key=aws_sns_app.config['AWS_SECRET_ACCESS_KEY'],
-#   aws_region_name = aws_sns_app.config['AWS_REGION_NAME'],
-#   aws_session_token = aws_sns_app.config['']
-# )
+aws_access_key_id = os.environ.get('AWS_ACCESS_KEY_ID')
+aws_secret_access_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
+aws_default_region = os.environ.get('AWS_DEFAULT_REGION')
+aws_confirmation_token_expiration = os.environ.get('CONFIRMATION_TOKEN_EXPIRATION')
 
-sns_client = boto3.client('sns', region_name='us-east-1')
-sns_resource = boto3.resource('sns', region_name='us-east-1')
+sns_client = boto3.client('sns', region_name=aws_default_region)
+sns_resource = boto3.resource('sns', region_name=aws_default_region)
 
-if not os.environ.get('AWS_ACCESS_KEY_ID'):
+if not aws_access_key_id:
   print('AWS_ACCESS_KEY_ID is missing!')
 
-if not os.environ.get('AWS_SECRET_ACCESS_KEY'):
+if not aws_secret_access_key:
   print('AWS_SECRET_ACCESS_KEY is missing!')
 
-if not os.environ.get('AWS_DEFAULT_REGION'):
+if not aws_default_region:
   print('AWS_DEFAULT_REGION is missing!')
 
 if not os.environ.get('AWS_SESSION_TOKEN'):
   print('AWS_SESSION_TOKEN is missing!')
 
 # database connection
-aws_sns_app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://kenttran@localhost:5432/userdatabase'
+aws_sns_app.config['SQLALCHEMY_DATABASE_URI'] = '{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}'
 
 db.init_app(aws_sns_app)
 api = Api(aws_sns_app)
@@ -110,13 +106,13 @@ class AWS_SNS_SDKs_setup(Resource):
  def send_email_confirmation(self, email):
   with aws_sns_app.app_context():
    # Generate a random JWT Token with expiration time of 15 minutes
-   expiration_time = datetime.utcnow() + timedelta(seconds=aws_sns_app.config['CONFIRMATION_TOKEN_EXPIRATION'])
+   expiration_time = datetime.utcnow() + timedelta(seconds=aws_confirmation_token_expiration)
    payload = {
     'email' : email,
     'exp' : expiration_time
    }
 
-   token = jwt.encode(payload, aws_sns_app.config['AWS_SECRET_ACCESS_KEY'], algorithm='HS256')
+   token = jwt.encode(payload, aws_secret_access_key, algorithm='HS256')
    # decode the token to string object to store into the database along with the user's email
    # decoded_token = token.decode('utf-8')
 
@@ -171,13 +167,13 @@ class AWS_SNS_SDKs_setup(Resource):
  def send_sms_confirmation(self, phone_number):
   with aws_sns_app.app_context():
    # Generate a random JWT Token with expiration time of 15 minutes
-   expiration_time = datetime.utcnow() + timedelta(seconds=aws_sns_app.config['CONFIRMATION_TOKEN_EXPIRATION'])
+   expiration_time = datetime.utcnow() + timedelta(seconds=aws_confirmation_token_expiration)
    payload = {
     'phone_number' : phone_number,
     'exp' : expiration_time
    }
 
-   token = jwt.encode(payload, aws_sns_app.config['AWS_SECRET_ACCESS_KEY'], algorithm='HS256')
+   token = jwt.encode(payload, aws_secret_access_key, algorithm='HS256')
    # decode the token and store it into the database
    # decoded_token = token.decode('utf-8')
 
@@ -230,7 +226,7 @@ class Email_Confirmation(Resource):
    try:
     # get the message
     # encrypted the token using hash256 algorithm
-    payload = jwt.decode(token, aws_sns_app.config['AWS_SECRET_ACCESS_KEY'], algorithm='HS256')
+    payload = jwt.decode(token, aws_secret_access_key, algorithm='HS256')
    # if the token is expired
    except jwt.ExpiredSignatureError:
     return jsonify({'error' : 'Token has expired.'}), 401
@@ -272,7 +268,7 @@ class SMS_Confirmation(Resource):
    try:
     # get the sms message
     # encrypted the token using HASH256 Algorithm
-    payload = jwt.decode(token, aws_sns_app.config['AWS_SECRET_ACCESS_KEY'], algorithm='HS256')
+    payload = jwt.decode(token, aws_secret_access_key, algorithm='HS256')
    # if the token is expired
    except jwt.ExpiredSignatureError:
     return jsonify({'error' : 'Token has expired.'}), 401

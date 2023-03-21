@@ -13,6 +13,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine.reflection import Inspector
 import pdb
 
+# load in the sensitive data from .env
+if(os.environ.get("DB_TYPE") == None):
+  from dotenv import load_dotenv
+  from config.definitions import ROOT_DIR
+  load_dotenv(os.path.join(ROOT_DIR, 'config', 'conf', '.env'))
+
 # import the users models from the models.py
 from database.users_models import db, Users, Verification
 from AWS.aws_sns_helper_function import AWS_SNS_SDKs_setup
@@ -28,9 +34,13 @@ register_app.config['APPLICATION_ROOT'] = '/'
 register_app.config['PREFERRED_URL_SCHEME'] = 'http'
 register_app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
-# configure the app to work with boto3 AWS SNS Service
-register_app.config['CONFIRMATION_TOKEN_EXPIRATION'] = 900 # 15 minutes
-sns_client = boto3.client('sns', region_name='us-east-1')
+# get the database connection information
+database_type = os.environ.get("DB_TYPE")
+database_host = os.environ.get("DB_HOST")
+database_username = os.environ.get("DB_USER")
+database_password = os.environ.get("DB_PASS")
+database_port = os.environ.get("PORT")
+database_name = os.environ.get("DB_NAME")
 
 # set up the app for testing api
 api = Api(register_app)
@@ -45,8 +55,8 @@ register_app.config['WTF_CSRF_ENABLED'] = False
 migrate = Migrate(register_app, db)
 
 # connect to the userdatabase where will store all the users data
-register_app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://kenttran@localhost:5432/userdatabase'
-engine = create_engine('postgresql://kenttran@localhost:5432/userdatabase')
+register_app.config['SQLALCHEMY_DATABASE_URI'] = '{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}'
+engine = create_engine('{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}')
 inspector = Inspector.from_engine(engine)
 
 # create the sqlalchemy database object 

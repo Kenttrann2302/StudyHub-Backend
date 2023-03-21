@@ -8,6 +8,7 @@ import bcrypt
 from werkzeug.security import check_password_hash
 from sqlalchemy import create_engine
 import jwt
+import os
 import secrets
 from datetime import datetime, timedelta
 import pdb
@@ -15,6 +16,20 @@ import pdb
 # import the users models from the models.py
 from database.users_models import db, Users, Verification
 from helper_functions.signupformValidations import create_validated_fields_dict
+
+# load in the sensitive data from .env
+if(os.environ.get("DB_TYPE") == None):
+  from dotenv import load_dotenv
+  from config.definitions import ROOT_DIR
+  load_dotenv(os.path.join(ROOT_DIR, 'config', 'conf', '.env'))
+
+# get the database connection information
+database_type = os.environ.get("DB_TYPE")
+database_host = os.environ.get("DB_HOST")
+database_username = os.environ.get("DB_USER")
+database_password = os.environ.get("DB_PASS")
+database_port = os.environ.get("PORT")
+database_name = os.environ.get("DB_NAME")
 
 # login app configuration
 login_app = Flask(__name__)
@@ -41,8 +56,8 @@ login_app.config['WTF_CSRF_ENABLED'] = False
 migrate = Migrate(login_app, db)
 
 # connect to the userdatabase where storing all the username, password, email and phone number
-login_app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://kenttran@localhost:5432/userdatabase'
-engine = create_engine('postgresql://kenttran@localhost:5432/userdatabase')
+login_app.config['SQLALCHEMY_DATABASE_URI'] = '{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}'
+engine = create_engine('{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}')
 
 # global variables
 # initialize all the a dictionary of validated fields for user inputs
