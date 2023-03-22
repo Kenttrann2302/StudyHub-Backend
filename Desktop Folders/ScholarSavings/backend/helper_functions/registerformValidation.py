@@ -98,7 +98,7 @@ def check_verification(verification_method, verification_id, errors, validate_ne
   elif not verification_method.isdigit():
     errors['verification-input'] = f"Phone number must contain only digits!"
   else:
-    validate_new_user.append('(' + areaCodeID + ')' + ' ' + verification_method)
+    validate_new_user.append(areaCodeID + verification_method)
 
 
 

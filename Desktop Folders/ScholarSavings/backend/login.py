@@ -130,13 +130,13 @@ class SignInResource(Resource):
        # query the permissions list in the user table with the user id
        permissions= [permission.name for permission in user.permissions]
        token = jwt.encode({'id' : user.user_id, 'username': user.username, 'exp': datetime.utcnow() + timedelta(minutes=30), 'permissions': permissions}, login_app.config['SECRET_KEY'], algorithm='HS256')
-       pdb.set_trace()
+
        # Store the token in a cookie
-       response = make_response(jsonify({'message': 'Login successful'}))
+       response = make_response(redirect(url_for('user_dashboard')))
        response.set_cookie('token', value=token, expires=datetime.utcnow() + timedelta(minutes=30), httponly=True)
-       print(response)
+       
        # Redirect to the dashboard and some restricted resource
-       return redirect(url_for('user_dashboard'))
+       return response
 
       # if correct username but wrong password
       else:

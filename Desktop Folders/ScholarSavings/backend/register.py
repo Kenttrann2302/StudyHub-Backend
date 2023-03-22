@@ -218,7 +218,7 @@ class RegistrationResource(Resource):
               if int(verification_id) == 2:
                 response_message = aws_sns_model.send_email_confirmation(email=verification_method)
               else:
-                response_message = aws_sns_model.send_sms_confirmation(phone_number=verification_method)
+                response_message = aws_sns_model.send_sms_confirmation(phone_number=areacode_id + verification_method)
               
               # check if the response_message is sent successfully!
               if response_message is not None:

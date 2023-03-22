@@ -8,7 +8,7 @@ import jwt
 # import files from directories
 from signup import signUpFormResource, SavingChallengesResource
 from register import VerificationMethodsResource, RegistrationResource
-from login import SignInRenderResource, SignInResource, DashBoardResource
+from login import SignInRenderResource, SignInResource, DashBoardResource, login_app
 from search import searchItemsResource
 # import the users models from the models.py
 from database.users_models import db, Users, Verification
@@ -127,8 +127,8 @@ permission_list = ['can_view_dashboard', 'can_register_saving_challenges', 'can_
 @token_required(permissions_list=permission_list)
 def user_dashboard():
   # decode the token and get the username
-  token = request.cookies.get['token']
-  user_id = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])['id']
+  token = request.cookies.get('token')
+  user_id = jwt.decode(token, login_app.config['SECRET_KEY'], algorithms=['HS256'])['id']
   return dashboard_obj.render_dashboard(user_id)
   
 ################################## SIGN UP FORM for saving strategy algorithm ('/scholarsavings/signup/)###################################

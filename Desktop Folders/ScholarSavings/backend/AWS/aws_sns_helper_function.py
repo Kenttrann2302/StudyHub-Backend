@@ -174,13 +174,13 @@ class AWS_SNS_SDKs_setup(Resource):
  def send_sms_confirmation(self, phone_number):
   with aws_sns_app.app_context():
    # Generate a random JWT Token with expiration time of 15 minutes
-   expiration_time = datetime.utcnow() + timedelta(seconds=aws_confirmation_token_expiration)
+   expiration_time = datetime.utcnow() + timedelta(seconds=int(aws_confirmation_token_expiration))
    payload = {
     'phone_number' : phone_number,
     'exp' : expiration_time
    }
 
-   token = jwt.encode(payload, aws_secret_access_key, algorithms=['HS256'])
+   token = jwt.encode(payload, aws_secret_access_key, algorithm='HS256')
    # decode the token and store it into the database
    # decoded_token = token.decode('utf-8')
 
@@ -201,7 +201,7 @@ class AWS_SNS_SDKs_setup(Resource):
      topic_arn_model = SnsWrapper(sns_resource=sns_resource)
      sns_topic = topic_arn_model.create_topic(name='MyTopic-eEXEKdldnX-32121e0d-16c1-4a85-a478-1527818c79df')
 
-     response = sns_client.subscibe(
+     response = sns_client.subscribe(
       TopicArn=sns_topic.arn,
       Protocol='sms',
       Endpoint=phone_number,

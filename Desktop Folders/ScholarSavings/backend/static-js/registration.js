@@ -25,7 +25,7 @@ window.onload = function () {
   // if the option is phone number
   else if (this.value === "3"){
    areaCodeMessage.style.display = 'inline-block';
-   areaCode.style.display = 'block';
+   areaCode.style.display = 'inline-block';
    verification_method.setAttribute("type", "text");
    verification_method.setAttribute("max-length", 10);
    verification_method.style.display = 'inline-block';
