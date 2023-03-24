@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <title>
+   ScholarSavings Account Confirmation
+  </title>
+ </head>
+ <body>
+  <div class="header">
+   <h1>
+    {% if verification_id == 2 %}
+    Thank you {{ name }} for verifying your email account with us!
+    {% elif verification_id == 3 %} 
+    Thank you {{ name }} for verifying your phone number with us! 
+    {% endif %} 
+   </h1>
+   <h2>
+    {% if verification_id == 2 %} 
+    If you forget your username and password, please use this email to backup your account.
+    {% elif verification_id == 3 %} 
+    If you forget your username and password, please use this phone number for backing up your account. 
+    {% endif %} 
+   </h2>
+  </div>
+  <div class="body-content">
+   <ul>
+    <p>
+     Now, you can click on the follow link to login with your username and password to view your account.
+    </p>
+    <li>
+     <a href="{{ url_for('loginPage') }}">Sign In</a>
+    </li>
+   </ul>
+  </div>
+ </body>
+</html>
