@@ -9,5 +9,20 @@
   <h1>
    OTP Verification
   </h1>
+  <form action="{{ url_for('validate_otp_code') }}" method="POST">
+   {% if verification_id == 'EMAIL' %} 
+    <p>
+     A 6 digits OTP Verification Code has been sent to this email: {{ verification_method }} 
+    </p>
+    <label>Please enter the OTP that has been sent to you below:</label><br>
+    <input type="text" name='OTP_CODE'/>
+   {% else %} 
+    <p>
+     A 6 digits OTP Verification Code has been sent to this phone number: {{ verification_method }}
+    </p>
+    <label>Please enter the OTP that has been sent to you below:</label>
+    <input type="text" name="OTP_CODE"/>
+   {% endif %}
+  </form>
  </body>
 </html>

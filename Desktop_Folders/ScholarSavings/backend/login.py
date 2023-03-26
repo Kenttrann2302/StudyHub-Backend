@@ -131,13 +131,10 @@ class SignInResource(Resource):
        # Generate JWT token and store it in cookies
        # query the permissions list in the user table with the user id
        permissions= [permission.name for permission in user.permissions]
-       token = jwt.encode({'id' : user.user_id, 'username': user.username, 'exp': datetime.now(pytz.timezone('EST')) + timedelta(minutes=30), 'permissions': permissions}, login_app.config['SECRET_KEY'], algorithm='HS256')
-       
-       # send the users otp verification to the email or sms in the database
-       OTP_verification = sendOTP(phoneNumber=user.verification_method, appId=)
+       token = jwt.encode({'id' : user.user_id, 'username': user.username, 'verification_id' : user.verification_id, 'verification_endpoint' : user.verification_method ,'exp': datetime.now(pytz.timezone('EST')) + timedelta(minutes=30), 'permissions': permissions}, login_app.config['SECRET_KEY'], algorithm='HS256')
 
-       # Store the token in a cookie
-       response = make_response(redirect(url_for('user_dashboard')))
+       # Store the token in cookie local storage
+       response = make_response(redirect(url_for('send_otp_code')))
        response.set_cookie('token', value=token, expires=datetime.now(pytz.timezone('EST')) + timedelta(minutes=30), httponly=True)
        
        # Redirect to the dashboard and some restricted resource

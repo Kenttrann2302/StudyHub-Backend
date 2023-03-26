@@ -14,6 +14,7 @@ from search import searchItemsResource
 from database.users_models import db, Users, Verification
 # aws sns sdks for sending email and sms subscription and confirmation to user's email or phone number
 from AWS.aws_sns_helper_function import Email_Confirmation, SMS_Confirmation
+from AWS.aws_pinpoint_otp import sendOTP
 # middleware function to verify users permission
 from helper_functions.middleware_functions import token_required
 
@@ -118,15 +119,43 @@ def signin():
 def loginPage():
   return signin_authentication.login()
 
+################################# SENDING OTP VERIFICATION ########################
+# send the otp to the user's endpoint(whether an email or password)
+@app.route('/studyhub/send-otp/?/', methods=['POST', 'GET'])
+@token_required('can_receive_otp')
+def send_otp_code():
+  # get the token from cookies
+  pdb.set_trace()
+  token = request.cookies.get('token')
+  decoded_token = jwt.decode(token, login_app.config['SECRET_KEY'], algorithms=['HS256'])
+  verification_id = decoded_token['verification_id']
+  verification_method = decoded_token['verification_endpoint']
+  # using AWS Pinpoint to send the otp code to the endpoint
+  send_otp_request = sendOTP(channel_id=verification_id, channel=verification_method, allowedAttempts=3, codeLength=6, brandName='StudyHub', source='Login', language='en-US')
+  send_otp_response = send_otp_request.send_otp(validityPeriod=15)
+  return send_otp_response
 
+# handle the post request to validate the user's otp
+@app.route('/studyhub/validate-otp/?/', methods=['POST'])
+@token_required('can_validate_otp')
+def validate_otp_code():
+  # get the token from cookies
+  # get the token from cookies
+  token = request.cookies.get('token')
+  decoded_token = jwt.decode(token, login_app.config['SECRET_KEY'], algorithms=['HS256'])
+  verification_id = decoded_token['verification_id']
+  verification_method = decoded_token['verification_endpoint']
+  # using AWS Pinpoint to validate the code 
+  validate_otp_request = sendOTP(channel_id=verification_id, channel=verification_method, allowedAttempts=3, codeLength=6, brandName='StudyHub', source='Login', language='en-US')
+  valdiate_otp_response = validate_otp_request.verify_otp()
+  return valdiate_otp_response
 
 ################################## USER'S ACCOUNT DASHBOARD ##################################
 dashboard_obj = DashBoardResource()
-permission_list = ['can_view_dashboard', 'can_register_saving_challenges', 'can_use_geolocation_api']
 
 # render the dashboard for user after they are authenticated
 @app.route('/scholarsavings/dashboard/')
-@token_required(permissions_list=permission_list)
+@token_required('can_view_dashboard')
 def user_dashboard():
   # decode the token and get the username
   token = request.cookies.get('token')

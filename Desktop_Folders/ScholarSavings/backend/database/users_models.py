@@ -108,7 +108,7 @@ class Users(db.Model):
 class Permission(db.Model):
   __tablename__ = 'permission'
   id = db.Column(db.Integer, primary_key=True, autoincrement=True, unique=True)
-  name = db.Column(db.String(1000), nullable=False, unique=True)
+  name = db.Column(db.String(1000), nullable=False)
   user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
 
 # Add a foreign key constraint to the gender_id field in the User model

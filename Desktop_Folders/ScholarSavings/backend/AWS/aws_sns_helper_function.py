@@ -251,9 +251,10 @@ class Email_Confirmation(Resource):
 
    # update the value at 'account_verified' column
    user.account_verified = True
+   
 
    # grant access for user for permission after they have verified their accounts
-   permissions = ['can_view_dashboard', 'can_register_saving_challenges', 'can_use_geolocation_api']
+   permissions = ['can_receive_otp', 'can_validate_otp']
    for permission in permissions:
     grant_permission_to_verified_users(permission_name=permission)
 
