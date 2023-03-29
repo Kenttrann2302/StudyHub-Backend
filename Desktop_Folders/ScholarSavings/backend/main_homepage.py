@@ -64,7 +64,7 @@ def mainHomePage():
   return render_template('main_homepage.html')
 
 # implementing search engine with search endpoint
-@app.route('/scholarsavings/search/')
+@app.route('/studyhub/search/')
 def search():
   # create an object for searching class
   search = searchItemsResource()
@@ -75,14 +75,14 @@ registration_resource = RegistrationResource()
 verification_methods_resource = VerificationMethodsResource()
 
 # rendering the registration form (username, password, email and phone number)
-@app.route('/scholarsavings/register/')
+@app.route('/studyhub/register/')
 def registration():
   # insert into verification table
   verification_methods_resource.insert_verification_table()
   return verification_methods_resource.registration()
 
 # call an api to handle the post request from the form
-@app.route('/scholarsavings/createaccount/', methods = ['POST'])
+@app.route('/studyhub/createaccount/', methods = ['POST'])
 def registerNewUser():
   return registration_resource.createAccount()
 
@@ -91,7 +91,7 @@ def registerNewUser():
 email_confirmation_model = Email_Confirmation()
 
 # render the template after the user successfully confirm the email
-@app.route('/scholarsavings/confirm-email/', methods=['GET'])
+@app.route('/studyhub/confirm-email/', methods=['GET'])
 def confirm_email_handler():
   response_message = email_confirmation_model.confirm_email()
   return response_message
@@ -100,7 +100,7 @@ def confirm_email_handler():
 sms_confirmation_model = SMS_Confirmation()
 
 # render the template after the user successfully confirm the sms
-@app.route('/scholarsavings/confirm-sms/', methods=['GET'])
+@app.route('/studyhub/confirm-sms/', methods=['GET'])
 def confirm_sms_handler():
   response_message = sms_confirmation_model.confirm_sms()
   return response_message
@@ -110,22 +110,21 @@ signin_render_resource = SignInRenderResource()
 signin_authentication = SignInResource()
 
 # rendering the login form page, response from the GET request (username and password)
-@app.route('/scholarsavings/login/', methods=['GET'])
+@app.route('/studyhub/login/', methods=['GET'])
 def signin():
   return signin_render_resource.SignInRender()
 
 # call an api to handle the post request from the login form to authenticate the user login action
-@app.route('/scholarsavings/validateuser/', methods=['POST'])
+@app.route('/studyhub/validateuser/', methods=['POST'])
 def loginPage():
   return signin_authentication.login()
 
 ################################# SENDING OTP VERIFICATION ########################
 # send the otp to the user's endpoint(whether an email or password)
-@app.route('/studyhub/send-otp/?/', methods=['POST', 'GET'])
+@app.route('/studyhub/send-otp/sms/?/', methods=['POST', 'GET'])
 @token_required('can_receive_otp')
 def send_otp_code():
   # get the token from cookies
-  pdb.set_trace()
   token = request.cookies.get('token')
   decoded_token = jwt.decode(token, login_app.config['SECRET_KEY'], algorithms=['HS256'])
   verification_id = decoded_token['verification_id']
@@ -136,10 +135,9 @@ def send_otp_code():
   return send_otp_response
 
 # handle the post request to validate the user's otp
-@app.route('/studyhub/validate-otp/?/', methods=['POST'])
+@app.route('/studyhub/validate-otp/sms/?/', methods=['POST'])
 @token_required('can_validate_otp')
 def validate_otp_code():
-  # get the token from cookies
   # get the token from cookies
   token = request.cookies.get('token')
   decoded_token = jwt.decode(token, login_app.config['SECRET_KEY'], algorithms=['HS256'])
@@ -154,7 +152,7 @@ def validate_otp_code():
 dashboard_obj = DashBoardResource()
 
 # render the dashboard for user after they are authenticated
-@app.route('/scholarsavings/dashboard/')
+@app.route('/studyhub/dashboard/')
 @token_required('can_view_dashboard')
 def user_dashboard():
   # decode the token and get the username
@@ -162,11 +160,11 @@ def user_dashboard():
   user_id = jwt.decode(token, login_app.config['SECRET_KEY'], algorithms=['HS256'])['id']
   return dashboard_obj.render_dashboard(user_id)
   
-################################## SIGN UP FORM for saving strategy algorithm ('/scholarsavings/signup/)###################################
+################################## SIGN UP FORM for saving strategy algorithm ('/scholarsavings/signup/) ###################################
 signUP = signUpFormResource()
 savingChallenges = SavingChallengesResource()
 
-@app.route('/scholarsavings/treasurehunt/signup/')
+@app.route('/studyhub/signup/')
 def signup():
   # add the gender table
   signUP.insert_gender_table()
@@ -178,6 +176,17 @@ def signup():
 # perform action on the url for treasure hunting game 
 def savingChallengesInput():
   return savingChallenges.savings_challenge_signup()
+
+############################## OTP VERIFICATION ################################
+@app.route('/studyhub/otp_verification/<string:email_address>/', methods=['POST'])
+def otp_verification(email_address):
+  if request.method == 'POST':
+    # get the form data for the otp verification from the user
+    try:
+      otp_code = request.form['otp_code']
+      return redirect('https://77kc0c8b30.execute-api.us-east-1.amazonaws.com/StudyHubBackend/studyhub/verify-otp-email?email_address=' + email_address + '&otp=' + otp_code)
+    except Exception as e:
+      return ({'message' : f'There is an error while verifying the otp_code with error: {e}'}), 5000
     
 if __name__ == '__main__':
   app.run(debug=True)

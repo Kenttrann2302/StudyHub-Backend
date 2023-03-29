@@ -4,6 +4,7 @@ from flask import request, jsonify, current_app
 from login import login_app
 import jwt
 import pdb
+from urllib.parse import urlparse, parse_qs
 
 def token_required(permission):
  def decorator(f):

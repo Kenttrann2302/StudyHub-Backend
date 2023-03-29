@@ -4,6 +4,7 @@ from flask import Flask, redirect, url_for, session, render_template, request, a
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_restful import Api, Resource, reqparse
+from cryptography.fernet import Fernet
 import bcrypt
 from werkzeug.security import check_password_hash
 from sqlalchemy import create_engine
@@ -32,6 +33,9 @@ database_password = os.getenv("DB_PASS")
 database_port = os.getenv("PORT")
 database_name = os.getenv("DB_NAME")
 
+# get the secret key from the environment
+secret_key = os.getenv("SECRET_KEY")
+
 # login app configuration
 login_app = Flask(__name__)
 login_app.config['SERVER_NAME'] = 'localhost:5000'
@@ -40,7 +44,7 @@ login_app.config['PREFERRED_URL_SCHEME'] = 'http'
 login_app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 login_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # generate random token for secret key
-login_app.config['SECRET_KEY'] = secrets.token_hex(16)
+login_app.config['SECRET_KEY'] = secret_key
 
 # set up the login app for rest api
 api = Api(login_app)
@@ -133,7 +137,12 @@ class SignInResource(Resource):
        permissions= [permission.name for permission in user.permissions]
        token = jwt.encode({'id' : user.user_id, 'username': user.username, 'verification_id' : user.verification_id, 'verification_endpoint' : user.verification_method ,'exp': datetime.now(pytz.timezone('EST')) + timedelta(minutes=30), 'permissions': permissions}, login_app.config['SECRET_KEY'], algorithm='HS256')
 
-       # Store the token in cookie local storage
+       # if the user's verification option is an email address, then redirect the user to the enpoint of lambda functions to send OTP Verification code
+       if user.verification_id == 2:
+        # store the token into the request header and send it to aws lambda function
+        return redirect(f'https://77kc0c8b30.execute-api.us-east-1.amazonaws.com/StudyHubBackend/studyhub/send-email-otp', headers={'Authorization' : 'Bearer' + token})
+
+       # Store the token in cookie local storage if the user choose sms for verification
        response = make_response(redirect(url_for('send_otp_code')))
        response.set_cookie('token', value=token, expires=datetime.now(pytz.timezone('EST')) + timedelta(minutes=30), httponly=True)
        
@@ -166,9 +175,9 @@ class DashBoardResource(Resource):
     return render_template('dashboard.html', name=user.username)
 
 # add sign in resource to rest api
-api.add_resource(SignInRenderResource, '/scholarsavings/login/')
-api.add_resource(SignInResource, '/scholarsavings/validateuser/')
-api.add_resource(DashBoardResource, '/scholarsavings/dashboard/')
+api.add_resource(SignInRenderResource, '/studyhub/login/')
+api.add_resource(SignInResource, '/studyhub/validateuser/')
+api.add_resource(DashBoardResource, '/studyhub/dashboard/')
 
 # add login_routes to test the rest api
 

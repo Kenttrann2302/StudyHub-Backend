@@ -130,10 +130,9 @@ class AWS_SNS_SDKs_setup(Resource):
     if row:
      row.aws_token = token
      db.session.commit()
-
      # Send confirmation message to email
      email_subject = 'Confirm your account!'
-     email_body = f'Please click on the link below to confirm your account:\n\n{request.host_url}scholarsavings/confirm-email?id={row.user_id}&token={token}\n\nThis confirmation email link will be expired in 15 minutes.'
+     email_body = f'Thank you for choosing StudyHub services.\nPlease click on the link below to confirm your account:\n\n{request.host_url}studyhub/confirm-email?id={row.user_id}&token={token}\n\nThis confirmation email link will be expired in 15 minutes.'
      email_message = {
       'Subject': {'Data': email_subject},
       'Body': {'Text': {'Data':email_body}},
@@ -194,7 +193,7 @@ class AWS_SNS_SDKs_setup(Resource):
      db.session.commit()
 
      # Send SMS confirmation to the phone number
-     sms_body = f'Thank you for choosing ScholarSaving Service!\n\nPlease click the link below to verify your email with us:\n{request.host_url}scholarsavings/confirm-sms?id={row.user_id}&token={token}\nThis SMS confirmation link will be expired in 15 minutes.'
+     sms_body = f'Thank you for choosing StudyHub Service!\n\nPlease click the link below to verify your email with us:\n{request.host_url}studyhub/confirm-sms?id={row.user_id}&token={token}\nThis SMS confirmation link will be expired in 15 minutes.'
 
      # Send sms confirmation message to the phone number
      # create a SnSWrapper model

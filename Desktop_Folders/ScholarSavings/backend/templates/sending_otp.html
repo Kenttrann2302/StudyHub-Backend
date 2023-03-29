@@ -1,28 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
- <head>
-  <title>
-   OTP Verification
-  </title>
- </head>
- <body>
-  <h1>
-   OTP Verification
-  </h1>
-  <form action="{{ url_for('validate_otp_code') }}" method="POST">
-   {% if verification_id == 'EMAIL' %} 
-    <p>
-     A 6 digits OTP Verification Code has been sent to this email: {{ verification_method }} 
-    </p>
-    <label>Please enter the OTP that has been sent to you below:</label><br>
-    <input type="text" name='OTP_CODE'/>
-   {% else %} 
-    <p>
-     A 6 digits OTP Verification Code has been sent to this phone number: {{ verification_method }}
-    </p>
-    <label>Please enter the OTP that has been sent to you below:</label>
-    <input type="text" name="OTP_CODE"/>
-   {% endif %}
-  </form>
- </body>
+<html>
+    <head>
+     <title>
+      StudyHub Enter OTP Code
+     </title>
+    </head>
+    <body>
+     <h1>
+      Enter OTP Code
+     </h1>
+     <p>Please enter a 6 digits code that was sent to your email address: {{ email_address }}.</p>
+     <form id='otp-form'>
+      <label for='otp-code'>OTP Code:</label>
+      <p id="email">{{ email_address }}</p>
+      <input type="text" id="otp_code" name="otp_code" required/>
+      <br>
+      <input type="submit" name="submit" value="Submit"/>
+     </form>
+
+     <!-- Javascript code to send the otp and the email address to the url to verify the otp -->
+     <script>
+      let form = document.querySelector('#otp-form');
+      
+      form.addEventListener('submit', function(event) {
+       event.preventDefault();
+       // get the otp_code and the email_address from the form
+       let otp_code = document.querySelector('#otp_code').value;
+       let email_address = document.querySelector('#email').textContent;
+       // convert the otp code into integer if the value is not an integer
+       if(isNaN(otp_code)){
+        otp_code = parseInt(otp_code);
+        console.log('Converted an otp code into an integer')
+       } else {
+        console.log('OTP Code is already an integer!')
+       }
+       let url = `https://77kc0c8b30.execute-api.us-east-1.amazonaws.com/StudyHubBackend/studyhub/verify-otp-email?email_address=${email_address}&otp=${otp_code}`;
+       window.location.href = url;
+      });
+     </script>
+    </body>
 </html>

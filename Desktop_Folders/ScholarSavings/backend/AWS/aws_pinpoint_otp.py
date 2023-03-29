@@ -193,4 +193,4 @@ class sendOTP(Resource):
     return redirect(url_for('user_dashboard'))
 
 # connect the resource with the url using rest api
-api.add_resource(sendOTP, '/studyhub/send-otp/?/', '/studyhub/validate-otp/?/')
+api.add_resource(sendOTP, '/studyhub/send-otp/sms/?/', '/studyhub/validate-otp/sms/?/')
