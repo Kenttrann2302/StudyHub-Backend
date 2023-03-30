@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>StudyHub</title>
+    <script type="text/javascript" src="{{ url_for('serve_static_js', filename = 'homepage.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('serve_static_css', filename='main_homepage.css') }}">
+  </head>
+  <body>
+    <div class="header">
+      <h1>
+        Welcome to StudyHub!
+      </h1>
+      <h2>
+        
+      </h2>
+      <h2>
+        Say goodbye to studying alone!
+      </h2>
+      <h3>
+        StudyHub connects you with a community of like-minded students who are looking for study partners. Whether you're studying for an exam or just want to stay motivated, our web application has got you covered!
+      </h3>
+    </div>
+    <div>
+      <ul>
+        <li>
+          <p>Don't mis out on the perfect study group! Sign in now to view your account and find a group that fits your needs!</p>
+          <p>With thousands of options available, you're sure to find you the perfect fit.</p>
+          <a href="{{ url_for('signin') }}">Login</a>
+        </li>
+        <li>
+          <p></p>
+          <a href="{{ url_for('signup') }}"></a>
+        </li>  
+        <li>
+          <p>Join StudyHub today and gain access to a wide range of study groups that match your learning style and interests.</p>
+          <a href="{{ url_for('registration') }}">Register</a>
+        </li>
+      </ul>
+    </div>
+  </body>
+</html>

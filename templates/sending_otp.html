@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+    <head>
+     <title>
+      StudyHub Enter OTP Code
+     </title>
+    </head>
+    <body>
+     <h1>
+      Enter OTP Code
+     </h1>
+     <p>Please enter a 6 digits code that was sent to your email address: {{ email_address }}.</p>
+     <form id='otp-form'>
+      <label for='otp-code'>OTP Code:</label>
+      <p id="email">{{ email_address }}</p>
+      <input type="text" id="otp_code" name="otp_code" required/>
+      <br>
+      <input type="submit" name="submit" value="Submit"/>
+     </form>
+
+     <!-- Javascript code to send the otp and the email address to the url to verify the otp -->
+     <script>
+      let form = document.querySelector('#otp-form');
+      
+      // function send a fetch api to get the token from the request header
+      function get_token() {
+       /* global fetch */
+       fetch('https://77kc0c8b30.execute-api.us-east-1.amazonaws.com/StudyHubBackend/studyhub/send-email-otp')
+        .then(response => {
+         const token = response.headers.get['Authorization'];
+       });
+      }
+      
+      // function send a fetch api to send the token as a request header
+      function send_token(token, url) {
+       /* global fetch */
+       fetch(url)
+        method = 'GET',
+        headers = {
+         'Authorization' : `Bearer ${token}`
+        }
+        .then(response => {
+         if(!response.ok) {
+          throw new Error (`Response with error with status code: ${response.status}`);
+         }
+         window.location.href = url;
+        })
+        .catch((error) => {
+         console.log(`There is an error during your fetch operation, response with error: ${error}`);
+        })
+      }
+      
+      form.addEventListener('submit', function(event) {
+       event.preventDefault();
+       // get the otp_code and the email_address from the form
+       let otp_code = document.querySelector('#otp_code').value;
+       let email_address = document.querySelector('#email').textContent;
+       // convert the otp code into integer if the value is not an integer
+       if(isNaN(otp_code)){
+        otp_code = parseInt(otp_code);
+        console.log('Converted an otp code into an integer');
+       } else {
+        console.log('OTP Code is already an integer!')
+       }
+       let url = `https://77kc0c8b30.execute-api.us-east-1.amazonaws.com/StudyHubBackend/studyhub/verify-otp-email?otp=${otp_code}`;
+       // get the token from the request header
+       const token = get_token();
+       // send the token in the request header and redirect the user to the url
+       send_token(token, url);
+      });
+     </script>
+    </body>
+</html>

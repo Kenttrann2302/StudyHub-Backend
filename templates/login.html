@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <title>
+   ScholarSavings SignIn
+  </title>
+ </head>
+ <body>
+  <div class="header">
+   <h1>
+    Sign In
+   </h1>
+  </div>
+  <div class="content-block">
+   <form action="{{ url_for('loginPage') }}" method="POST" id="signin-form">
+    <label for="signIn_username">Username:</label><br>
+    <input type="text" name="signIn_username" value="{{ validated_fields.get('username', '') }}" id="username-login" required/><br>
+    {% if request.method == 'POST' and errors.get('signIn_username') %} 
+     <span class="error" style="color:red;">{{ errors['signIn_username'] }}</span><br>
+    {% endif %} 
+
+    <label for="signIn_password">Password:</label><br>
+    <input type="password" name="signIn_password" value="{{ validated_fields.get('password', '') }}" id="password-login" required/><br>
+    {% if request.method == 'POST' and errors.get('signIn_password') %} 
+     <span class="error" style="color:red;">{{ errors['signIn_password'] }}</span><br>
+    {% endif %}
+
+    <!-- Submit button for user to submit the form  -->
+    <input type="submit" value="Sign In"/>
+   </form>
+  </div>
+  <div>
+   <ul>
+    <li>
+     <p>Forgot password?</p>
+    </li>
+    <li>
+     <a href="{{ url_for('registration') }}">New user?</a>
+    </li>
+   </ul>
+  </div>
+ </body>
+</html>
