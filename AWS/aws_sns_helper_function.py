@@ -45,6 +45,7 @@ aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
 aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
 aws_default_region = os.getenv('AWS_DEFAULT_REGION')
 aws_confirmation_token_expiration = os.getenv('CONFIRMATION_TOKEN_EXPIRATION')
+aws_topic_name = os.getenv('AWS_TOPIC_NAME')
 
 sns_client = boto3.client('sns', region_name=aws_default_region)
 sns_resource = boto3.resource('sns', region_name=aws_default_region)
@@ -57,6 +58,9 @@ if not aws_secret_access_key:
 
 if not aws_default_region:
   print('AWS_DEFAULT_REGION is missing!')
+
+if not aws_topic_name:
+  print('AWS_TOPIC_NAME is missing!')
 
 if not os.environ.get('AWS_SESSION_TOKEN'):
   print('AWS_SESSION_TOKEN is missing!')
@@ -141,7 +145,7 @@ class AWS_SNS_SDKs_setup(Resource):
     
      # create a SnSWrapper model
      topic_arn_model = SnsWrapper(sns_resource=sns_resource)
-     sns_topic = topic_arn_model.create_topic(name='MyTopic-eEXEKdldnX-32121e0d-16c1-4a85-a478-1527818c79df')
+     sns_topic = topic_arn_model.create_topic(name='')
     
      # subscribe an email endpoint to the topic
 
@@ -198,7 +202,7 @@ class AWS_SNS_SDKs_setup(Resource):
      # Send sms confirmation message to the phone number
      # create a SnSWrapper model
      topic_arn_model = SnsWrapper(sns_resource=sns_resource)
-     sns_topic = topic_arn_model.create_topic(name='MyTopic-eEXEKdldnX-32121e0d-16c1-4a85-a478-1527818c79df')
+     sns_topic = topic_arn_model.create_topic(name=aws_topic_name)
 
      response = sns_client.subscribe(
       TopicArn=sns_topic.arn,
@@ -305,6 +309,6 @@ class SMS_Confirmation(Resource):
    return render_template('verifiedAccount.html', name=user.username, verification_id=user.verification_id)
 
 # add all the resources to the rest api
-api.add_resource(AWS_SNS_SDKs_setup, '/scholarsavings/createaccount/')
-api.add_resource(Email_Confirmation, '/scholarsavings/confirm-email/')
-api.add_resource(SMS_Confirmation, '/scholarsavings/confirm-sms/')
+api.add_resource(AWS_SNS_SDKs_setup, '/studyhub/createaccount/')
+api.add_resource(Email_Confirmation, '/studyhub/confirm-email/')
+api.add_resource(SMS_Confirmation, '/studyhub/confirm-sms/')

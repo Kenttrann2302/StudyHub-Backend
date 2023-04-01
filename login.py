@@ -46,6 +46,9 @@ login_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # generate random token for secret key
 login_app.config['SECRET_KEY'] = secret_key
 
+# get 2 apis for sending and verifying otp
+aws_sending_otp = os.getenv('AWS_EMAIL_SEND_OTP')
+
 # set up the login app for rest api
 api = Api(login_app)
 
@@ -138,10 +141,9 @@ class SignInResource(Resource):
        token = jwt.encode({'id' : user.user_id, 'username': user.username, 'verification_id' : user.verification_id, 'verification_endpoint' : user.verification_method ,'exp': datetime.now(pytz.timezone('EST')) + timedelta(minutes=30), 'permissions': permissions}, login_app.config['SECRET_KEY'], algorithm='HS256')
 
        # if the user's verification option is an email address, then redirect the user to the enpoint of lambda functions to send OTP Verification code
-       pdb.set_trace()
        if user.verification_id == 2:
         # store the token into the request header and send it to aws lambda function
-        response = redirect('https://77kc0c8b30.execute-api.us-east-1.amazonaws.com/StudyHubBackend/studyhub/send-email-otp')
+        response = redirect(aws_sending_otp)
         response.headers = {'Authorization' : f'Bearer {token}'}
         return response
 

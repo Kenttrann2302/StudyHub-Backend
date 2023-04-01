@@ -31,6 +31,8 @@ database_password = os.getenv("DB_PASS")
 database_port = os.getenv("PORT")
 database_name = os.getenv("DB_NAME")
 
+aws_verify_otp = os.getenv('AWS_EMAIL_VERIFY_OTP')
+
 app = Flask(__name__)
 app.debug = True
 app.config['SERVER_NAME'] = '127.0.0.1:5000'
@@ -70,7 +72,7 @@ def search():
   search = searchItemsResource()
   return search.search_results()
 
-################################## REGISTER FORM for users account ('/scholarsavings/register/) ##########################
+################################## REGISTER FORM for users account ('/studyhub/register/) ##########################
 registration_resource = RegistrationResource()
 verification_methods_resource = VerificationMethodsResource()
 
@@ -148,6 +150,20 @@ def validate_otp_code():
   valdiate_otp_response = validate_otp_request.verify_otp()
   return valdiate_otp_response
 
+############################## OTP VERIFICATION FOR EMAIL ADDRESS ################################
+@app.route('/studyhub/otp_verification/<string:email_address>/', methods=['POST'])
+def otp_verification(email_address):
+  if request.method == 'POST':
+    # get the form data for the otp verification from the user
+    try:
+      otp_code = request.form['otp_code']
+      return redirect(aws_verify_otp + email_address + '&otp=' + otp_code)
+    except Exception as e:
+      return ({'message' : f'There is an error while verifying the otp_code with error: {e}'}), 5000
+    
+if __name__ == '__main__':
+  app.run(debug=True)
+
 ################################## USER'S ACCOUNT DASHBOARD ##################################
 dashboard_obj = DashBoardResource()
 
@@ -159,8 +175,8 @@ def user_dashboard():
   token = request.cookies.get('token')
   user_id = jwt.decode(token, login_app.config['SECRET_KEY'], algorithms=['HS256'])['id']
   return dashboard_obj.render_dashboard(user_id)
-  
-################################## SIGN UP FORM for saving strategy algorithm ('/scholarsavings/signup/) ###################################
+
+################################## FIRST FEATURE (USER'S PROFILE) ###################################
 signUP = signUpFormResource()
 savingChallenges = SavingChallengesResource()
 
@@ -172,21 +188,7 @@ def signup():
   signUP.insert_identification_table()
   return signUP.render_signup()
 
-@app.route('/scholarsavings/treasurehunt/signup/process/', methods = ['POST'])
+@app.route('/studyhub/treasurehunt/signup/process/', methods = ['POST'])
 # perform action on the url for treasure hunting game 
 def savingChallengesInput():
   return savingChallenges.savings_challenge_signup()
-
-############################## OTP VERIFICATION ################################
-@app.route('/studyhub/otp_verification/<string:email_address>/', methods=['POST'])
-def otp_verification(email_address):
-  if request.method == 'POST':
-    # get the form data for the otp verification from the user
-    try:
-      otp_code = request.form['otp_code']
-      return redirect('https://77kc0c8b30.execute-api.us-east-1.amazonaws.com/StudyHubBackend/studyhub/verify-otp-email?email_address=' + email_address + '&otp=' + otp_code)
-    except Exception as e:
-      return ({'message' : f'There is an error while verifying the otp_code with error: {e}'}), 5000
-    
-if __name__ == '__main__':
-  app.run(debug=True)

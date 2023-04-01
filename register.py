@@ -243,12 +243,12 @@ class RegistrationResource(Resource):
       return render_template('registration.html', verification_options=verification_options, errors=register_errors, validated_fields=validated_fields)
 
 # add registration resource to rest api
-api.add_resource(VerificationMethodsResource, '/scholarsavings/register/')
-api.add_resource(RegistrationResource, '/scholarsavings/createaccount/')
+api.add_resource(VerificationMethodsResource, '/studyhub/register/')
+api.add_resource(RegistrationResource, '/studyhub/createaccount/')
 
 # Register the routes
-registration_routes.add_url_rule('/scholarsavings/register/', view_func=VerificationMethodsResource.as_view('verification_methods'))
-registration_routes.add_url_rule('/scholarsavings/createaccount/', view_func=RegistrationResource.as_view('registration'))
+registration_routes.add_url_rule('/studyhub/register/', view_func=VerificationMethodsResource.as_view('verification_methods'))
+registration_routes.add_url_rule('/studyhub/createaccount/', view_func=RegistrationResource.as_view('registration'))
 
 # register the blueprint with the app instance
 register_app.register_blueprint(registration_routes)
