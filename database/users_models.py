@@ -1,3 +1,5 @@
+# Here are the models that store the users profiles information (most important)
+
 # import libraries 
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.schema import CheckConstraint
@@ -28,7 +30,7 @@ class Verification(db.Model):
 class Users(db.Model):
   __tablename__ = 'users'
 
-  user_id = db.Column(UUID(as_uuid=True), primary_key=True, default=str(uuid.uuid4), unique=True, nullable=False) # using universal unique identifier for best security practice
+  user_id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False) # using universal unique identifier for best security practice
   username = db.Column(db.String(500), nullable=False, unique=True)
   password = db.Column(db.String(500), nullable=False, unique=True)
   password_salt = db.Column(db.String(500), nullable=False, unique=True)
@@ -79,7 +81,7 @@ class Gender(db.Model):
 class UsersInformation(db.Model):
   __tablename__ = 'users_information'
   
-  id = db.Column(UUID(as_uuid=True), primary_key=True, default=str(uuid.uuid4()), unique=True, nullable=False)
+  id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
   first_name = db.Column(db.String(100), nullable=False)
   middle_name = db.Column(db.String(100), nullable=True)
   last_name = db.Column(db.String(100), nullable=False)
@@ -114,15 +116,16 @@ class UsersInformation(db.Model):
 
   long_term_goal = db.relationship('LongTermGoal', backref='users_information', uselist=False)
 
+  communication_preferences = db.relationship('CommunicationPreferences', backref='users_information', uselist=False)
+
   def __repr__(self):
     return '<Users %r>' % self.first_name % self.last_name
-
 
 
 #################### EDUCATION IN USER'S PROFILE ##################
 # Define an institutions table to store all the options for all the institutes that are available at StudyHub
 class Institutions(db.Model):
-  __tablename__ = 'institution'
+  __tablename__ = 'institutions'
 
   id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False, unique=True)
   university_options = db.Column(db.String(200), nullable=False, unique=True)
@@ -164,7 +167,7 @@ class Education(db.Model):
 
   id = db.Column(UUID(as_uuid=True), primary_key=True, default=str(uuid.uuid4()), unique=True, nullable=False)
   profile_id = db.Column(db.String(500), db.ForeignKey('users_information.id'), unique=True) # perform a many-to-one relationship with the users profile, one user can have multiple education records.
-  institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=False)
+  institution_id = db.Column(db.Integer, db.ForeignKey('institutions.id'), nullable=False)
   institution_name = db.relationship('Institutions', backref='education', uselist=True) # perform a 1 to many relationship with the institution model
   start_date = db.Column(db.Date, nullable=False)
   graduation_date = db.Column(db.Date, nullable=False)
@@ -260,7 +263,7 @@ class StudyMaterialPreferences(db.Model):
   __tablename__ = 'study_materials'
 
   id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-  study_materials_preference = db.relationship(db.String(500), nullable=False) # # example: online resources, digital textbooks, traditional print materials,...
+  study_materials_preference = db.relationship(db.String(500), nullable=False) # example: online resources, digital textbooks, traditional print materials,...
   created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), nullable=False)
   updated_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), onupdate=datetime.now(pytz.timezone('EST')), nullable=False)
 
@@ -269,9 +272,9 @@ class StudyMaterialPreferences(db.Model):
 class StudyPreferences(db.Model):
   __tablename__ = 'study_preferences'
 
-  id = db.Column(UUID(as_uuid=True), primary_key=True, default=str(uuid.uuid4()), unique=True, nullable=False)
+  id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
 
-  user_id = db.Column(db.Integer, db.ForeignKey('users_information.id'), nullable=False) # form a one to one relationship with the user's profile
+  user_id = db.Column(db.String(500), db.ForeignKey('users_information.id'), nullable=False) # form a one to one relationship with the user's profile
 
   # study environment preferences
   study_env_id = db.Column(db.Integer, db.ForeignKey('study_environment.id'), nullable=False)
@@ -322,13 +325,16 @@ class StudyPreferences(db.Model):
 class AvailabilitySchedule(db.Model):
   __tablename__ = 'availability_schedule'
 
-  id = db.Column(UUID(as_uuid=True), primary_key=True, default=str(uuid.uuid4()), unique=True, nullable=False)
-  user_id = db.Column(db.Integer, db.ForeignKey('users_information.id'), nullable=False)
+  id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
+  user_id = db.Column(db.String(500), db.ForeignKey('users_information.id'), nullable=False)
   timezone = db.Column(db.Integer, db.ForeignKey('users_information.id'), nullable=False)
   schedule = db.Column(db.JSON, nullable=False) # a json object that stores the user's weekly schedule, with each day of the week represented as a key and list of time ranges as the value
   preferred_times = db.Column(db.JSON, nullable=False) # a json object that stores the user's preferred study times, with each time represented as a key and a boolean value indicating whether the user is avalable at that time
   created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), nullable=False)
   updated_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), onupdate=datetime.now(pytz.timezone('EST')), nullable=False)
+
+  def __repr__(self) -> str:
+    return '<Availability Schedule %r' % self.id
 
 
 
@@ -337,12 +343,74 @@ class AvailabilitySchedule(db.Model):
 class LongTermGoal(db.Model):
   __tablename__ = 'long_term_goal'
 
-  id = db.Column(UUID(as_uuid=True), primary_key=True, default=str(uuid.uuid4()), unique=True, nullable=False)
-  user_id = db.Column(db.Integer, db.ForeignKey('users_information.id'), nullable=False)
-   
+  id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
+  user_id = db.Column(db.String(500), db.ForeignKey('users_information.id'), nullable=False)
+  goal_name = db.Column(db.Text, nullable=False) # users will input their long term goal achievements
+  goal_description = db.Column(db.Text, nullable=False) # users will describe their goal achievements such as what elements they need to achieve the goals
+  created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), nullable=False)
+  updated_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), onupdate=datetime.now(pytz.timezone('EST')), nullable=False)
+
+  def __repr__(self) -> str:
+    return '<Long Term Goal %r' % self.id
+
+
+
+########## COMMUNICATION PREFERENCES ##########
+# Define a model that stores all the options for the communication methods that are supported in StudyHub
+class CommunicationMethods(db.Model):
+  __tablename__ = 'communication_methods'
+
+  id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
+  communication_methods = db.Column(db.String(500), nullable=False) # example: Zoom, Microsoft Office, Slack, Instagram, SnapChat,...
+  created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), nullable=False)
+  updated_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), onupdate=datetime.now(pytz.timezone('EST')), nullable=False)
+
+# Define a model that stores all the options for the communication frequency that the users can choose
+class CommunicationFrequency(db.Model):
+  __tablename__ = 'communication_frequency'
+
+  id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
+  communication_frequency = db.Column(db.String(500), nullable=False) # example: daily check-ins, weekly meetings, sporadic communication,...
+  created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), nullable=False)
+  updated_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), onupdate=datetime.now(pytz.timezone('EST')), nullable=False)
+
+# Define a model that stores all the options for the communication time of the dat that users can choose from
+class CommunicationTime(db.Model):
+  __tablename__ = 'communication_time'
+
+  id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
+  communication_time = db.Column(db.String(500), nullable=False) # example: day, afternoon, night time,...
+  created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), nullable=False)
+  updated_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), onupdate=datetime.now(pytz.timezone('EST')), nullable=False)
   
 
+# Define a model that stores the user's preferred communication methods
+class CommunicationPreferences(db.Model):
+  __tablename__ = 'communication_preferences'
 
+  id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False, unique=True)
+  user_id = db.Column(db.String(500), db.ForeignKey('users_information.id'), nullable=False)
+  communication_methods_id = db.Column(db.Integer, db.ForeignKey('communication_methods.id'), nullable=False)
+  communication_methods = db.relationship('CommunicationMethods', backref=db.backref('communication_preferences', uselist=True))
+  communication_frequency_id = db.Column(db.Integer, db.ForeignKey('communication_frequency.id'), nullable=False) 
+  communication_frequency = db.relationship('CommunicationFrequency', backref=db.backref('communication_frequency', uselist=True))
+  communication_time_id = db.Column(db.Integer, db.ForeignKey('communication_time.id'), nullable=False)
+  communication_time = db.relationship('Communication_time', backref=db.backref('communication_time'), uselist=True)
+  created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), nullable=False)
+  updated_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), onupdate=datetime.now(pytz.timezone('EST')), nullable=False)
+
+  def __repr__(self) -> str:
+    return '<Communication Preference %r' % self.id
+
+
+
+############## STUDY GROUP SESSION HISTORY ###############
+# Define a model that stores the user's history study group session
+# query the group databases that contains the users profile  
+# class StudyHistory(db.Model):
+#   id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False, unique=True)
+#   user_id = db.Column(db.String(500), db.ForeignKey('users_information.id'), nullable=False)
+#   group_id = db.Column(db.String(500), db.ForeignKey())
   
 
 

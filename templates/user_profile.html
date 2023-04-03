@@ -11,14 +11,30 @@
   <body>
     <div>
       <h1>
-        
+        Your Profile
       </h1>
-      <h2>
-        Fill out the form below to set your foot on a long and interesting adventure!
-      </h2>
     </div>
     <div>
-      <form enctype="multipart/form-data" id="signupform" action = "{{ url_for('savingChallengesInput') }}" method = 'POST'>
+      <form enctype="multipart/form-data" id="user_information_form" action = "{{ url_for('users_information') }}" method = 'POST'>
+        <!-- User's profile picture and bio -->
+        <div class="profile_image_uploader">
+          <p id="image-introduction">Upload an image to let people know who you are.</p>
+          <label for="image">Choose an image to upload:</label>
+          <span id="image-instruction">We support .PNG, .JPEG, .JPG or .PDF format!</span><br>
+          <input type="file" id="profile-image" name="profile-image" value="{{ validated_fields.get('profile_picture', '') }}"><br>
+          {% if request.method == 'POST' and validated_errors.get('profile_picture') %} 
+          <span class="error" style="color:red">{{ validated_errors['profile_picture'] }}</span>
+          {% endif %} 
+        </div>
+        <div class="user_bio">
+          <p id="bio-instruction">A little bit about me!</p>
+          <input type="text" id="bio-input" name="bio-input">
+        </div>
+        <div class="user_interest">
+          <p id="user_interest_instruction">What interest you most in studying, {{ username }}? Share it so everyone in your study group will know more about you!</p>
+          <input type="text" id="user_interest_input" name="interest_input">
+        </div>
+        <!-- User's personal information -->
         <div>
           <label for="fname">First Name(*):</label><br>
           <input type="text" name = "fname" value="{{ validated_fields.get('firstName', '') }}" required/><br>
@@ -39,6 +55,7 @@
           {% endif %}
         </div>
         
+        <!-- User's age and birthday -->
         <div>
           <label for="birthday">Date Of Birth(*):</label><br>
           <p>Format: (yyyy-mm-dd)</p><br>
@@ -56,6 +73,7 @@
           {% endif %}   
         </div>
 
+        <!-- User's address -->
         <div>
           <label for="address1">Address Line 1(*):</label><br>
           <textarea name = "address1" value="{{ validated_fields.get('firstAddress', '') }}" required></textarea><br>
@@ -96,12 +114,13 @@
           <label for="postal_code">Postal Code(*):</label><br>
           <input type="text" name="postal_code" value="{{ validated_fields.get('postalCode', '') }}" required/><br>
 
+          <!-- User's Timezone -->
+
+
           {% if request.method == 'POST' and error_message.get('address1') %} 
             <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
           {% endif %}
         </div>
-
-
       
         <!-- Get the gender options boxes -->
         <div>
@@ -120,43 +139,17 @@
           {% endif %}
         </div>
         
-      
+        <!-- User's religion -->
         <label>Religion:</label><br>
         <input type="text" name="religion" value="{{ validated_fields.get('religion', '') }}"/><br>
-        
-        <!-- Get the identification options boxes -->
-        <div>
-          <label for="identification_id">Please choose one of the following options for verification:</label>
-          <label>All documents must be official and unaltered. If we detect any tampering or alteration of the documents, your verification will be denied.</label>
-          <select name="identification_id" id="id_type">
-            {% for option in identification_options %} 
-            <option value="{{ option.id }}"
-              {% if option.id == identification_id %} selected
-              {% endif %}>
-              {{ option.identification_options }}
-            </option>
-            {% endfor %}
-          </select><br> 
-          {% if request.method == 'POST' and error_message.get('identification_id') %} 
-            <span class="error" style="color:red;">{{ error_message['identification_id'] }}</span><br>
-          {% endif %}
-        </div>
-
-        <div>
-          <p id="message"></p>
-          <input type="text" id="id_number" name="id_number" style="display: none;" value="{{ validated_fields.get('verification_material', '') }}" required/><br>
-          {% if request.method == 'POST' and validated_errors.get('verification_material') %}
-            <span class="error" style="color:red;">{{ validated_errors['verification_material'] }}</span><br>
-          {% endif %} 
-        </div>
-        
+       
         <!-- Submit button for user to submit the form  -->
         <input type="submit" value="Submit"/><br>
       </form>
       <div>
         <ul>
           <li>
-            <a href="{{ url_for('mainHomePage') }}">Home</a><br>
+            <a href="{{ url_for('user_dashboard') }}">Home</a><br>
           </li>
         </ul>
       </div>

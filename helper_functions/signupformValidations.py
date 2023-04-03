@@ -98,6 +98,16 @@ def save_image(file):
   file.save(file_path)
   return file_path
 
+# This is a helper function that handle the upload image for the user's profile picture
+def get_profile_image():
+  # convert the image upload to bytes code
+  profile_image = request.files['profile_file'].read()
+  # get the original image to validate the file
+  validate_profile_upload = request.files['profile_file']
+  # save the user's profile picture as a path to the userdatabase 
+  profile_image = save_image(validate_profile_upload)
+  return profile_image, validate_profile_upload
+
 # This is a helper function to indicate if the user upload a file or a string email
 def get_verification_material(verification_id):
  # if the users choose an email to verify

@@ -1,17 +1,13 @@
 # import libraries
 from flask import Flask, url_for, render_template, redirect, request, send_from_directory
-import psycopg2
 import pdb
 import os
 import jwt
 
 # import files from directories
-from signup import signUpFormResource, SavingChallengesResource
 from register import VerificationMethodsResource, RegistrationResource
 from login import SignInRenderResource, SignInResource, DashBoardResource, login_app
 from search import searchItemsResource
-# import the users models from the models.py
-from database.users_models import db, Users, Verification
 # aws sns sdks for sending email and sms subscription and confirmation to user's email or phone number
 from AWS.aws_sns_helper_function import Email_Confirmation, SMS_Confirmation
 from AWS.aws_pinpoint_otp import sendOTP
@@ -40,7 +36,6 @@ app.config['APPLICATION_ROOT'] = '/'
 app.config['PREFERRED_URL_SCHEME'] = 'http'
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 app.config['SQLALCHEMY_DATABASE_URI'] = f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
-db.init_app(app)
 # app.register_blueprint('registration_routes')
 
 # include some static files for javascript
@@ -176,19 +171,3 @@ def user_dashboard():
   user_id = jwt.decode(token, login_app.config['SECRET_KEY'], algorithms=['HS256'])['id']
   return dashboard_obj.render_dashboard(user_id)
 
-################################## FIRST FEATURE (USER'S PROFILE) ###################################
-signUP = signUpFormResource()
-savingChallenges = SavingChallengesResource()
-
-@app.route('/studyhub/signup/')
-def signup():
-  # add the gender table
-  signUP.insert_gender_table()
-  # add the identification table
-  signUP.insert_identification_table()
-  return signUP.render_signup()
-
-@app.route('/studyhub/treasurehunt/signup/process/', methods = ['POST'])
-# perform action on the url for treasure hunting game 
-def savingChallengesInput():
-  return savingChallenges.savings_challenge_signup()
