@@ -1,6 +1,6 @@
 <!-- Please update value in the {}  -->
 
-<h1 align="center">StudyHub</h1>
+<h1 align="center">StudyHub-Backend</h1>
 
 <!-- TABLE OF CONTENTS -->
 
