@@ -6,7 +6,7 @@ import jwt
 import pdb
 from urllib.parse import urlparse, parse_qs
 
-def token_required(permission):
+def token_required(permission_list):
  def decorator(f):
   @wraps(f)
   def decorated_function(*args, **kwargs):
@@ -15,8 +15,9 @@ def token_required(permission):
     return jsonify({'message' : 'Token is missing!'}), 401
    try:
     data = jwt.decode(token, login_app.config['SECRET_KEY'], algorithms=['HS256'])
-    if permission not in data['permissions']:
-      return jsonify({'message' : 'Unauthorized access!'}), 403
+    for permission in permission_list:
+      if permission not in data['permissions']:
+        return jsonify({'message' : 'Unauthorized access!'}), 403
    except:
     return jsonify({'message' : 'Token is invalid!'}), 401
    return f(*args, *kwargs)

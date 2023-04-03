@@ -296,12 +296,7 @@ class SMS_Confirmation(Resource):
 
    # update the value at 'account_verified' column
    user.account_verified = True
-
-   # grant access for user for permission after they have verified their accounts
-   permissions = ['can_view_dashboard', 'can_register_saving_challenges', 'can_use_geolocation_api']
-   for permission in permissions:
-    grant_permission_to_verified_users(permission_name=permission)
-
+   
    # commit the change to the database
    db.session.commit()
 

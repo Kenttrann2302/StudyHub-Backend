@@ -17,7 +17,8 @@ import pytz
 
 # import the users models from the models.py
 from database.users_models import db, Users, Verification
-from helper_functions.signupformValidations import create_validated_fields_dict
+from helper_functions.validate_users_information import create_validated_fields_dict
+from helper_functions.grant_permission import grant_permission_to_verified_users
 from AWS.aws_pinpoint_otp import sendOTP
 
 # load in the sensitive data from .env
@@ -70,21 +71,6 @@ engine = create_engine(f"{database_type}://{database_username}:{database_passwor
 # global variables
 # initialize all the a dictionary of validated fields for user inputs
 validated_fields = {
-  'firstName' : '',
-  'midName' : '',
-  'lastName' : '',
-  'age' : '',
-  'birthDay' : '',
-  'firstAddress' : '',
-  'secondAddress' : '',
-  'city' : '',
-  'province' : '',
-  'country' : '',
-  'postalCode' : '',
-  'gender' : '',
-  'religion' : '',
-  'verification' : '',
-  'verification_material' : '',
   'username' : '',
   'password' : '',
   'password_confirmation' : '',
@@ -100,7 +86,7 @@ class SignInRenderResource(Resource):
  def SignInRender(self):
   with login_app.app_context():
    if request.method == 'GET':
-    create_validated_fields_dict(validated_fields=validated_fields, firstName='', midName='', lastName='', age='', birthDay='', firstAddress='', secondAdress='', city='', province='', country='', postalCode='', gender='', religion='', verification='', verification_material='', username='', password='', password_confirmation='', verification_id='', verification_method='')
+    create_validated_fields_dict(validated_fields=validated_fields, username='', password='', password_confirmation='', verification_id='', verification_method='')
 
     return render_template('login.html', validated_fields=validated_fields)
    else:
@@ -125,7 +111,7 @@ class SignInResource(Resource):
      signin_errors = {}
 
      # Get the fields that are validated
-     create_validated_fields_dict(validated_fields=validated_fields, firstName='', midName='', lastName='', age='', birthDay='', firstAddress='', secondAdress='', city='', province='', country='', postalCode='', gender='', religion='', verification='', verification_material='', username=signIn_username, password=signIn_password, password_confirmation='', verification_id='', verification_method='')
+     create_validated_fields_dict(validated_fields=validated_fields, username=signIn_username, password=signIn_password, password_confirmation='', verification_id='', verification_method='')
 
      # Query user record from database
      user = Users.query.filter(Users.username == signIn_username).first()
@@ -135,9 +121,15 @@ class SignInResource(Resource):
       # if the username and password is correct
       if bcrypt.checkpw(signIn_password.encode('utf-8'), user.password.encode('utf-8')):
        # User credentials are valid
+       # grant permissions for the users to view the dashboard, use geolocation, view, upload and update their own profile
+       # give the user the permission to view, upload or update their profile
+       permissions_list = ['can_view_dashboard', 'can_view_profile', 'can_upload_profile', 'can_update_profile', 'can_use_geolocation_api']
+       for permission in permissions_list:
+        grant_permission_to_verified_users(permission_name=permission)
+        
        # Generate JWT token and store it in cookies
        # query the permissions list in the user table with the user id
-       permissions= [permission.name for permission in user.permissions]
+       permissions = [permission.name for permission in user.permissions]
        token = jwt.encode({'id' : user.user_id, 'username': user.username, 'verification_id' : user.verification_id, 'verification_endpoint' : user.verification_method ,'exp': datetime.now(pytz.timezone('EST')) + timedelta(minutes=30), 'permissions': permissions}, login_app.config['SECRET_KEY'], algorithm='HS256')
 
        # if the user's verification option is an email address, then redirect the user to the enpoint of lambda functions to send OTP Verification code
@@ -177,6 +169,7 @@ class DashBoardResource(Resource):
   def render_dashboard(self, id):
     # run a query to find the username with the id and the token_id that is given
     user = Users.query.filter_by(user_id=id).first()
+
     return render_template('dashboard.html', name=user.username)
 
 # add sign in resource to rest api

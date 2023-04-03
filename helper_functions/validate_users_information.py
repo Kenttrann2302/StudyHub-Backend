@@ -45,7 +45,7 @@ def validate_files_size(file) -> bool:
   return False
 
 # function to validate all the fields of the users input
-def validate_users_input(errors, fname, lname, age, birthDay, gender, verification, verification_material, validate_verification_material) -> list:
+def validate_users_information(errors, fname, lname, age, birthDay, gender, profile_picture) -> list:
   # check if the users input the username and password
   if not fname or not lname:
     errors[fname] = f"Please enter your first name!"
@@ -63,33 +63,12 @@ def validate_users_input(errors, fname, lname, age, birthDay, gender, verificati
   if int(gender) == 1:
     errors['gender_id'] = f'Please select your gender!'
   
-  # identification validation
-  # initialize a list of errors for verification
-  verification_errors = {}
-
-  if int(verification) == 1:
-    errors['identification_id'] = f'Please choose one of the following method to verify your identification!'
-
-  # users choose student email to verify
-  elif int(verification) == 2:
-    if not is_email(validate_verification_material):
-     verification_errors['verification_material'] = f'Please enter an appropriate email (name@example.com)'
-    #  raise ValueError('Please enter an appropriate email (name@example.com)')
-    
-  # users choose to upload an image or file
-  else:  
-    # check if any file is uploaded 
-    if validate_verification_material.filename == '':
-      verification_errors['verification_material'] = f'No selected file!'
-      # raise ValueError('No selected file!')
-    if not validate_files_upload(validate_verification_material):
-      verification_errors['verification_material'] = f'Invalid file. Allowed file types are .png, .jpg, .jpeg, .pdf!'
-      # raise ValueError('Invalid file. Allowed file types are .png, .jpg, .jpeg, .pdf!')
-    if not validate_files_size(validate_verification_material):
-      verification_errors['verification_material'] = f'File is too large! Please try again! The maximum size allowed is 10MB!'
-      # raise ValueError('File is too large! Please try again! The maximum size allowed is 10MB!')
-
-  return verification_errors
+  # validate user's profile picture
+  if profile_picture is not None:
+    if not validate_files_upload(profile_picture):
+      errors['profile-image'] = f'Invalid file. Allowed file types are .png, .jpg, .jpeg, .pdf!'
+    if not validate_files_size(profile_picture):
+      errors['profile-image'] = f'File is too large! Please try again! The maximum size allowed is 10MB!'
 
 # This is a helper function that handle upload files and save them to the folder
 def save_image(file):

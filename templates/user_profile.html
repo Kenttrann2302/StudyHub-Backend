@@ -1,158 +1,44 @@
+<!-- This is the page where users can navigate through each categories such as user_information, study_preference,... to upload or update their profile -->
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>
-      StudyHub Profile
-    </title>
-    <meta charset="utf-8">
-    <script type="text/javascript" src="{{ url_for('serve_static_js', filename = 'identification.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('serve_static_js', filename = 'ageCalculation.js') }}"></script>
-  </head>
-  <body>
-    <div>
-      <h1>
-        Your Profile
-      </h1>
-    </div>
-    <div>
-      <form enctype="multipart/form-data" id="user_information_form" action = "{{ url_for('users_information') }}" method = 'POST'>
-        <!-- User's profile picture and bio -->
-        <div class="profile_image_uploader">
-          <p id="image-introduction">Upload an image to let people know who you are.</p>
-          <label for="image">Choose an image to upload:</label>
-          <span id="image-instruction">We support .PNG, .JPEG, .JPG or .PDF format!</span><br>
-          <input type="file" id="profile-image" name="profile-image" value="{{ validated_fields.get('profile_picture', '') }}"><br>
-          {% if request.method == 'POST' and validated_errors.get('profile_picture') %} 
-          <span class="error" style="color:red">{{ validated_errors['profile_picture'] }}</span>
-          {% endif %} 
-        </div>
-        <div class="user_bio">
-          <p id="bio-instruction">A little bit about me!</p>
-          <input type="text" id="bio-input" name="bio-input">
-        </div>
-        <div class="user_interest">
-          <p id="user_interest_instruction">What interest you most in studying, {{ username }}? Share it so everyone in your study group will know more about you!</p>
-          <input type="text" id="user_interest_input" name="interest_input">
-        </div>
-        <!-- User's personal information -->
-        <div>
-          <label for="fname">First Name(*):</label><br>
-          <input type="text" name = "fname" value="{{ validated_fields.get('firstName', '') }}" required/><br>
-          <p>Maximum of 100 characters!</p>
-          {% if request.method == 'POST' and error_message.get('fname') %}
-            <span class="error" style="color:red;">{{ error_message['fname'] }}</span>
-          {% endif %}
-
-          <label for="mname">Middle Name:</label><br>
-          <input type="text" name = "mname" value="{{ validated_fields.get('midName', '') }}"/><br>
-          <p>Maximum of 100 characters!</p>
-
-          <label for="lname">Last Name(*):</label><br>
-          <input type="text" name = "lname" value="{{ validated_fields.get('lastName', '') }}" required/><br>
-          <p>Maximum of 100 characters!</p>
-          {% if request.method == 'POST' and error_message.get('lname') %} 
-            <span class="error" style="color:red">{{ error_message['lname'] }}</span>
-          {% endif %}
-        </div>
-        
-        <!-- User's age and birthday -->
-        <div>
-          <label for="birthday">Date Of Birth(*):</label><br>
-          <p>Format: (yyyy-mm-dd)</p><br>
-          <p>Note: You must be at least 18 to register for an online banking account!</p><br>
-          <input type="date" name="birthday" id="birthday" required onchange="calculateAge()" value="{{ validated_fields.get('birthDay', '') }}" required/><br>
-          {% if request.method == 'POST' and error_message.get('birthday') %} 
-            <span class="error" style="color:red;">{{ error_message['birthday'] }}</span>
-          {% endif %}
-
-          <label for="age">Age(*):</label><br>
-          <p>Your age is: <span id="age" name="age"></span></p>
-          <input type="hidden" id="age-input" name="age" value="{{ validated_fields.get('age', '') }}" required/>
-          {% if request.method == 'POST' and error_message.get('age-input') %} 
-            <span class="error" style="color:red;">{{ error_message['age'] }}</span>
-          {% endif %}   
-        </div>
-
-        <!-- User's address -->
-        <div>
-          <label for="address1">Address Line 1(*):</label><br>
-          <textarea name = "address1" value="{{ validated_fields.get('firstAddress', '') }}" required></textarea><br>
-
-          {% if request.method == 'POST' and error_message.get('address1') %} 
-            <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
-          {% endif %}
-          
-          <label for="address2">Address Line 2:</label><br>
-          <p>Please indicates any buiding</p>
-          <textarea name = "address2" value="{{ validated_fields.get('secondAddress', '') }}"></textarea><br>
-
-          {% if request.method == 'POST' and error_message.get('address1') %} 
-            <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
-          {% endif %}
-    
-          <label for="city">City(*):</label><br>
-          <input type="text" name="city" value="{{ validated_fields.get('city', '') }}" required/><br>
-
-          {% if request.method == 'POST' and error_message.get('address1') %} 
-            <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
-          {% endif %}
-    
-          <label for-="province">Province/State(*):</label><br>
-          <input type="text" name="province" value="{{ validated_fields.get('province', '') }}" required/><br>
-
-          {% if request.method == 'POST' and error_message.get('address1') %} 
-            <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
-          {% endif %}
-    
-          <label for="country">Country(*):</label><br>
-          <input type="text" name="country" value="{{ validated_fields.get('country', '') }}" required/><br>
-
-          {% if request.method == 'POST' and error_message.get('address1') %} 
-            <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
-          {% endif %}
-    
-          <label for="postal_code">Postal Code(*):</label><br>
-          <input type="text" name="postal_code" value="{{ validated_fields.get('postalCode', '') }}" required/><br>
-
-          <!-- User's Timezone -->
-
-
-          {% if request.method == 'POST' and error_message.get('address1') %} 
-            <p class="error" style="color:red;">{{ error_message['address1'] }}</p>
-          {% endif %}
-        </div>
-      
-        <!-- Get the gender options boxes -->
-        <div>
-          <label for="gender_id">Please select your gender: </label>
-          <select name="gender_id">
-            {% for option in gender_options %} 
-            <option value="{{ option.id }}"
-              {% if option.id == gender_id %} selected
-              {% endif %}>
-              {{ option.gender_options }}
-            </option>
-            {% endfor %}   
-          </select><br>
-          {% if request.method == 'POST' and error_message.get('gender_id') %} 
-            <span class="error" style="color:red;">{{ error_message['gender_id'] }}</span>
-          {% endif %}
-        </div>
-        
-        <!-- User's religion -->
-        <label>Religion:</label><br>
-        <input type="text" name="religion" value="{{ validated_fields.get('religion', '') }}"/><br>
-       
-        <!-- Submit button for user to submit the form  -->
-        <input type="submit" value="Submit"/><br>
-      </form>
-      <div>
-        <ul>
-          <li>
-            <a href="{{ url_for('user_dashboard') }}">Home</a><br>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </body>
+ <head id="page-head">
+  <title id="page-title">
+   Profile
+  </title>
+ </head>
+ <body>
+  <h1>
+   Welcome to your profile, {{ username }}
+  </h1>
+  <h2>
+   This is where us as well as your future study mates will get to know more about you!
+  </h2>
+  <h3>
+   Let's get started on building your own profile and find the best study group that match your needs!
+  </h3>
+  <div class="page-body">
+   <section class="nav-links">
+    <ul>
+     <li>
+      <a href="{{ url_for('') }}">Your information</a>
+     </li>
+     <li>
+      <a href="{{ url_for('') }}">Your education</a>
+     </li>
+     <li>
+      <a href="{{ url_for('') }}">Your study preferences</a>
+     </li>
+     <li>
+      <a href="{{ url_for('') }}">Your schedule</a>
+     </li>
+     <li>
+      <a href="{{ url_for('') }}">Your communication methods</a>
+     </li>
+     <li>
+      <a href="{{ url_for('') }}">Your recent activities</a>
+     </li>
+    </ul>
+   </section>
+  </div>
+ </body>
 </html>

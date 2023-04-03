@@ -14,7 +14,7 @@ from datetime import datetime
 # import other files
 from API.locationAPI import checkAddress
 from database.users_models import db, Gender, Identification, Users
-from helper_functions.signupformValidations import validate_users_input, create_validated_fields_dict, get_verification_material
+from helper_functions.validate_users_information import validate_users_information, create_validated_fields_dict
 from helper_functions.users_tables_create import create_users_tables
 
 user_profile_app = Flask(__name__)
@@ -39,7 +39,7 @@ db.init_app(user_profile_app)
 # create 3 tables: Gender, Identification and Users according to the class models in users_models
 create_users_tables(app=user_profile_app, inspector=inspector, db=db, engine=engine)
 
-class UserInformation(Resource):
+class UserInformationResource(Resource):
   def __init__(self) -> None:
     super().__init__()
 
@@ -72,19 +72,13 @@ class UserInformation(Resource):
       # query all of the gender options from the gender table 
       genders = Gender.query.all()
 
-
       # call the helper function to get the validated fields with empty strings for each field
-      validated_fields = create_validated_fields_dict(firstName='', midName='', lastName='', age='', birthDay='', firstAddress='', secondAdress='', city='', province='', country='', postalCode='', gender='', religion='', verification='', verification_material='', username='', password='', password_confirmation='', verification_id='', verification_method='', profile_picture='', user_bio='')
-
+      validated_fields = create_validated_fields_dict(firstName='', midName='', lastName='', age='', birthDay='', firstAddress='', secondAdress='', city='', province='', country='', postalCode='', gender='', religion='', profile_picture='', user_bio='', user_interest='')
 
       return render_template('user_profile.html', validated_fields = validated_fields, gender_options = genders)
 
-class UserInformationResource(Resource):
-  def __init__(self) -> None:
-    super().__init__()
-
-  # handle the POST request from the form data from signup.html
-  def savings_challenge_signup(self):
+  # handle the POST request from the form data from user_profile.html
+  def handle_user_information(self, user_id):
     with user_profile_app.app_context(): 
       # get the request method
       if request.method == 'POST':
@@ -104,17 +98,18 @@ class UserInformationResource(Resource):
           gender = request.form['gender_id']
           religion = request.form['religion']
           profile_image = request.files['profile-image']
-          
+          user_bio = request.form['bio-input']
+          user_interest = request.form['interest_input']
           
           # Initialize the errors dictionary:
           errors = {}
 
           # Validate the form data, if not -> send the error messages to the front-end
           # validate the users input before insert the data into the database
-          validated_errors = validate_users_input(errors, firstName, lastName, age, birthDay, gender, , verification_material, validate_verification_material)
+          validated_errors = validate_users_information(errors, firstName, lastName, age, birthDay, gender, profile_image)
 
           # create a dictionary to store the validated fields by calling the helper function
-          validated_fields = create_validated_fields_dict(firstName=firstName, midName=midName, lastName=lastName, age=age, birthDay=birthDay, firstAddress=firstAddress, secondAdress=secondAddress, city=city, province=province, country=country, postalCode=postalCode, gender=gender, religion=religion, verification=verification, verification_material=verification_material, username='', password='', password_confirmation='', verification_id='', verification_method='')
+          validated_fields = create_validated_fields_dict(firstName=firstName, midName=midName, lastName=lastName, age=age, birthDay=birthDay, firstAddress=firstAddress, secondAdress=secondAddress, city=city, province=province, country=country, postalCode=postalCode, gender=gender, religion=religion, user_bio=user_bio, user_interest=user_interest)
 
           # after getting the address, check for the validation using Google Maps Geocoding API before execute the insert the element
           # if the address is not valid 
@@ -123,23 +118,18 @@ class UserInformationResource(Resource):
           # if all the fields are valid
           if not errors and not validated_errors and addressChecking.is_valid_address():
             # query the database to check if there is any user that already exists with the same information
-            result = Users.query.filter_by(first_name=firstName, middle_name=midName, last_name=lastName, age=age, date_of_birth=birthDay, address_line_1=firstAddress, address_line_2=secondAddress, city=city, province=province, country=country, postal_code=postalCode, gender_id=gender, religion=religion, identification_id=verification, identification_material=verification_material).first()
+            result = Users.query.filter_by(first_name=firstName, middle_name=midName, last_name=lastName, age=age, date_of_birth=birthDay, address_line_1=firstAddress, address_line_2=secondAddress, city=city, province=province, country=country, postal_code=postalCode, gender_id=gender, religion=religion, profile_image=profile_image).first()
 
-            # check if user info already exists in the database
+            # check if user info already exists in the database then update the user's information based on the user id from the token
             if result:
-              flash(f"You have already registered for this feauture! If you want to update your information, please use this link to update your profile!")
+              print(f'Found user {user_id} in the database!')
 
-              # please work on handle the put request for users to update their profile
-              # instead of checking if the result has already exist, please using JWTs for access token
-              db.session.rollback()
-              genders = Gender.query.all()
-              identifications = Identification.query.all()
-              return render_template('signup.html', error_message=errors, validated_fields = validated_fields, validated_errors = validated_errors, gender_options = genders, identification_options = identifications)
+              
             
             # if the users information didn't exist in the database yet
             # create a list of new user instance
             new_users = [
-              Users(first_name=firstName, middle_name=midName, last_name=lastName, age=age, date_of_birth=birthDay, address_line_1=firstAddress, address_line_2=secondAddress, city=city, province=province, country=country, postal_code=postalCode, gender_id=gender, religion=religion, identification_id=verification, identification_material=verification_material)
+              Users(first_name=firstName, middle_name=midName, last_name=lastName, age=age, date_of_birth=birthDay, address_line_1=firstAddress, address_line_2=secondAddress, city=city, province=province, country=country, postal_code=postalCode, gender_id=gender, religion=religion, profile_picture=profile_image, user_bio=user_bio, interests=user_interest)
             ] 
 
             # add new user into users model
@@ -148,7 +138,7 @@ class UserInformationResource(Resource):
                 db.session.add(user)
                 # commit the change to the database
                 db.session.commit()
-                flash(f"User {user.first_name} {user.last_name} added successful!")
+                return redirect(url_for(''))
 
               except:
                 db.session.rollback()
@@ -173,5 +163,4 @@ class UserInformationResource(Resource):
           identifications = Identification.query.all()
           return render_template('signup.html', error_message=errors, validated_fields=validated_fields, validated_errors = validated_errors, gender_options = genders, identification_options = identifications)
         
-api.add_resource(signUpFormResource, '/scholarsavings/treasurehunt/signup/') 
-api.add_resource(SavingChallengesResource, '/scholarsavings/treasurehunt/signup/process/')   
+api.add_resource(UserInformationResource, '/studyhub/user-profile/user-information/')   
