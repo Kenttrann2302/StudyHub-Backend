@@ -122,6 +122,7 @@ class UsersInformation(db.Model):
     return '<Users %r>' % self.first_name % self.last_name
 
 
+
 #################### EDUCATION IN USER'S PROFILE ##################
 # Define an institutions table to store all the options for all the institutes that are available at StudyHub
 class Institutions(db.Model):

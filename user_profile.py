@@ -78,7 +78,7 @@ class UserInformationResource(Resource):
       return render_template('user_profile.html', validated_fields = validated_fields, gender_options = genders)
 
   # handle the POST request from the form data from user_profile.html
-  def handle_user_information(self, user_id):
+  def handle_user_information(self, user_id, username):
     with user_profile_app.app_context(): 
       # get the request method
       if request.method == 'POST':
@@ -118,14 +118,26 @@ class UserInformationResource(Resource):
           # if all the fields are valid
           if not errors and not validated_errors and addressChecking.is_valid_address():
             # query the database to check if there is any user that already exists with the same information
-            result = Users.query.filter_by(first_name=firstName, middle_name=midName, last_name=lastName, age=age, date_of_birth=birthDay, address_line_1=firstAddress, address_line_2=secondAddress, city=city, province=province, country=country, postal_code=postalCode, gender_id=gender, religion=religion, profile_image=profile_image).first()
+            result = Users.query.filter_by(id=user_id, first_name=firstName, middle_name=midName, last_name=lastName, age=age, date_of_birth=birthDay, address_line_1=firstAddress, address_line_2=secondAddress, city=city, province=province, country=country, postal_code=postalCode, gender_id=gender, religion=religion, profile_image=profile_image).first()
 
             # check if user info already exists in the database then update the user's information based on the user id from the token
             if result:
-              print(f'Found user {user_id} in the database!')
+              print(f'Found user {user_id} in the database! Now update the users information.')
+              # create a list of columns need to be update
+              columns = [result.first_name, result.middle_name, result.last_name, result.age, result.date_of_birth, result.address_line_1, result.address_line_2, result.city, result.province, result.country, result.postal_code, result.gender_id, result.religion, result.profile_image]
 
-              
-            
+              # create a list of new row
+              row = [firstName, midName, lastName, age, birthDay, firstAddress, secondAddress, city, province, country, postalCode, gender, religion, profile_image]
+
+              j = 0
+              # update the user's information
+              for i in range(len(columns)):
+                columns[i] = row[j]
+                j += 1
+
+              db.session.commit()
+              return redirect(render_template('user_profile.html', username=username))
+
             # if the users information didn't exist in the database yet
             # create a list of new user instance
             new_users = [
@@ -145,12 +157,12 @@ class UserInformationResource(Resource):
                 flash(f"User {user.first_name} {user.last_name} cannot be added!")
                 abort(406)
 
-          # if there is any invalid field is being caught (including verification materials and address)
+          # if there is any invalid field is being caught (including address, )
           else:
             db.session.rollback()
             genders = Gender.query.all()
             identifications = Identification.query.all()
-            return render_template('signup.html', error_message=errors, validated_fields = validated_fields, validated_errors = validated_errors, gender_options = genders, identification_options = identifications)
+            return render_template('user_information.html', error_message=errors, validated_fields = validated_fields, validated_errors = validated_errors, gender_options = genders)
 
         # catch the error if the address is invalid
         except ValueError:
@@ -161,6 +173,6 @@ class UserInformationResource(Resource):
           db.session.rollback()
           genders = Gender.query.all()
           identifications = Identification.query.all()
-          return render_template('signup.html', error_message=errors, validated_fields=validated_fields, validated_errors = validated_errors, gender_options = genders, identification_options = identifications)
+          return render_template('user_information.html', error_message=errors, validated_fields=validated_fields, validated_errors = validated_errors, gender_options = genders)
         
 api.add_resource(UserInformationResource, '/studyhub/user-profile/user-information/')   
