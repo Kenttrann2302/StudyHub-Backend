@@ -10,7 +10,6 @@ from login import SignInRenderResource, SignInResource, DashBoardResource, login
 from search import searchItemsResource
 # aws sns sdks for sending email and sms subscription and confirmation to user's email or phone number
 from AWS.aws_sns_helper_function import Email_Confirmation, SMS_Confirmation
-from AWS.aws_pinpoint_otp import sendOTP
 # middleware function to verify users permission
 from helper_functions.middleware_functions import token_required
 
@@ -82,7 +81,6 @@ def registration():
 @app.route('/studyhub/createaccount/', methods = ['POST'])
 def registerNewUser():
   return registration_resource.createAccount()
-
 
 ################################## EMAIL CONFIRMATION HANDLER URL #####################################
 email_confirmation_model = Email_Confirmation()

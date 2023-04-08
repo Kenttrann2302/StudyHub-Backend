@@ -17,7 +17,8 @@ load_dotenv()
 google_api_secret_key = os.getenv('GOOGLE_GEOLOCATION_API')
 
 class checkAddress:
- def __init__(self, address_line_1, city, province, country, postalCode, address_line_2 = None) -> None:
+ def __init__(self, errors, address_line_1, city, province, country, postalCode, address_line_2 = None) -> None:
+  self.errors = errors
   self.address_line_1 = address_line_1
   self.address_line_2 = address_line_2
   self.city = city
@@ -51,7 +52,8 @@ class checkAddress:
      return True
    else:
      print("Sorry! No results found!")
-     raise ValueError("This address is invalid")
+     self.errors['address1'] = f'Please enter a valid address!'
+     return False
      
   # if the Geocoding API didn't return any results or returned an invalid address, return False
   print(f"Request failed with status code {response.status_code}.")

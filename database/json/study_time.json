@@ -1,0 +1,52 @@
+{
+ "Study_time_preferences" : {
+  "1" : {
+   "Time" : "Early morning",
+   "Frame" : "(5am-8am)"
+  },
+  "2" : {
+   "Time" : "Morning",
+   "Frame" : "(8am-12pm)"
+  },
+  "3" : {
+   "Time" : "Afternoon",
+   "Frame" : "(12pm-4pm)"
+  },
+  "4" : {
+   "Time" : "Evening",
+   "Frame" :  "(4pm-8pm)"
+  },
+  "5" : {
+   "Time" : "Late night",
+   "Frame" : "(8pm-12am)"
+  },
+  "6" : {
+   "Time" : "All night",
+   "Frame" : "(12am-5am)"
+  },
+  "7" : {
+   "Time" : "Weekday mornings",
+   "Frame" : "(Mon-Fri, 8am-12pm)"
+  },
+  "8" : {
+   "Time" : "Weekday afternoons",
+   "Frame" : "(Mon-Fri, 12pm-5pm)"
+  },
+  "9" : {
+   "Time" : "Weekday evening",
+   "Frame" : "(Mon-Fri, 5pm-10pm)"
+  },
+  "10" :{
+   "Time" : "Weekend mornings",
+   "Frame" : "(Sat-Sun, 8am-12pm)"
+  },
+  "11" : {
+   "Time" : "Weekend afternoons",
+   "Frame" : "(Sat-Sun, 12pm-5pm)"
+  },
+  "12" : {
+   "Time" : "Weekend evenings",
+   "Frame" : "(Sat-Sun, 5pm-10pm)"
+  }
+ }
+}

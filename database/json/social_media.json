@@ -1,0 +1,24 @@
+{
+ "Social_media_platforms" : {
+  "1" : "Facebook",
+  "2" : "Twitter",
+  "3" : "Instagram",
+  "4" : "LinkedIn",
+  "5" : "Snapchat",
+  "6" : "TikTok",
+  "7" : "WhatsApp",
+  "8" : "WeChat",
+  "9" : "Skype",
+  "10" : "Slack",
+  "11" : "Discord",
+  "12" : "Reddit",
+  "13" : "Pinterest",
+  "14" : "Tumblr",
+  "15" : "YouTube",
+  "16" : "Vimeo",
+  "17" : "Twitch",
+  "18" : "Clubhouse",
+  "19" : "Zoom",
+  "20" : "Microsoft Teams"
+ }
+}

@@ -70,12 +70,12 @@ def checkpasswordconfirm(confirmed_password, password, errors, validate_new_user
 # function check the email input to see if the email is valid to the constraints database
 def check_verification(verification_method, verification_id, errors, validate_new_user, areaCodeID) -> None:
  # Case 0: user don't choose any method for authentication
- if (int(verification_id) == 1):
+ if verification_id == '--select--':
   errors['verification_id'] = f"Please choose one of the following methods to confirm your account!"
 
  # Case 1: user choose first method for authentication -> email
  # fix email validation regular expression
- elif int(verification_id) == 2:
+ elif verification_id == 'Email':
   split_email = verification_method.split('@')
 
   switch = {
@@ -92,7 +92,7 @@ def check_verification(verification_method, verification_id, errors, validate_ne
     validate_new_user.append(verification_method)
   
  # Case 2: user choose second method for authentication -> phone number
- elif int(verification_id) == 3:
+ elif verification_id == 'Phone number':
   if len(verification_method) != 10:
     errors['verification-input'] = f"Phone number must be 10 digits long!"
   elif not verification_method.isdigit():

@@ -1,0 +1,16 @@
+{
+ "Time_Management_Methods" : {
+  "Method1" : {
+   "name" : "Pomodoro technique",
+   "explaination" : "A time management method that involves breaking down work into intervals (typically 25 minutes) separated by short breaks"
+  },
+  "Method2" : {
+   "name" : "Eisenhower Matrix",
+   "explaination" : "A method of prioritizing tasks based on their importance and urgency"
+  },
+  "Method3" : {
+   "name" : "Time blocking",
+   "explaination" : "A method of scheduling where you block off specific periods of time for different tasks."
+  }
+ }
+}
