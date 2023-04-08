@@ -23,7 +23,7 @@ load_dotenv()
 from database.users_models import db, Users
 
 # import third party services for verification method confirmation
-from Twilio.twilio_email_verification import twilio_send_email
+from Twilio.twilio_send_email import twilio_send_email
 
 # import other files
 from helper_functions.users_tables_create import create_all_tables
@@ -279,6 +279,8 @@ class RegistrationResource(Resource):
       response_json = json.dumps(response_data)
       response = Response(response=response_json, status=500, mimetype='application/json')
       return response
+
+
 
 # add registration resource to rest api
 api.add_resource(RegistrationResource, '/studyhub/createaccount/')
