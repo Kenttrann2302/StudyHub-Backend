@@ -26,7 +26,8 @@ class Users(db.Model):
   verification_method = db.Column(db.Enum('--select--', 'Email', 'Phone number', 'Device Push Notification', name='verification_options'), nullable=False) # duo factor authentication methods such as Email, SMS or Device Push Notification
   verification = db.Column(db.String(500), nullable=False) # a field to store the user's email or sms or device number depends on the verification_method
   account_verified = db.Column(db.Boolean, nullable=False, default=False)
-  is_active = db.Column(db.Boolean, nullable=False, default=True) # deactivate the user's account when they violate the terms and condition or they lock their account
+  temp_token = db.Column(db.String(500), nullable=True) # a field to store a temporary token that is generated to verify the user's verification
+  is_active = db.Column(db.Boolean, nullable=False, default=False) # deactivate the user's account when they violate the terms and condition or they lock their account
   profile = db.relationship('UserInformation', uselist=False, backref='users') # perform a 1 to 1 relationship with the user's profile
   permissions = db.relationship('Permission', backref='users', lazy=True) # perform a 1 to many relationship with the user's permission model
   created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), nullable=False)

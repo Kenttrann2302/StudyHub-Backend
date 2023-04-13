@@ -7,7 +7,6 @@ from flask_bcrypt import Bcrypt
 from flask_migrate import Migrate
 from sqlalchemy import create_engine
 from sqlalchemy.engine.reflection import Inspector
-import psycopg2
 import pdb
 from datetime import datetime
 import os
@@ -16,6 +15,8 @@ import os
 from API.locationAPI import checkAddress
 from database.users_models import db, UserInformation
 from helper_functions.validate_users_information import validate_users_information, create_validated_fields_dict
+
+
 
 user_profile_app = Flask(__name__)
 user_profile_app.config['SERVER_NAME'] = 'localhost:5000'
@@ -210,7 +211,8 @@ class UserInformationResource(Resource):
             'gender_option' : genders
           }), 500
 
-api.add_resource(UserInformationResource, '/studyhub/user-profile/user-information/')   
+api.add_resource(UserInformationResource, '/studyhub/user-profile/user-information/')
+
 
 if __name__ == "__main__":
   user_profile_app.run(debug=True)

@@ -22,7 +22,7 @@ user_data = [
 
 for i in range(len(user_data)):
  registration_response = requests.post(BASE + "/studyhub/createaccount/", user_data[i])
-print(registration_response.json())
+ print(registration_response.json())
 
 # insert the list of options for verification methods into the identification database
 response = requests.get(BASE + "/studyhub/createaccount/")

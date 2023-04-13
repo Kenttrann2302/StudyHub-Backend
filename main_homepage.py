@@ -135,7 +135,7 @@ def send_otp_code():
 def validate_otp_code():
   # get the token from cookies
   token = request.cookies.get('token')
-  decoded_token = jwt.decode(token, login_app.config['SECRET_KEY'], algorithms=['HS256'])
+  decoded_token = jwt.decode(token, secret_key, algorithms=['HS256'])
   verification_id = decoded_token['verification_id']
   verification_method = decoded_token['verification_endpoint']
   # using AWS Pinpoint to validate the code 

@@ -1,14 +1,18 @@
 ############### REGISTER PAGE FOR USERS TO CREATE THEIR USERNAME AND PASSWORD FOR THE APPLICATION
 # import libraries
-from flask import Flask, redirect, url_for, session, render_template, request, abort, Blueprint, jsonify, Response
+from flask import Flask, redirect, url_for, session, render_template, request, abort, Blueprint, jsonify, Response, make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_restful import Api, Resource, reqparse, fields, marshal_with
 import bcrypt
-import boto3
 import os
-import jwt
 import json
+import jwt
+import requests
+import pytz
+import random
+import time
+import secrets
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 from sqlalchemy.engine.reflection import Inspector
@@ -20,15 +24,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # import the users models from the models.py
-from database.users_models import db, Users
+from database.users_models import db, Users, Permission
 
 # import third party services for verification method confirmation
-from Twilio.twilio_send_email import twilio_send_email
+from Twilio.twilio_send_email import sendgrid_verification_email
 
 # import other files
 from helper_functions.users_tables_create import create_all_tables
 from helper_functions.registerformValidation import validate_registration_form
 from helper_functions.validate_users_information import create_validated_fields_dict
+from helper_functions.grant_permission import grant_permission_to_verified_users
 
 register_app = Flask(__name__)
 register_app.config['SERVER_NAME'] = '127.0.0.1:5000'
@@ -36,6 +41,10 @@ register_app.config['APPLICATION_ROOT'] = '/'
 register_app.config['PREFERRED_URL_SCHEME'] = 'http'
 register_app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 register_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+
+
+# Set the secret key as an environment variable
+secret_key = os.getenv('STUDYHUB_SECRET_KEY')
 
 # get the database connection information
 database_type = os.getenv("DB_TYPE")
@@ -87,7 +96,7 @@ user_resource_fields = {
   'username' : fields.String,
   'password' : fields.String,
   'verification_method' : fields.String,
-  'verification' : fields.String,
+  'verification' : fields.String
 }
 
 # create a resource for rest api to handle the post request 
@@ -120,6 +129,13 @@ class RegistrationResource(Resource):
       response_json = json.dumps(response_data)
       response = Response(response_json, status=500, mimetype="application/json")
       return response
+
+ # a function generate a random 6 digits otp code
+ def generate_otp(self):
+  otp = ''
+  for i in range(6):
+    otp += str(random.randint(0,9))
+  return otp
     
  # this is a function to handle the POST request from the registration form and insert the registration fields into the database
  def post(self) -> None:
@@ -224,32 +240,32 @@ class RegistrationResource(Resource):
         else:
           # create an instance to add the new user into the database
           new_user = Users(username=validated_registration[0], password=decoded_hashed_password, password_salt=decoded_salt , verification_method=verification_method, verification=validated_registration[3])
-
           # add new user to the registration model
           try:
             db.session.add(new_user)
-            # commit the change to the database
-            db.session.commit()
             print(f"User {new_user.user_id} added successfully!")
-            # Connect with AWS SES using AWS SDKs to send an email confirmation to the user's email
             
             # send a confirmation email to the user to verify their account using Twillio
             if verification_method == 'Email':
-              response_message = twilio_send_email(email_id=verification)
-            
-            # check if the response_message is not none -> verification sent successfully!
-            if response_message is not None:
-              print(response_message)
-              # return render_template('successRegistration.html', username=username, verification_id=verification_id)
-              response_data = ({
-                'message' : f'Sending email confirmation to {verification} successfully!'
-              })
-              response_json = json.dumps(response_data)
-              response = Response(response=response_json, status=201, mimetype='application/json')
-              return response
+              response_status, response_message, temp_token = sendgrid_verification_email(user_email=new_user.verification, studyhub_code=self.generate_otp())
 
-            else:
-              raise ValueError(f"Cannot proccess confirmation protocol!")
+              # store the user's temporary token into the database
+              new_user.temp_token = temp_token
+              # commit the change to the database
+              db.session.commit()
+
+              # check if the response_message is True -> verification sent successfully!
+              if response_status and response_message is not None:
+                response_data = ({
+                  'message1' : f'User with id: {new_user.user_id} has been inserted successfully in to the Users table!',
+                  'message2' : f'Sending email confirmation to {verification} successfully!'
+                })
+                response_json = json.dumps(response_data)
+                response = Response(response=response_json, status=201, mimetype='application/json')
+                return response
+
+              else:
+                raise ValueError(f"Cannot proccess confirmation protocol!")
 
           except BaseException as error:
             # handle the problem while inserting user registration into the database
@@ -279,8 +295,71 @@ class RegistrationResource(Resource):
       response_json = json.dumps(response_data)
       response = Response(response=response_json, status=500, mimetype='application/json')
       return response
+    
 
+# a get request to perform a query string to get the token from the url and decode to get the email address and code to verify the user's email
+@register_app.route('/studyhub/confirm-email', methods=['GET'])
+def email_verifcation():
+  try:
+    # get the token from the query string
+    token = request.args.get('token')
 
+    # decode the token
+    decoded_token = jwt.decode(token, secret_key, algorithms=['HS256'])
+
+    # Check if the expiration time is more than the current time
+    exp_time = decoded_token['exp']
+    current_time = int(time.time())
+
+    if exp_time > current_time:
+      # check if the email address and the temporary token is correct with the record inside the database
+      user_email = decoded_token['email']
+
+      # query the database to see if the user_email contains the correct token
+      result = Users.query.filter_by(verification=user_email).first()
+
+      if result.temp_token == token:
+        # if the token is still valid
+        # verified the user's email with the system
+        result.account_verified = True
+        result.is_active = True
+        # commit the database change
+        db.session.commit()
+
+        # return the json response
+        response_data = ({
+          'message' : f"User with email {user_email} has been successfully verified with the system!"
+        })
+        response_json = json.dumps(response_data)
+        response = Response(response=response_json, status=201, mimetype='application/json')
+        return response
+    
+      # if the user email is invalid -> not verified
+      else:
+        response_data = ({
+          'message' : f"User with email {user_email} is not verified and is invalid!"
+        })
+        response_json = json.dumps(response_data)
+        response = Response(response=response_json, status=400, mimetype='application/json')
+        return response
+  
+  except jwt.ExpiredSignatureError:
+    # the token has expired
+    response_data = ({
+      'message' : f'This token has been expired, please generate a new token',
+    })
+    response_json = json.dumps(response_data)
+    response = Response(response=response_json, status=401, mimetype='application/json')
+    return response
+
+  except Exception as error:
+    response_data = ({
+      'message' : f"There is an internal server error while verifying user's email",
+      'error' : error
+    })
+    response_json = json.dumps(response_data)
+    response = Response(response=response_json, status=500, mimetype='application/json')
+    return response
 
 # add registration resource to rest api
 api.add_resource(RegistrationResource, '/studyhub/createaccount/')
