@@ -16,7 +16,8 @@ from API.locationAPI import checkAddress
 from database.users_models import db, UserInformation
 from helper_functions.validate_users_information import validate_users_information, create_validated_fields_dict
 
-
+# get the secret key from the virtual environment
+secret_key = os.getenv('STUDYHUB_SECRET_KEY')
 
 user_profile_app = Flask(__name__)
 user_profile_app.config['SERVER_NAME'] = 'localhost:5000'
@@ -50,26 +51,25 @@ inspector = Inspector.from_engine(engine)
 # Create the SQLAlchemy database object
 db.init_app(user_profile_app)
 
-
 # Querying and inserting into user profile database Flask_Restful API 
 class UserInformationResource(Resource):
   def __init__(self) -> None:
     super().__init__()
   
   # querying the database to get the gender options
-  def render_user_information(self) -> None:
-    with user_profile_app.app_context():
-      # query all of the gender options from the gender table 
-      genders = Gender.query.all()
+  # def render_user_information(self) -> None:
+  #   with user_profile_app.app_context():
+  #     # query all of the gender options from the gender table 
+  #     genders = .query.all()
 
-      # call the helper function to get the validated fields with empty strings for each field
-      # validated_fields = create_validated_fields_dict(firstName='', midName='', lastName='', age='', birthDay='', firstAddress='', secondAdress='', city='', province='', country='', postalCode='', gender='', religion='', profile_picture='', user_bio='', user_interest='')
+  #     # call the helper function to get the validated fields with empty strings for each field
+  #     # validated_fields = create_validated_fields_dict(firstName='', midName='', lastName='', age='', birthDay='', firstAddress='', secondAdress='', city='', province='', country='', postalCode='', gender='', religion='', profile_picture='', user_bio='', user_interest='')
 
-      # return render_template('user_profile.html', validated_fields = validated_fields, gender_options = genders)
-      return jsonify({
-        'message' : f'Ok',
-        'gender_options' : genders
-      }), 200
+  #     # return render_template('user_profile.html', validated_fields = validated_fields, gender_options = genders)
+  #     return jsonify({
+  #       'message' : f'Ok',
+  #       'gender_options' : genders
+  #     }), 200
 
   # handle the POST request from the form data from user_profile.html
   def post(self, user_id, username):

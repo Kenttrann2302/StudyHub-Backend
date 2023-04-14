@@ -116,7 +116,7 @@ class SignInResource(Resource):
         response_json = json.dumps(response_data)
         response = Response(response=response_json, status=500, mimetype='application/json')
         return response
-
+ 
  # this is a function to handle the POST request from the login form data and validate them against the registration table to see if the user is already registered in the system
  def post(self) -> None:
   with login_app.app_context():
@@ -161,7 +161,7 @@ class SignInResource(Resource):
         global token
         global user_email
         user_email = user.verification
-        token = jwt.encode({'id' : str(user.user_id), 'username': user.username, 'verification_id' : user.verification_method, 'verification_endpoint' : user.verification ,'exp': datetime.now(pytz.timezone('EST')) + timedelta(minutes=30), 'permissions': permissions}, secret_key, algorithm='HS256')
+        token = jwt.encode({'id' : str(user.user_id), 'username': user.username, 'verification_id' : user.verification_method, 'verification_endpoint' : user.verification ,'exp': datetime.now(pytz.timezone('EST')) + timedelta(minutes=10), 'permissions': permissions}, secret_key, algorithm='HS256')
   
         # if the user's verification option is an email address, then redirect the user to the enpoint of lambda functions to send OTP Verification code
         if user.verification_method == 'Email':
@@ -280,9 +280,8 @@ class verifyOTP(Resource):
       user_token = response_dict['token']
       user_email = response_dict['user_email']
 
-      # query the database to get the user's id along with the user's email
+      # query the database to get the user with the user's email
       user = Users.query.filter_by(verification=user_email).first()
-      pdb.set_trace()
 
       # perform a GET request to the AWS Lambda function with the token and the otp_code
       headers = {'Authorization' : f'Bearer {user_token}'}
@@ -290,20 +289,55 @@ class verifyOTP(Resource):
 
       # if the request was made successfully
       if response.status_code == 200:
-        return response.content
-      
+        # give the users permission to view the dashboard, use geolocation api, view and change their profile for the algorithms
+        permission_lists = ['can_view_dashboard', 'can_use_geolocation_api', 'can_view_profile', 'can_change_profile']
+        for permission in permission_lists:
+          # query the database to see if the user with this email id already has these permissions
+          grant_permission = Permission.query.filter_by(user_id=user.user_id, name=permission).first()
+          # if they are not in then add the permissions in
+          if not grant_permission:
+            grant_permission = Permission(name=permission, user_id=user.user_id)
+            db.session.add(permission)
+
+        db.session.commit()
+        
+        # query the permissions list in the user table with the user id
+        permissions = [permission.name for permission in user.permissions]
+        # generate a new jwt token with new permissions for to the authenticate the user
+        new_token = jwt.encode(
+          {
+            'id' : str(user.user_id),
+            'username' : user.username,
+            'verification_id' : user.verification_method,
+            'verification_endpoint' : user.verification,
+            'permissions' : permissions,
+            'exp' : datetime.now(pytz.timezone('EST')) + timedelta(minutes=30)
+          }, secret_key, algorithm='HS256'
+        )
+
+        response_dict = json.loads(response.content.decode('utf-8'))
+        response_data = {
+          'aws_message' : response_dict
+
+        }
+        response_json = json.dumps(response_data)
+        response = Response(response=response_json, status=200, mimetype='application/json')
+
+        return response
+ 
       else:
         raise ValueError
     
     except ValueError: # if there is an error with AWS Lambda Client
+      response_dict = json.loads(response.content.decode('utf-8'))
       response_data = ({
-          'message' : f'Failed to verify user with user id: {user.user_id}: {response.content}!'
-        })
+        'message' : f'Failed to verify user with user id: {user.user_id}: {response_dict}!'
+      })
       response_json = json.dumps(response_data)
       response = Response(response=response_json, status=response.status_code, mimetype='application/json')
       return response
 
-    except Exception as error: # if the server catches the server-side error during handling the request
+    except Exception as error: # if the server catches the server-side error during handling the request 
       response_data = ({
         'message' : f'There is an internal server error while verifying user otp: {error}'
       })

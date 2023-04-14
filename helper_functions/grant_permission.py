@@ -6,7 +6,6 @@ def grant_permission_to_verified_users(permission_name, db, Users, Permission) -
  verified_users = Users.query.filter_by(account_verified=True).all()
  
  try:
-    # grant the access to view the user dashboard, allow them to sign up for the saving challenges game to these users
     for user in verified_users:
       permission = Permission.query.filter_by(user_id=user.user_id, name=permission_name).first()
       if not permission:
