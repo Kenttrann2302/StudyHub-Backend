@@ -45,7 +45,7 @@ def validate_files_size(file) -> bool:
   return False
 
 # function to validate all the fields of the users input
-def validate_users_information(errors, fname, lname, age, birthDay, gender, profile_picture) -> list:
+def validate_users_information(errors, fname, lname, age, birthDay, gender, profile_picture, education_institutions, education_majors, education_degrees, graduation_date, identification_option, identification_material) -> None:
   # check if the users input the username and password
   if not fname or not lname:
     errors[fname] = f"Please enter your first name!"
@@ -60,7 +60,7 @@ def validate_users_information(errors, fname, lname, age, birthDay, gender, prof
     errors['birthday'] = f'Sorry! You must be at least 18 to register for this service!!!'
   
   # gender validation
-  if int(gender) == 1:
+  if gender == '--select--':
     errors['gender_id'] = f'Please select your gender!'
   
   # validate user's profile picture
@@ -69,6 +69,52 @@ def validate_users_information(errors, fname, lname, age, birthDay, gender, prof
       errors['profile-image'] = f'Invalid file. Allowed file types are .png, .jpg, .jpeg, .pdf!'
     if not validate_files_size(profile_picture):
       errors['profile-image'] = f'File is too large! Please try again! The maximum size allowed is 10MB!'
+  
+  # validate user's education institutions
+  if education_institutions == '--select--':
+    errors['education_institutions'] = f'Please select your university or college!'
+  
+  # validate user's education majors
+  if education_majors == '--select--':
+    errors['education_majors'] = f'Please select your majors!'
+  
+  # validate user's education degrees
+  if education_degrees == '--select--':
+    errors['education_degrees'] = f'Please select your degree level!'
+
+  # validate user's graduation date
+  if graduation_date is None:
+    errors['graduation_date'] = f'Please enter your graduation date!'
+
+  # validate user's identification option
+  if identification_option == '--select--':
+    errors['identification_option'] = f'Please choose which your method of student verification!'
+  
+  # validate user's identification material if the user's choose to upload the image
+  if identification_option != 'Student Email Address':
+    if not validate_files_upload(identification_material):
+      errors['identification_material'] = f'Invalid file. Allowed file types are .png, .jpg, .jpeg, .pdf!'
+    if not validate_files_size(identification_material):
+      errors['identification_material'] = f'File is too large! Please try again! The maximum size allowed is 10MB'
+  
+  # validate the user's email
+  else:
+    if identification_material is None:
+      errors['identification_material'] = f"Please enter your student's email address!"
+    else:
+      # start email address regex 
+      split_email = identification_material.split('@')
+
+      switch = {
+        len(split_email) != 2 : f"Email address must contain a single '@' symbol!",
+        len(split_email[0]) : f"Email address must contain a username before the '@' symbol!",
+        '.' not in split_email[1] : f"Email must contain a domain name with a '.' symbol",
+        len(split_email[1].split('.')[0]) == 0: f"Email address must contain a domain name before the '.' symbol." 
+      }
+
+      errors = switch.get(True, None)
+      if errors is not None:
+        errors['identification_material'] = errors
 
 # This is a helper function that handle upload files and save them to the folder
 def save_image(file):

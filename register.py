@@ -175,7 +175,6 @@ class RegistrationResource(Resource):
         # hash the password using bcrypt hashing algorithm 
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
 
-        decoded_salt = salt.decode('utf-8')
         decoded_hashed_password = hashed_password.decode('utf-8')
 
         # query each field to make sure each of them is unique
@@ -239,11 +238,10 @@ class RegistrationResource(Resource):
 
         else:
           # create an instance to add the new user into the database
-          new_user = Users(username=validated_registration[0], password=decoded_hashed_password, password_salt=decoded_salt , verification_method=verification_method, verification=validated_registration[3])
+          new_user = Users(username=validated_registration[0], password=decoded_hashed_password, verification_method=verification_method, verification=validated_registration[3])
           # add new user to the registration model
           try:
             db.session.add(new_user)
-            print(f"User {new_user.user_id} added successfully!")
             
             # send a confirmation email to the user to verify their account using Twillio
             if verification_method == 'Email':

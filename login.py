@@ -297,13 +297,13 @@ class verifyOTP(Resource):
           # if they are not in then add the permissions in
           if not grant_permission:
             grant_permission = Permission(name=permission, user_id=user.user_id)
-            db.session.add(permission)
+            db.session.add(grant_permission)
 
         db.session.commit()
         
         # query the permissions list in the user table with the user id
         permissions = [permission.name for permission in user.permissions]
-        # generate a new jwt token with new permissions for to the authenticate the user
+        # generate a new jwt token with new permissions to authenticate the user
         new_token = jwt.encode(
           {
             'id' : str(user.user_id),
@@ -311,22 +311,25 @@ class verifyOTP(Resource):
             'verification_id' : user.verification_method,
             'verification_endpoint' : user.verification,
             'permissions' : permissions,
-            'exp' : datetime.now(pytz.timezone('EST')) + timedelta(minutes=30)
+            'exp' : datetime.now(pytz.timezone('EST')) + timedelta(minutes=30) # set the token to be expired after 30 minutes
           }, secret_key, algorithm='HS256'
         )
 
         response_dict = json.loads(response.content.decode('utf-8'))
         response_data = {
           'aws_message' : response_dict
-
         }
         response_json = json.dumps(response_data)
         response = Response(response=response_json, status=200, mimetype='application/json')
 
-        return response
+        # store the token into cookies
+        token_in_cookies = make_response(response)
+        token_in_cookies.set_cookie('token', value=new_token, expires=datetime.now(pytz.timezone('EST')) + timedelta(minutes=30))
+
+        return token_in_cookies
  
       else:
-        raise ValueError
+        raise ValueError 
     
     except ValueError: # if there is an error with AWS Lambda Client
       response_dict = json.loads(response.content.decode('utf-8'))

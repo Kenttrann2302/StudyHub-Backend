@@ -22,7 +22,6 @@ class Users(db.Model):
   user_id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False) # using universal unique identifier for best security practice
   username = db.Column(db.String(500), nullable=False, unique=True) 
   password = db.Column(db.String(500), nullable=False, unique=True)
-  password_salt = db.Column(db.String(500), nullable=False, unique=True)
   verification_method = db.Column(db.Enum('--select--', 'Email', 'Phone number', 'Device Push Notification', name='verification_options'), nullable=False) # duo factor authentication methods such as Email, SMS or Device Push Notification
   verification = db.Column(db.String(500), nullable=False) # a field to store the user's email or sms or device number depends on the verification_method
   account_verified = db.Column(db.Boolean, nullable=False, default=False)
@@ -50,7 +49,7 @@ with open("database/json/majors.json", 'r') as f:
 
 list_of_majors = []
 
-for i in range(53):
+for i in range(55):
   list_of_majors.append(data['majors'][f"major{i}"])
 
 # Define a user table to store the user's data when they sign up for the saving challenges algorithm
@@ -79,8 +78,8 @@ class UserInformation(db.Model):
   education_institutions = db.Column(db.Enum('--select--', 'University of Waterloo', 'University of Toronto', 'University of British Columbia', name='universities'), nullable=False) # a list of universities and colleges options that StudyHub currently support
   education_majors = db.Column(db.Enum(*list_of_majors, name='majors_lists'), nullable=False)
   # a list of majors in universities that StudyHub currently support
-  education_degree = db.Column(db.Enum('--select--', "Associate's Degree", "Bachelor's Degree", "Master's Degree", "Doctoral Degree", "Professional Degree", name='degree_levels'), nullable=False)
-  graduation_day = db.Column(db.Date, nullable=False)
+  education_degrees = db.Column(db.Enum('--select--', "Associate's Degree", "Bachelor's Degree", "Master's Degree", "Doctoral Degree", "Professional Degree", name='degree_levels'), nullable=False)
+  graduation_date = db.Column(db.Date, nullable=False)
   # user's proof of enrollment
   identification_option = db.Column(db.Enum('--select--', 'Student Email Address', 'Student ID Card', 'Enrollment Verification Letter', 'Transcript', name='student_identification'), nullable=False)
   identification_material = db.Column(db.String(500), nullable=False) # image of identification that related to the user's school
