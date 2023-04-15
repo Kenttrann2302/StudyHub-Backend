@@ -1,0 +1,60 @@
+{
+ "Study_Techniques" : {
+  "technique1" : {
+   "name" : "The Feynman Technique",
+   "explaination" : "A method of learning and retaining information by explaining it in simple terms."
+  },
+  "technique2" : {
+   "name" : "The Cornell Method",
+   "explaination" : "A note-taking method that involves dividing a page into sections for notes, cues, and a summary."
+  },
+  "technique3" : {
+   "name" : "SQ3R Method",
+   "explaination" : "A method of studying that involves Surveying, Questioning, Reading, Reciting and Reviewing."
+  },
+  "technique4" : {
+   "name" : "Mind Mapping",
+   "explaination" : "A visual method of organizing information by connecting ideas with branches and sub-branches."
+  },
+  "technique5" : {
+   "name" : "Flashcards",
+   "explaination" : "A method of studying that involves creating cards with information on them and reviewing them."
+  },
+  "technique6" : {
+   "name" : "Active Recall",
+   "explaination" : "A method of studying that involves actively trying to remember information."
+  },
+  "technique7" : {
+   "name" : "Spaced Repetition",
+   "explaination" : "A method of studying that involves reviewing information at increasing intervals to improve retention."
+  },
+  "technique8" : {
+   "name" : "The Leitner System",
+   "explaination" : "A method of spaced repetition that involves sorting flashcards into different boxes based on how well you know the information."
+  },
+  "technique9" : {
+   "name" : "Mnemonics",
+   "explaination" : "Memory aids that help you remember information by associating it with something else."
+  },
+  "technique10" : {
+   "name" : "Visualization",
+   "explaination" : "A technique of creating mental images to help remember information"
+  },
+  "technique11" : {
+   "name" : "Elaborative Interrogation",
+   "explaination" : "A technique of generating explanations for why facts are true to help remember them."
+  },
+  "technique12" : {
+   "name" : "Interleaving",
+   "explaination" : "A method of studying that involves switching between different topics or types of problems to improve retention"
+  },
+  "technique13" : {
+   "name" : "Deliberate Practice",
+   "explaination" : "A method of practicing that involves setting specific goals and focusing on improving weaknesses."
+  },
+  "technique14" : {
+   "name" : "Retrieval Practice",
+   "explaination" : "A method of studying that involves actively trying to recall information from memory."
+  }
+ }
+}

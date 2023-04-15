@@ -1,0 +1,16 @@
+{
+ "Study_env_preferences" : {
+  "1" : "Quiet study areas",
+  "2" : "Group study areas",
+  "3" : "Library",
+  "4" : "Coffee shop",
+  "5" : "Home", 
+  "6" : "Outdoors",
+  "7" : "Study room",
+  "8" : "Computer Lab",
+  "9" : "Classroom",
+  "10" : "Open space",
+  "11" : "Private space",
+  "12" : "No preference"
+ }
+}
