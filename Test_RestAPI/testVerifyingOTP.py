@@ -7,3 +7,11 @@ otp_code = int(input('Please enter the OTP code: '))
 
 response = requests.get(BASE + '/studyhub/verify-otp/' + f'{otp_code}')
 print(response.json())
+
+test_token_response = requests.get(BASE + '/studyhub/test-token/')
+print(test_token_response.json())
+
+
+
+
+
