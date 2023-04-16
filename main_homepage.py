@@ -138,7 +138,8 @@ def validate_otp_code():
   decoded_token = jwt.decode(token, secret_key, algorithms=['HS256'])
   verification_id = decoded_token['verification_id']
   verification_method = decoded_token['verification_endpoint']
-  # using AWS Pinpoint to validate the code 
+
+  # using AWS Pinpoint to validate the code
   validate_otp_request = sendOTP(channel_id=verification_id, channel=verification_method, allowedAttempts=3, codeLength=6, brandName='StudyHub', source='Login', language='en-US')
   valdiate_otp_response = validate_otp_request.verify_otp()
   return valdiate_otp_response
@@ -153,7 +154,7 @@ def otp_verification(email_address):
       return redirect(aws_verify_otp + email_address + '&otp=' + otp_code)
     except Exception as e:
       return ({'message' : f'There is an error while verifying the otp_code with error: {e}'}), 5000
-    
+
 if __name__ == '__main__':
   app.run(debug=True)
 
