@@ -4,6 +4,7 @@ import os
 
 # load in the sensitive data from .env
 from dotenv import load_dotenv
+
 # Load the configuration data from the .env file
 load_dotenv()
 
@@ -27,3 +28,6 @@ aws_verify_otp = os.getenv('AWS_EMAIL_VERIFY_OTP')
 
 # TWILIO stuffs
 twilio_api_key = os.getenv('TWILIO_API_KEY')
+
+# Google API key
+google_api_secret_key = os.getenv('GOOGLE_GEOLOCATION_API')

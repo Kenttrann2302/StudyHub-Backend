@@ -1,15 +1,19 @@
 ## this is where all the REST APIs being put together and running on 1 application (server running)
 # import libraries
 from flask import Flask
+from flask_migrate import Migrate
 from flask_restful import Api, Resource
 
-# import the REST APIs
-from register import db, RegistrationResource, registration_routes # -> REST API for registration
-from login import SignInResource, verifyOTP # REST API for login and verifying OTP code
-from user_profile import UserInformationResource # -> REST API for user to post their user's profile
-
 # import database configurations
-from get_env import database_type, database_username, database_password, database_host, database_port, database_name
+from get_env import (database_host, database_name, database_password,
+                     database_port, database_type, database_username)
+from login import SignInResource  # REST API for login and verifying OTP code
+from login import verifyOTP
+# import the REST APIs
+from register import (RegistrationResource, db,  # -> REST API for registration
+                      registration_routes)
+from user_profile import \
+    UserInformationResource  # -> REST API for user to post their user's profile
 
 app = Flask(__name__)
 app.config['SERVER_NAME'] = '127.0.0.1:5000'
@@ -21,6 +25,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # database connection
 app.config['SQLALCHEMY_DATABASE_URI'] = f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
 db.init_app(app)
+
+migrate = Migrate(app, db)
 
 # adding APIs to one resource
 api = Api(app)

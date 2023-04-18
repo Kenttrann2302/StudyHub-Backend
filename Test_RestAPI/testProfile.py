@@ -1,8 +1,9 @@
 # test rest api for posting user profile
-import requests
-import uuid
 import datetime
 import pdb
+import uuid
+
+import requests
 
 date_str = '2003-04-01'
 grad_day_str = '2027-04-30'
@@ -25,7 +26,9 @@ print(response.json())
 
 # include cookies in the request headers
 cookie = response.cookies.get_dict()
-headers = {'Cookie' : f"token={cookie['token']}"}
+headers = {
+ 'Cookie' : f"token={cookie['token']}"
+}
 
 data = [
  {
@@ -33,7 +36,7 @@ data = [
   "midName" : "Duy",
   "lastName" : "Tran",
   "age" : 20,
-  # "birthDay" : date,
+  "birthDay" : date,
   "firstAddress" : "75 Skelton Boulevard",
   "city" : "Brampton",
   "province" : "Ontario",
@@ -46,7 +49,7 @@ data = [
   "education_institutions" : "University of Waterloo",
   "education_majors" : "Engineering",
   "education_degrees" : "Bachelor",
-  # "graduation_date" : grad_day,
+  "graduation_date" : grad_day,
   "identification_option" : "Student Email Address",
   "identification_material" : "kd3tran@uwaterloo.ca"
  }

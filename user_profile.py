@@ -1,34 +1,36 @@
 ########## SIGN UP PAGE FOR USERS INPUT FOR MACHINE LEARNING ALGORITHM FOR SAVING STRATEGIES #########
 # import libraries
-from flask import Flask, jsonify, request, abort, Response
-from flask_sqlalchemy import SQLAlchemy
-from flask_restful import Api, Resource, reqparse, inputs
+import json
+import os
+import pdb
+from datetime import datetime
+from http import HTTPStatus
+
+import jwt
+from flask import Flask, Response, abort, jsonify, request
 from flask_bcrypt import Bcrypt
 from flask_migrate import Migrate
+from flask_restful import Api, Resource, inputs, reqparse
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine
 from sqlalchemy.engine.reflection import Inspector
-import pdb
-import json
-import jwt
-from datetime import datetime
-import os
 
 # import other files
 from API.locationAPI import checkAddress
-from database.users_models import db, UserInformation
-from helper_functions.validate_users_information import (
-    validate_users_information,
-    create_validated_fields_dict,
-)
-from helper_functions.middleware_functions import token_required
+from database.users_models import UserInformation, db
 from get_env import (
-    database_username,
     database_host,
     database_name,
     database_password,
     database_port,
     database_type,
+    database_username,
     secret_key,
+)
+from helper_functions.middleware_functions import token_required
+from helper_functions.validate_users_information import (
+    create_validated_fields_dict,
+    validate_users_information,
 )
 
 user_profile_app = Flask(__name__)
@@ -109,7 +111,7 @@ class UserInformationResource(Resource):
                         "birthDay",
                         type=inputs.date,
                         help="Birthday is required and the format must be YYYY-MM-DD",
-                        required=False,
+                        required=True,
                     )
                     formData.add_argument(
                         "firstAddress",
@@ -121,7 +123,7 @@ class UserInformationResource(Resource):
                         "secondAddress",
                         type=str,
                         help="Second address is required",
-                        required=True,
+                        required=False,
                     )
                     formData.add_argument(
                         "city", type=str, help="City is required", required=True
@@ -172,7 +174,7 @@ class UserInformationResource(Resource):
                         "graduation_date",
                         type=inputs.date,
                         help="Graduation Day is required",
-                        required=False,
+                        required=True,
                     )
                     formData.add_argument(
                         "identification_option",
@@ -234,23 +236,24 @@ class UserInformationResource(Resource):
                     )
 
                     # create a dictionary to store the validated fields by calling the helper function
-                    validated_fields = create_validated_fields_dict(
-                        firstName=firstName,
-                        midName=midName,
-                        lastName=lastName,
-                        age=age,
-                        birthDay=birthDay,
-                        firstAddress=firstAddress,
-                        secondAddress=secondAddress,
-                        city=city,
-                        province=province,
-                        country=country,
-                        postalCode=postalCode,
-                        gender=gender,
-                        religion=religion,
-                        user_bio=user_bio,
-                        user_interest=user_interest,
-                    )
+                    # create_validated_fields_dict(
+                    #     validated_fields=validated_fields,
+                    #     firstName=firstName,
+                    #     midName=midName,
+                    #     lastName=lastName,
+                    #     age=age,
+                    #     birthDay=birthDay,
+                    #     firstAddress=firstAddress,
+                    #     secondAddress=secondAddress,
+                    #     city=city,
+                    #     province=province,
+                    #     country=country,
+                    #     postalCode=postalCode,
+                    #     gender=gender,
+                    #     religion=religion,
+                    #     user_bio=user_bio,
+                    #     user_interest=user_interest,
+                    # )
 
                     # after getting the address, check for the validation using Google Maps Geocoding API before execute the insert the element
                     # if the address is not valid
@@ -279,10 +282,10 @@ class UserInformationResource(Resource):
                             province=province,
                             country=country,
                             postal_code=postalCode,
-                            gender_id=gender,
+                            gender=gender,
                             religion=religion,
                             profile_image=profile_image,
-                            education_institution=education_institution,
+                            education_institutions=education_institution,
                             education_majors=education_majors,
                             education_degrees=education_degrees,
                             graduation_date=graduation_date,
@@ -340,13 +343,12 @@ class UserInformationResource(Resource):
                             db.session.add(new_user)
                             # commit the change to the database -> 201 if successful
                             db.session.commit()
-                            response_data = {
-                                "message": f"User with {user_id} profile has been added successfully to the database!"
-                            }
+
+                            response_data = {"user_info": json.dumps(new_user)}
                             response_json = json.dumps(response_data)
                             response = Response(
                                 response=response_json,
-                                status=201,
+                                status=HTTPStatus.CREATED,
                                 mimetype="application/json",
                             )
                             return response
@@ -372,7 +374,6 @@ class UserInformationResource(Resource):
                         response_data = {
                             "message": f"Caught invalid client fields!",
                             "errors": errors,  # errors that are caught with the invalid fields -> users need to enter them again
-                            "validated_fields": validated_fields,  # fields that are already validated -> users don't need to re-input
                         }
                         response_json = json.dumps(response_data)
                         response = Response(
