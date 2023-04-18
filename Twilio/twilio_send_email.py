@@ -6,9 +6,10 @@ import jwt
 from datetime import datetime, timedelta
 import pytz
 import pdb
+
+# import other files
 # get environment variables
-twilio_api_key = os.environ['TWILIO_API_KEY']
-secret_key = os.getenv('STUDYHUB_SECRET_KEY')
+from get_env import twilio_api_key, secret_key
 
 # function send the verification email along with the link for the user to verify their email address with StudyHub resource
 def sendgrid_verification_email(user_email, studyhub_code) -> bool:

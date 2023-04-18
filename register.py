@@ -18,13 +18,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine.reflection import Inspector
 import pdb
 
-# load in the sensitive data from .env
-from dotenv import load_dotenv
-# Load the configuration data from the .env file
-load_dotenv()
-
 # import the users models from the models.py
-from database.users_models import db, Users, Permission
+from database.users_models import db, Users
 
 # import third party services for verification method confirmation
 from Twilio.twilio_send_email import sendgrid_verification_email
@@ -33,29 +28,14 @@ from Twilio.twilio_send_email import sendgrid_verification_email
 from helper_functions.users_tables_create import create_all_tables
 from helper_functions.registerformValidation import validate_registration_form
 from helper_functions.validate_users_information import create_validated_fields_dict
-from helper_functions.grant_permission import grant_permission_to_verified_users
+from get_env import secret_key, database_type, database_host, database_username, database_password, database_port, database_name
 
 register_app = Flask(__name__)
-register_app.config['SERVER_NAME'] = '127.0.0.1:5000'
-register_app.config['APPLICATION_ROOT'] = '/'
-register_app.config['PREFERRED_URL_SCHEME'] = 'http'
-register_app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-register_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
-
-
-# Set the secret key as an environment variable
-secret_key = os.getenv('STUDYHUB_SECRET_KEY')
-
-# get the database connection information
-database_type = os.getenv("DB_TYPE")
-database_host = os.getenv("DB_HOST")
-database_username = os.getenv("DB_USER")
-database_password = os.getenv("DB_PASS")
-database_port = os.getenv("PORT")
-database_name = os.getenv("DB_NAME")
-
-# set up the app for testing api
-api = Api(register_app)
+# register_app.config['SERVER_NAME'] = '127.0.0.1:5000'
+# register_app.config['APPLICATION_ROOT'] = '/'
+# register_app.config['PREFERRED_URL_SCHEME'] = 'http'
+# register_app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+# register_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 
 # register the app instance with the endpoints we are using for this app
 registration_routes = Blueprint('registration_routes', __name__)
@@ -71,7 +51,7 @@ register_app.config['SQLALCHEMY_DATABASE_URI'] = f"{database_type}://{database_u
 engine = create_engine(f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}")
 inspector = Inspector.from_engine(engine)
 
-# create the sqlalchemy database object 
+# # create the sqlalchemy database object 
 db.init_app(register_app)
 
 # create the registration table according to the registration model
@@ -296,7 +276,7 @@ class RegistrationResource(Resource):
     
 
 # a get request to perform a query string to get the token from the url and decode to get the email address and code to verify the user's email
-@register_app.route('/studyhub/confirm-email', methods=['GET'])
+@registration_routes.route('/studyhub/confirm-email', methods=['GET'])
 def email_verifcation():
   try:
     # get the token from the query string
@@ -360,10 +340,7 @@ def email_verifcation():
     return response
 
 # add registration resource to rest api
-api.add_resource(RegistrationResource, '/studyhub/createaccount/')
-
-if __name__ == "__main__":
-  register_app.run(debug=True)
+# api.add_resource(RegistrationResource, '/studyhub/createaccount/')
 
 # # Register the routes
 # registration_routes.add_url_rule('/studyhub/register/', view_func=VerificationMethodsResource.as_view('verification_methods'))

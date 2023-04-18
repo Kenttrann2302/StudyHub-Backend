@@ -20,37 +20,15 @@ import pytz
 from database.users_models import db, Users, Permission
 from helper_functions.validate_users_information import create_validated_fields_dict
 from helper_functions.grant_permission import grant_permission_to_verified_users
-
-# load in the sensitive data from .env
-from dotenv import load_dotenv
-# Load the configuration data from the .env file
-load_dotenv()
-
-# get the database connection information
-database_type = os.getenv("DB_TYPE")
-database_host = os.getenv("DB_HOST")
-database_username = os.getenv("DB_USER")
-database_password = os.getenv("DB_PASS")
-database_port = os.getenv("PORT")
-database_name = os.getenv("DB_NAME")
-
-# get the secret key from the environment
-secret_key = os.getenv("STUDYHUB_SECRET_KEY")
+from get_env import database_type, database_port, database_name, database_host, database_password, database_username, aws_sending_otp, aws_verify_otp, secret_key
 
 # login app configuration
 login_app = Flask(__name__)
-login_app.config['SERVER_NAME'] = '127.0.0.1:5000'
-login_app.config['APPLICATION_ROOT'] = '/'
-login_app.config['PREFERRED_URL_SCHEME'] = 'http'
-login_app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-login_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# get 2 apis for sending and verifying otp
-aws_sending_otp = os.getenv('AWS_EMAIL_SEND_OTP')
-aws_verify_otp = os.getenv('AWS_EMAIL_VERIFY_OTP')
-
-# set up the login app for rest api
-api = Api(login_app)
+# login_app.config['SERVER_NAME'] = '127.0.0.1:5000'
+# login_app.config['APPLICATION_ROOT'] = '/'
+# login_app.config['PREFERRED_URL_SCHEME'] = 'http'
+# login_app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+# login_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(login_app)
 
@@ -144,7 +122,13 @@ class SignInResource(Resource):
        # User credentials are valid
        # verified if the user's verification method has been verified with StudyHub system
        if user.account_verified == False:
-        abort(401, message=f'Sorry! But it seems like you need to verify your {user.verification_method} with our system!')
+        # abort if the user did not verify their email or sms or device push notification
+        response_data = ({
+          'message' : f'Sorry! But it seems like you need to verify your {user.verification_method} with our system!'
+        })
+        response_json = json.dumps(response_data)
+        response = Response(response_json, status=403, mimetype='application/json')
+        return response
 
        # grant permissions for the users to view the dashboard, use geolocation, view, upload and update their own profile
        # give the user the permission to view, upload or update their profile
@@ -203,7 +187,7 @@ class SignInResource(Resource):
             return response
 
         # Store the token in cookie local storage if the user choose sms for verification
-        response = make_response(redirect(url_for('send_otp_code')))
+        response = make_response()
         response.set_cookie('token', value=token, expires=datetime.now(pytz.timezone('EST')) + timedelta(minutes=30), httponly=True)
        
         # Redirect to the dashboard and some restricted resource
@@ -251,6 +235,7 @@ class SignInResource(Resource):
       response_json = json.dumps(response_data)
       response = Response(response=response_json, status=500, mimetype='application/json')
       return response
+
 
 # create a resource for the Rest API to handle the GET request to the AWS Verify OTP Lambda function to verify the user's otp code
 class verifyOTP(Resource):
@@ -303,7 +288,8 @@ class verifyOTP(Resource):
         
         # query the permissions list in the user table with the user id
         permissions = [permission.name for permission in user.permissions]
-        # generate a new jwt token with new permissions to authenticate the user
+
+        # generate a new jwt token with new permissions to authenticate the user if the user has the permission to visit some certain protected resources using a middleware function
         new_token = jwt.encode(
           {
             'id' : str(user.user_id),
@@ -319,22 +305,23 @@ class verifyOTP(Resource):
         response_data = {
           'aws_message' : response_dict
         }
+
         response_json = json.dumps(response_data)
-        response = Response(response=response_json, status=200, mimetype='application/json')
+        # response = Response(response_json, status=200, mimetype='application/json')
 
         # store the token into cookies
-        token_in_cookies = make_response(response)
-        token_in_cookies.set_cookie('token', value=new_token, expires=datetime.now(pytz.timezone('EST')) + timedelta(minutes=30))
-
+        token_in_cookies = make_response(response_json)
+        token_in_cookies.set_cookie('token', value=new_token, expires=datetime.now(pytz.timezone('EST')) + timedelta(minutes=30), httponly=True)
+        
         return token_in_cookies
- 
+                                                             
       else:
         raise ValueError 
     
     except ValueError: # if there is an error with AWS Lambda Client
       response_dict = json.loads(response.content.decode('utf-8'))
       response_data = ({
-        'message' : f'Failed to verify user with user id: {user.user_id}: {response_dict}!'
+        'message' : f'Failed to verify user with user email: {user_email} : {response_dict}!'
       })
       response_json = json.dumps(response_data)
       response = Response(response=response_json, status=response.status_code, mimetype='application/json')
@@ -348,11 +335,5 @@ class verifyOTP(Resource):
       response = Response(response=response_json, status=500, mimetype='application/json')
       return response
 
-# add sign in resource to rest api
-api.add_resource(SignInResource, '/studyhub/validateuser/') # api for validating the user's credentials and sending otp
-api.add_resource(verifyOTP, '/studyhub/verify-otp/<int:otp_code>') # api for verifying the user's otp
-
 # add login_routes to write the unit test the rest api
 
-if __name__ == '__main__':
-  login_app.run(debug=True)
