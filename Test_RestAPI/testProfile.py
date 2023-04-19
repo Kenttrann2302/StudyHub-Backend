@@ -47,8 +47,8 @@ data = [
   "user_bio" : "Mechatronics Engineering at University of Waterloo",
   "user_interest" : "Backend Development",
   "education_institutions" : "University of Waterloo",
-  "education_majors" : "Engineering",
-  "education_degrees" : "Bachelor",
+  "education_majors" : "Accounting",
+  "education_degrees" : "Bachelor's Degree",
   "graduation_date" : grad_day,
   "identification_option" : "Student Email Address",
   "identification_material" : "kd3tran@uwaterloo.ca"

@@ -11,6 +11,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.schema import CheckConstraint
+from sqlalchemy import Enum
 
 # create a db instance
 db = SQLAlchemy()
@@ -73,7 +74,7 @@ class UserInformation(db.Model):
   province = db.Column(db.String(50), nullable=False)
   country = db.Column(db.String(50), nullable=False)
   postal_code = db.Column(db.String(10), nullable=False) # Geolocation API will be used to validate the address
-  timezone = db.Column(db.String(50), nullable=False) # this timezone will be retrieved by Google Timezone API
+  timezone = db.Column(db.String(50), nullable=True) # this timezone will be retrieved by Google Timezone API
   gender = db.Column(db.Enum('--select--', 'Male', 'Female', 'Others', 'Prefer not to tell', name='gender_options'), nullable=False)
   religion = db.Column(db.String(100), nullable=True)
   education_institutions = db.Column(db.Enum('--select--', 'University of Waterloo', 'University of Toronto', 'University of British Columbia', name='universities'), nullable=False) # a list of universities and colleges options that StudyHub currently support

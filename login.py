@@ -55,12 +55,12 @@ validated_fields = {
 
 # define a resource field to serialize the response when perform a POST request to validate the user's credentials
 user_resource_fields = {
-  'message' : fields.String,
-  'user_id' : fields.String,
-  'username' : fields.String,
+  'message': fields.String,
+  'user_id': fields.String,
+  'username': fields.String,
   'verification_method' : fields.String,
-  'verification' : fields.String,
-  'permissions' : fields.List(fields.String)
+  'verification': fields.String,
+  'permissions': fields.List(fields.String)
 }
 
 # create a resource for REST API to handle the POST request that handle the form data when the user sign in with their username and pass
@@ -79,8 +79,8 @@ class SignInResource(Resource):
       try:
         global token
         response_data = ({
-          'token' : token,
-          'user_email' : user_email
+          'token': token,
+          'user_email': user_email
         })
         response_json = json.dumps(response_data)
         response = Response(response=response_json, status=200, mimetype='application/json')

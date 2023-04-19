@@ -334,10 +334,8 @@ class UserInformationResource(Resource):
                         try:
                             # if the users information didn't exist in the database yet
                             # create a list of new user instance
+                            new_user = UserInformation(first_name=firstName, middle_name=midName, last_name=lastName, age=age, date_of_birth=birthDay, address_line_1=firstAddress, address_line_2=secondAddress, city=city, province=province, country=country, postal_code=postalCode, gender=gender, religion=religion, profile_image=profile_image, user_bio=user_bio, interests=user_interest, education_institutions=education_institution, education_majors=education_majors, education_degrees=education_degrees, graduation_date=graduation_date, identification_option=identification_option, identification_material=identification_material, user_id=user_id)
 
-                            # new_user = UserInformation(first_name=firstName, middle_name=midName, last_name=lastName, age=age, date_of_birth=birthDay, address_line_1=firstAddress, address_line_2=secondAddress, city=city, province=province, country=country, postal_code=postalCode, gender=gender, religion=religion, profile_picture=profile_image, user_bio=user_bio, interests=user_interest, education_institution=education_institution, education_majors=education_majors, education_degrees=education_degrees, graduation_date=graduation_date, identification_option=identification_option, identification_material=identification_material)
-
-                            new_user = UserInformation(**args)
 
                             # add new user into users model
                             db.session.add(new_user)
