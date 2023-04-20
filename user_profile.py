@@ -195,85 +195,6 @@ class UserInformationResource(Resource):
             required=True,
         )
 
-    # a private method that is responsible for update the form data
-    # def __update_formData_addArguments(self, formData):
-    #     formData.add_argument(
-    #         "firstName",
-    #         type=str
-    #     )
-    #     formData.add_argument("midName", type=str)
-    #     formData.add_argument(
-    #         "lastName",
-    #         type=str
-    #     )
-    #     formData.add_argument(
-    #         "age",
-    #         type=int,
-    #         help="Age must be larger than 18"
-    #     )
-    #     formData.add_argument(
-    #         "birthDay",
-    #         type=inputs.date,
-    #         help="Birthday's format must be YYYY-MM-DD"
-    #     )
-    #     formData.add_argument(
-    #         "firstAddress",
-    #         type=str,
-    #     )
-    #     formData.add_argument(
-    #         "secondAddress",
-    #         type=str
-    #     )
-    #     formData.add_argument(
-    #         "city", type=str
-    #     )
-    #     formData.add_argument(
-    #         "province", type=str
-    #     )
-    #     formData.add_argument(
-    #         "country", type=str
-    #     )
-    #     formData.add_argument(
-    #         "postalCode",
-    #         type=str
-    #     )
-    #     formData.add_argument(
-    #         "gender", type=str
-    #     )
-    #     formData.add_argument(
-    #         "profile_image",
-    #         type=str
-    #     )
-    #     formData.add_argument("religion", type=str)
-    #     formData.add_argument("user_bio", type=str)
-    #     formData.add_argument("user_interest", type=str)
-    #     formData.add_argument(
-    #         "education_institutions",
-    #         type=str
-    #     )
-    #     formData.add_argument(
-    #         "education_majors",
-    #         type=str
-    #     )
-    #     formData.add_argument(
-    #         "education_degrees",
-    #         type=str
-    #     )
-    #     formData.add_argument(
-    #         "graduation_date",
-    #         type=inputs.date
-    #     )
-    #     formData.add_argument(
-    #         "identification_option",
-    #         type=str,
-    #         help='User has to choose one of the identification options available!'
-    #     )
-    #     formData.add_argument(
-    #         "identification_material",
-    #         type=str,
-    #         help="User has to upload the identification material that fits their chosen option and their student's status"
-    #     )
-
     # a get method to get the user profile and return to the client
     @token_required(permission_list=[
         "can_view_dashboard",
@@ -382,26 +303,6 @@ class UserInformationResource(Resource):
                         identification_option,
                         identification_material,
                     )
-
-                    # create a dictionary to store the validated fields by calling the helper function
-                    # create_validated_fields_dict(
-                    #     validated_fields=validated_fields,
-                    #     firstName=firstName,
-                    #     midName=midName,
-                    #     lastName=lastName,
-                    #     age=age,
-                    #     birthDay=birthDay,
-                    #     firstAddress=firstAddress,
-                    #     secondAddress=secondAddress,
-                    #     city=city,
-                    #     province=province,
-                    #     country=country,
-                    #     postalCode=postalCode,
-                    #     gender=gender,
-                    #     religion=religion,
-                    #     user_bio=user_bio,
-                    #     user_interest=user_interest,
-                    # )
 
                     # after getting the address, check for the validation using Google Maps Geocoding API before execute the insert the element
                     # if the address is not valid
@@ -580,9 +481,6 @@ class UserInformationResource(Resource):
                     errors = {}
 
                     # check if each argument is in the update_args -> yes (update the database field), no (leave them)
-                    all_request_fields = ['firstName', 'midName', 'lastName', 'age', 'birthDay', 'firstAddress', 'secondAddress', 'city', 'province', 'country', 'postalCode', 'gender', 'profile_image', 'religion', 'user_bio', 'user_interest', 'education_institutions', 'education_majors', 'education_degrees', 'graduation_date', 'identification_option', 'identification_material']
-                    all_model_fields = [user.first_name, user.middle_name, user.last_name, user.age, user.date_of_birth, user.address_line_1, user.address_line_2, user.city, user.province, user.country, user.postal_code, user.gender, user.profile_image, user.religion, user.user_bio, user.interests, user.education_institutions, user.education_majors, user.education_degrees, user.graduation_date, user.identification_option, user.identification_material]
-
                     # validate each input field
                     validate_users_information(
                         errors,
@@ -613,15 +511,14 @@ class UserInformationResource(Resource):
 
                     # if all the fields are valid
                     if not errors and geolocation_api_result.is_valid_address():
-                        j = 0
-                        for i in range(len(all_request_fields)):
-                            if update_args[all_request_fields[i]]:
-                                all_model_fields[j] = update_args[all_request_fields[i]]
-                                # commit the database insertion after update the fields
-                                db.session.commit()
-                            j += 1
+                        for args_names, args_values in update_args.items():
+                            if args_values:
+                              setattr(user, args_names, args_values) # set the attributes of the arguments
 
-                        # return a response to the user
+                        # commit the change to the database
+                        db.session.commit()
+
+                        # return a response to the client
                         response_data = ({
                             'message' : f'Successfully update the user information to the database!'
                         })
@@ -650,4 +547,48 @@ class UserInformationResource(Resource):
 
 
     # a method to delete a user's profile
+    @token_required(permission_list=
+    [
+        "can_view_dashboard",
+        "can_view_profile",
+        "can_change_profile"
+    ], secret_key=secret_key)
+    def delete(self):
+        # get the token from cookies
+        try:
+            token = request.cookies.get('token')
+            decoded_token = jwt.decode(token, secret_key, algorithms=['HS256']) # decode the jwt token
+            # get the user id
+            user_id = decoded_token['id']
+
+            # query the database to see if the user has the profile
+            find_user_profile = UserInformation.query.filter_by(user_id=user_id).first()
+
+            # abort if no profile found
+            if not find_user_profile:
+                abort(404, {
+                    'message' : 'No user information found!'
+                })
+
+            db.session.query(UserInformation).filter(UserInformation.user_id==user_id).delete()
+            # commit the change to the database
+            db.session.commit()
+
+            # return the response to the client if there is no error occured
+            response_data = ({
+                'message' : f'User information for user with user id: {user_id} has been successfully deleted!'
+            })
+            response_json = json.dumps(response_data)
+            response = Response(response_json, status=HTTPStatus.CREATED, mimetype='application/json')
+            return response
+
+        except Exception as error: # try to catch the error and display to the client
+            response_data = ({
+                'message' : 'Cannot delete the user information due to an internal server error!',
+                'error' : error
+            })
+            response_json = json.dumps(response_data)
+            response = Response(response_json, status=500, mimetype='application/json')
+            return response
+
 
