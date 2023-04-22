@@ -10,7 +10,7 @@ load_dotenv()
 
 # secret key
 # get the secret key from the virtual environment
-secret_key = os.getenv('STUDYHUB_SECRET_KEY')
+secret_key = os.getenv("STUDYHUB_SECRET_KEY")
 
 # database stuffs
 # get the database connection information
@@ -23,11 +23,11 @@ database_name = os.getenv("DB_NAME")
 
 # AWS stuffs
 # get 2 apis for sending and verifying otp
-aws_sending_otp = os.getenv('AWS_EMAIL_SEND_OTP')
-aws_verify_otp = os.getenv('AWS_EMAIL_VERIFY_OTP')
+aws_sending_otp = os.getenv("AWS_EMAIL_SEND_OTP")
+aws_verify_otp = os.getenv("AWS_EMAIL_VERIFY_OTP")
 
 # TWILIO stuffs
-twilio_api_key = os.getenv('TWILIO_API_KEY')
+twilio_api_key = os.getenv("TWILIO_API_KEY")
 
 # Google API key
-google_api_secret_key = os.getenv('GOOGLE_GEOLOCATION_API')
+google_api_secret_key = os.getenv("GOOGLE_GEOLOCATION_API")

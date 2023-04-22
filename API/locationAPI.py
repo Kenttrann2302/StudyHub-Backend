@@ -1,16 +1,7 @@
 # this function will create and send a Geocoding Google Map API to the google maps database to check if the user entered an acceptable address, city, country and postal code
 
 # _*_ coding: utf-8 _*_
-# pylint: disable=unused-import
-import json
-import os
-import pdb
-
 import requests
-
-# load in the sensitive data from .env
-from dotenv import load_dotenv
-from flask import Flask, request
 
 from get_env import google_api_secret_key
 
@@ -22,8 +13,8 @@ class LocationValidator:
         **kwargs,
     ) -> None:
         self.errors = errors
-        self.address_line_1 = kwargs.get("first_address", None)
-        self.address_line_2 = kwargs.get("second_address", None)
+        self.address_line_1 = kwargs.get("address_line_1", None)
+        self.address_line_2 = kwargs.get("address_line_2", None)
         self.city = kwargs.get("city", None)
         self.province = kwargs.get("province", None)
         self.country = kwargs.get("country", None)

@@ -1,22 +1,17 @@
 ########## SIGN UP PAGE FOR USERS INPUT FOR MACHINE LEARNING ALGORITHM FOR SAVING STRATEGIES #########
 # import libraries
 import json
-import os
 import pdb
-from datetime import datetime
 from http import HTTPStatus
-from werkzeug.exceptions import Conflict
 
 import jwt
-from flask import Flask, Response, jsonify, request
-from flask_bcrypt import Bcrypt
+from flask import Flask, Response, request
 from flask_migrate import Migrate
-from flask_restful import Resource, inputs, reqparse, fields, marshal_with, abort
-from flask_sqlalchemy import SQLAlchemy
+from flask_restful import Resource, abort, fields, inputs, marshal_with, reqparse
 from sqlalchemy import create_engine
 from sqlalchemy.engine.reflection import Inspector
+from werkzeug.exceptions import Conflict
 
-# import other files
 from API.locationAPI import LocationValidator
 from database.users_models import UserInformation, db
 from get_env import (
@@ -29,16 +24,9 @@ from get_env import (
     secret_key,
 )
 from helper_functions.middleware_functions import token_required
-from helper_functions.validate_users_information import (
-    create_validated_fields_dict,
-    validate_users_information,
-)
+from helper_functions.validate_users_information import validate_users_information
 
 user_profile_app = Flask(__name__)
-# user_profile_app.config['SERVER_NAME'] = '127.0.0.1:5000'
-# user_profile_app.config['APPLICATION_ROOT'] = '/'
-# user_profile_app.config['PREFERRED_URL_SCHEME'] = 'http'
-# user_profile_app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 migrate = Migrate(user_profile_app, db)
 
@@ -125,13 +113,13 @@ class UserInformationResource(Resource):
             required=True,
         )
         form_data.add_argument(
-            "first_address",
+            "address_line_1",
             type=str,
             help="First address is required",
             required=True,
         )
         form_data.add_argument(
-            "second_address",
+            "address_line_2",
             type=str,
             help="Second address is required",
             required=False,
@@ -209,8 +197,8 @@ class UserInformationResource(Resource):
         update_form_data.add_argument(
             "birth_day", type=inputs.date, help="Birthday format must be YYYY-MM-DD"
         )
-        update_form_data.add_argument("first_address", type=str)
-        update_form_data.add_argument("second_address", type=str)
+        update_form_data.add_argument("address_line_1", type=str)
+        update_form_data.add_argument("address_line_2", type=str)
         update_form_data.add_argument("city", type=str)
         update_form_data.add_argument("province", type=str)
         update_form_data.add_argument("country", type=str)
@@ -308,8 +296,8 @@ class UserInformationResource(Resource):
                 last_name = args["last_name"]
                 age = args["age"]
                 birth_day = args["birth_day"]
-                first_address = args["first_address"]
-                second_address = args["second_address"]
+                address_line_1 = args["address_line_1"]
+                address_line_2 = args["address_line_2"]
                 city = args["city"]
                 province = args["province"]
                 country = args["country"]
@@ -351,8 +339,8 @@ class UserInformationResource(Resource):
                 # if the address is not valid
                 addressChecking = LocationValidator(
                     errors,
-                    first_address=first_address,
-                    second_address=second_address,
+                    address_line_1=address_line_1,
+                    address_line_2=address_line_2,
                     city=city,
                     province=province,
                     country=country,
@@ -368,8 +356,8 @@ class UserInformationResource(Resource):
                         last_name=last_name,
                         age=age,
                         date_of_birth=birth_day,
-                        address_line_1=first_address,
-                        address_line_2=second_address,
+                        address_line_1=address_line_1,
+                        address_line_2=address_line_2,
                         city=city,
                         province=province,
                         country=country,
@@ -397,8 +385,8 @@ class UserInformationResource(Resource):
                         last_name=last_name,
                         age=age,
                         date_of_birth=birth_day,
-                        address_line_1=first_address,
-                        address_line_2=second_address,
+                        address_line_1=address_line_1,
+                        address_line_2=address_line_2,
                         city=city,
                         province=province,
                         country=country,
@@ -487,16 +475,16 @@ class UserInformationResource(Resource):
                 # check to see if the address is corrected
                 # create 2 python dictionaries
                 existing_location_data = {
-                    "first_address": user_information.address_line_1,
-                    "second_address": user_information.address_line_2,
+                    "address_line_1": user_information.address_line_1,
+                    "address_line_2": user_information.address_line_2,
                     "city": user_information.city,
                     "country": user_information.country,
                     "postal_code": user_information.postal_code,
                 }
 
                 update_location_data = {
-                    "first_address": update_args["first_address"],
-                    "second_address": update_args["second_address"],
+                    "address_line_1": update_args["address_line_1"],
+                    "address_line_2": update_args["address_line_2"],
                     "city": update_args["city"],
                     "province": update_args["province"],
                     "country": update_args["country"],
