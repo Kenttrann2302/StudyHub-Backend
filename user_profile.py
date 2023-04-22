@@ -1,4 +1,4 @@
-########## SIGN UP PAGE FOR USERS INPUT FOR MACHINE LEARNING ALGORITHM FOR SAVING STRATEGIES #########
+########## SIGN UP PAGE FOR USERS INPUT FOR MACHINE LEARNING ALGORITHM FOR RECOMMENDATION ENGINE #########
 # import libraries
 import json
 import os
@@ -30,20 +30,12 @@ from get_env import (
 )
 from helper_functions.middleware_functions import token_required
 from helper_functions.validate_users_information import (
-    create_validated_fields_dict,
-    validate_users_information,
+    validate_users_information
 )
 
 user_profile_app = Flask(__name__)
-# user_profile_app.config['SERVER_NAME'] = '127.0.0.1:5000'
-# user_profile_app.config['APPLICATION_ROOT'] = '/'
-# user_profile_app.config['PREFERRED_URL_SCHEME'] = 'http'
-# user_profile_app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 migrate = Migrate(user_profile_app, db)
-
-# change the size for accepting files in the requests
-user_profile_app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 megabytes
 
 # connect flask to postgres database using SQLALCHEMY
 user_profile_app.config[

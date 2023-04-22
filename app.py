@@ -20,6 +20,7 @@ app.config['SERVER_NAME'] = '127.0.0.1:5000'
 app.config['APPLICATION_ROOT'] = '/'
 app.config['PREFERRED_URL_SCHEME'] = 'http'
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 megabytes
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # database connection
