@@ -57,7 +57,7 @@ for i in range(55):
 # Define a user table to store the user's data when they sign up for the saving challenges algorithm
 class UserInformation(db.Model):
   __tablename__ = 'user_information'
-  
+
   id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
   profile_image = db.Column(db.String(500), nullable=True) # allow users to add the profile picture
   user_bio = db.Column(db.Text, nullable=True) # allow user to update their bio information

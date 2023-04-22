@@ -3,7 +3,7 @@
 from flask import Flask, redirect, url_for, session, render_template, request, abort, Blueprint, jsonify, Response, make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_restful import Api, Resource, reqparse, fields, marshal_with
+from flask_restful import Resource, reqparse, fields, marshal_with
 import bcrypt
 import os
 import json
