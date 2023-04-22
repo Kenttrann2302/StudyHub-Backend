@@ -52,5 +52,11 @@ _study_preferences_resource_fields = {
     "communication_preferences" : fields.String
 }
 
-# Querying and inserting into
+# REST API for CRUD for user to interact with Study Preferences resources
+class StudyPreference(Resource):
+    # private method that abort if user didn't have study preferences record -> get, patch, delete
+    def __abort_if_user_profile_exists(self, user_id) -> None:
+        if user_id:
+            raise Conflict
+        return
 
