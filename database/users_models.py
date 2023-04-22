@@ -150,7 +150,7 @@ class StudyPreferences(db.Model):
   user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('user_information.id'), nullable=False) # form a one to one relationship with the user's profile
 
   # study environment preferences
-  study_env_prefereces = db.Column(db.Enum(*list_study_env, name='list_study_env'), nullable=False)
+  study_env_preferences = db.Column(db.Enum(*list_study_env, name='list_study_env'), nullable=False)
 
   # study time preferences
   study_time_preferences = db.Column(db.Enum(*list_study_time, name='list_study_time'), nullable=False)
@@ -162,10 +162,10 @@ class StudyPreferences(db.Model):
   study_techniques_preferences = db.Column(db.Enum(*list_study_techniques, name='list_study_techniques'), nullable=False)
 
   # courses preferences
-  courses_preferences = db.Column(db.ARRAY(db.String(10), dimensions=5), nullable=False) # user can choose up to 5 favorite courses
+  courses_preferences = db.Column(db.ARRAY(db.String(10), dimensions=8), nullable=False) # user can choose up to 8 favorite courses
 
   # favorite communication social media platform -> connect with people that will be matched to form a study group
-  communication_prefereces = db.Column(db.Enum(*list_social_media, name='list_social_media'), nullable=False)
+  communication_preferences = db.Column(db.Enum(*list_social_media, name='list_social_media'), nullable=False)
 
 
   created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('EST')), nullable=False)
