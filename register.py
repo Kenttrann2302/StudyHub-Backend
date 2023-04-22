@@ -10,7 +10,6 @@ from flask import Blueprint, Flask, Response, request
 from flask_migrate import Migrate
 from flask_restful import Resource, fields, marshal_with, reqparse
 from sqlalchemy import create_engine
-from sqlalchemy.engine.reflection import Inspector
 
 from database.users_models import Users, db
 from get_env import (

@@ -1,7 +1,6 @@
 ########## SIGN UP PAGE FOR USERS INPUT FOR MACHINE LEARNING ALGORITHM FOR SAVING STRATEGIES #########
 # import libraries
 import json
-import pdb
 from http import HTTPStatus
 
 import jwt
@@ -9,7 +8,6 @@ from flask import Flask, Response, request
 from flask_migrate import Migrate
 from flask_restful import Resource, abort, fields, inputs, marshal_with, reqparse
 from sqlalchemy import create_engine
-from sqlalchemy.engine.reflection import Inspector
 from werkzeug.exceptions import Conflict
 
 from API.locationAPI import LocationValidator
