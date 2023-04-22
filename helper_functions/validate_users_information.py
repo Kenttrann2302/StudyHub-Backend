@@ -1,9 +1,5 @@
-# import neccessary libraries
-import base64
 import os
-import pdb
 import re
-import zlib
 
 from flask import request
 from werkzeug.utils import secure_filename
@@ -122,7 +118,10 @@ def validate_users_information(
         ] = f"Please choose which your method of student verification!"
 
     # validate user's identification material if the user's choose to upload the image
-    if identification_option != "Student Email Address" and identification_option is not None:
+    if (
+        identification_option != "Student Email Address"
+        and identification_option is not None
+    ):
         if not validate_files_upload(identification_material):
             errors[
                 "identification_material"

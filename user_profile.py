@@ -1,22 +1,15 @@
 ########## SIGN UP PAGE FOR USERS INPUT FOR MACHINE LEARNING ALGORITHM FOR RECOMMENDATION ENGINE #########
 # import libraries
 import json
-import os
-import pdb
-from datetime import datetime
 from http import HTTPStatus
-from werkzeug.exceptions import Conflict
 
 import jwt
-from flask import Flask, Response, jsonify, request
-from flask_bcrypt import Bcrypt
+from flask import Flask, Response, request
 from flask_migrate import Migrate
-from flask_restful import Resource, inputs, reqparse, fields, marshal_with, abort
-from flask_sqlalchemy import SQLAlchemy
+from flask_restful import Resource, abort, fields, inputs, marshal_with, reqparse
 from sqlalchemy import create_engine
-from sqlalchemy.engine.reflection import Inspector
+from werkzeug.exceptions import Conflict
 
-# import other files
 from API.locationAPI import LocationValidator
 from database.users_models import UserInformation, db
 from get_env import (
@@ -29,9 +22,7 @@ from get_env import (
     secret_key,
 )
 from helper_functions.middleware_functions import token_required
-from helper_functions.validate_users_information import (
-    validate_users_information
-)
+from helper_functions.validate_users_information import validate_users_information
 
 user_profile_app = Flask(__name__)
 
@@ -44,7 +35,7 @@ user_profile_app.config[
 engine = create_engine(
     f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
 )
-inspector = Inspector.from_engine(engine)
+# inspector = Inspector.from_engine(engine)
 
 # Create the SQLAlchemy database object
 db.init_app(user_profile_app)
@@ -117,13 +108,13 @@ class UserInformationResource(Resource):
             required=True,
         )
         form_data.add_argument(
-            "first_address",
+            "address_line_1",
             type=str,
             help="First address is required",
             required=True,
         )
         form_data.add_argument(
-            "second_address",
+            "address_line_2",
             type=str,
             help="Second address is required",
             required=False,
@@ -201,8 +192,8 @@ class UserInformationResource(Resource):
         update_form_data.add_argument(
             "birth_day", type=inputs.date, help="Birthday format must be YYYY-MM-DD"
         )
-        update_form_data.add_argument("first_address", type=str)
-        update_form_data.add_argument("second_address", type=str)
+        update_form_data.add_argument("address_line_1", type=str)
+        update_form_data.add_argument("address_line_2", type=str)
         update_form_data.add_argument("city", type=str)
         update_form_data.add_argument("province", type=str)
         update_form_data.add_argument("country", type=str)
@@ -300,8 +291,8 @@ class UserInformationResource(Resource):
                 last_name = args["last_name"]
                 age = args["age"]
                 birth_day = args["birth_day"]
-                first_address = args["first_address"]
-                second_address = args["second_address"]
+                address_line_1 = args["address_line_1"]
+                address_line_2 = args["address_line_2"]
                 city = args["city"]
                 province = args["province"]
                 country = args["country"]
@@ -343,8 +334,8 @@ class UserInformationResource(Resource):
                 # if the address is not valid
                 addressChecking = LocationValidator(
                     errors,
-                    first_address=first_address,
-                    second_address=second_address,
+                    address_line_1=address_line_1,
+                    address_line_2=address_line_2,
                     city=city,
                     province=province,
                     country=country,
@@ -355,26 +346,6 @@ class UserInformationResource(Resource):
                 if not errors and addressChecking.is_valid_address():
                     # query the database to check if there is any user that already exists with the same information
                     result = UserInformation.query.filter_by(
-                        first_name=first_name,
-                        middle_name=mid_name,
-                        last_name=last_name,
-                        age=age,
-                        date_of_birth=birth_day,
-                        address_line_1=first_address,
-                        address_line_2=second_address,
-                        city=city,
-                        province=province,
-                        country=country,
-                        postal_code=postal_code,
-                        gender=gender,
-                        religion=religion,
-                        profile_image=profile_image,
-                        education_institutions=education_institution,
-                        education_majors=education_majors,
-                        education_degrees=education_degrees,
-                        graduation_date=graduation_date,
-                        identification_option=identification_option,
-                        identification_material=identification_material,
                         user_id=user_id,
                     ).first()
 
@@ -389,8 +360,8 @@ class UserInformationResource(Resource):
                         last_name=last_name,
                         age=age,
                         date_of_birth=birth_day,
-                        address_line_1=first_address,
-                        address_line_2=second_address,
+                        address_line_1=address_line_1,
+                        address_line_2=address_line_2,
                         city=city,
                         province=province,
                         country=country,
@@ -408,7 +379,7 @@ class UserInformationResource(Resource):
                         identification_material=identification_material,
                         user_id=user_id,
                     )
-                    pdb.set_trace()
+
                     # add new user into users model
                     db.session.add(new_user)
                     # commit the change to the database -> 201 if successful
@@ -479,16 +450,16 @@ class UserInformationResource(Resource):
                 # check to see if the address is corrected
                 # create 2 python dictionaries
                 existing_location_data = {
-                    "first_address": user_information.address_line_1,
-                    "second_address": user_information.address_line_2,
+                    "address_line_1": user_information.address_line_1,
+                    "address_line_2": user_information.address_line_2,
                     "city": user_information.city,
                     "country": user_information.country,
                     "postal_code": user_information.postal_code,
                 }
 
                 update_location_data = {
-                    "first_address": update_args["first_address"],
-                    "second_address": update_args["second_address"],
+                    "address_line_1": update_args["address_line_1"],
+                    "address_line_2": update_args["address_line_2"],
                     "city": update_args["city"],
                     "province": update_args["province"],
                     "country": update_args["country"],
