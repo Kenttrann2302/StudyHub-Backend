@@ -34,8 +34,6 @@ login_app = Flask(__name__)
 # login_app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 # login_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db.init_app(login_app)
-
 # register the app instance with the endpoints we are using for this app
 login_routes = Blueprint("login_routes", __name__)
 
@@ -50,6 +48,8 @@ login_app.config[
 engine = create_engine(
     f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
 )
+
+db.init_app(login_app)
 
 # global variables
 # initialize an errors dictionary to notify the error message on the front-end for the user
@@ -105,219 +105,218 @@ class SignInResource(Resource):
     # this is a function to handle the POST request from the login form data and validate them against the registration table to see if the user is already registered in the system
     def post(self) -> None:
         with login_app.app_context():
-            if request.method == "POST":
-                try:
-                    # get the form data include username and password and validate them against the database
-                    signInForm = reqparse.RequestParser()
-                    signInForm.add_argument(
-                        "signIn_username",
-                        type=str,
-                        help="Username is required for logging in",
-                        required=True,
-                    )
-                    signInForm.add_argument(
-                        "signIn_password",
-                        type=str,
-                        help="Password is required for logging in",
-                        required=True,
-                    )
+            try:
+                # get the form data include username and password and validate them against the database
+                signInForm = reqparse.RequestParser()
+                signInForm.add_argument(
+                    "signIn_username",
+                    type=str,
+                    help="Username is required for logging in",
+                    required=True,
+                )
+                signInForm.add_argument(
+                    "signIn_password",
+                    type=str,
+                    help="Password is required for logging in",
+                    required=True,
+                )
 
-                    args = signInForm.parse_args()
-                    signIn_username = args["signIn_username"]
-                    signIn_password = args["signIn_password"]
+                args = signInForm.parse_args()
+                signIn_username = args["signIn_username"]
+                signIn_password = args["signIn_password"]
 
-                    # Get the fields that are validated
-                    create_validated_fields_dict(
-                        validated_fields=validated_fields,
-                        username=signIn_username,
-                        password=signIn_password,
-                    )
+                # Get the fields that are validated
+                create_validated_fields_dict(
+                    validated_fields=validated_fields,
+                    username=signIn_username,
+                    password=signIn_password,
+                )
 
-                    # Query user record from database
-                    user = Users.query.filter(Users.username == signIn_username).first()
+                # Query user record from database
+                user = Users.query.filter(Users.username == signIn_username).first()
 
-                    # Validate user credentials
-                    if user:
-                        # if the username and password is correct
-                        if bcrypt.checkpw(
-                            signIn_password.encode("utf-8"),
-                            user.password.encode("utf-8"),
-                        ):
-                            # User credentials are valid
-                            # verified if the user's verification method has been verified with StudyHub system
-                            if user.account_verified == False:
-                                # abort if the user did not verify their email or sms or device push notification
-                                response_data = {
-                                    "message": f"Sorry! But it seems like you need to verify your {user.verification_method} with our system!"
-                                }
-                                response_json = json.dumps(response_data)
-                                response = Response(
-                                    response_json,
-                                    status=403,
-                                    mimetype="application/json",
-                                )
-                                return response
-
-                            # grant permissions for the users to view the dashboard, use geolocation, view, upload and update their own profile
-                            # give the user the permission to view, upload or update their profile
-                            #  permissions_list = ['can_view_dashboard', 'can_view_profile', 'can_upload_profile', 'can_update_profile', 'can_use_geolocation_api']
-                            permissions_list = ["can_verify_otp"]
-                            for permission in permissions_list:
-                                grant_permission_response = (
-                                    grant_permission_to_verified_users(
-                                        permission_name=permission,
-                                        db=db,
-                                        Users=Users,
-                                        Permission=Permission,
-                                    )
-                                )
-
-                            # if grant permission return successfully
-                            if grant_permission_response:
-                                # Generate JWT token and store it in cookies
-                                # query the permissions list in the user table with the user id
-                                permissions = [
-                                    permission.name for permission in user.permissions
-                                ]
-                                global token
-                                global user_email
-                                user_email = user.verification
-                                token = jwt.encode(
-                                    {
-                                        "id": str(user.user_id),
-                                        "username": user.username,
-                                        "verification_id": user.verification_method,
-                                        "verification_endpoint": user.verification,
-                                        "exp": datetime.now(pytz.timezone("EST"))
-                                        + timedelta(minutes=10),
-                                        "permissions": permissions,
-                                    },
-                                    secret_key,
-                                    algorithm="HS256",
-                                )
-
-                                # if the user's verification option is an email address, then redirect the user to the enpoint of lambda functions to send OTP Verification code
-                                if user.verification_method == "Email":
-                                    # store the token into the request header and send it to aws lambda function
-                                    headers = {"Authorization": f"Bearer {token}"}
-
-                                    response = requests.get(
-                                        url=aws_sending_otp, headers=headers
-                                    )
-
-                                    # if the GET request towards AWS API Gateway successfully
-                                    if response.status_code == 200:
-                                        # save to verify token to the database along with the user_id
-                                        user.verify_otp_token = token
-
-                                        # object serialize for REST API
-                                        response_data = {
-                                            "message": f"An OTP code to verify {user.user_id} with email: {user.verification} has been sent successfully!",
-                                            "user_id": str(user.user_id),
-                                            "username": user.username,
-                                            "verification_method": user.verification_method,
-                                            "verification": user.verification,
-                                            "permissions": permissions,
-                                            "token": token,
-                                        }
-
-                                        response_json = json.dumps(response_data)
-                                        response = Response(
-                                            response=response_json,
-                                            status=200,
-                                            mimetype="application/json",
-                                        )
-
-                                        return response
-
-                                    # if there is an error while sending the request to AWS Lambda function url
-                                    else:
-                                        response_data = {
-                                            "message": f"Sending an OTP code to the user's email resulted in errors with status code: {response.status_code}"
-                                        }
-
-                                        response_json = json.dumps(response_data)
-                                        response = Response(
-                                            response=response_json,
-                                            status=response.status_code,
-                                            mimetype="application/json",
-                                        )
-
-                                        return response
-
-                                # Store the token in cookie local storage if the user choose sms for verification
-                                response = make_response()
-                                response.set_cookie(
-                                    "token",
-                                    value=token,
-                                    expires=datetime.now(pytz.timezone("EST"))
-                                    + timedelta(minutes=30),
-                                    httponly=True,
-                                )
-
-                                # Redirect to the dashboard and some restricted resource
-                                return response
-
-                            # if cannot grant permission due to any server error
-                            else:
-                                response_data = {
-                                    "message": f"There is an internal server error while granting the permission for the user!"
-                                }
-                                response_json = json.dumps(response_data)
-                                response = Response(
-                                    response=response_json,
-                                    status=500,
-                                    mimetype="application/json",
-                                )
-                                return response
-
-                        # if correct username but wrong password
-                        else:
-                            signin_errors[
-                                "signIn_password"
-                            ] = f"Password is invalid! Please enter again, if you forget your password, please click on the link below to reset your password!"
+                # Validate user credentials
+                if user:
+                    # if the username and password is correct
+                    if bcrypt.checkpw(
+                        signIn_password.encode("utf-8"),
+                        user.password.encode("utf-8"),
+                    ):
+                        # User credentials are valid
+                        # verified if the user's verification method has been verified with StudyHub system
+                        if user.account_verified == False:
+                            # abort if the user did not verify their email or sms or device push notification
                             response_data = {
-                                "error": signin_errors["signIn_password"],
-                                "validated_fields": validated_fields,
+                                "message": f"Sorry! But it seems like you need to verify your {user.verification_method} with our system!"
                             }
-
                             response_json = json.dumps(response_data)
                             response = Response(
-                                response=response_json,
-                                status=401,
+                                response_json,
+                                status=403,
                                 mimetype="application/json",
                             )
                             return response
 
-                    # User credentials are invalid
-                    # Return error response or redirect to login page wit error message
+                        # grant permissions for the users to view the dashboard, use geolocation, view, upload and update their own profile
+                        # give the user the permission to view, upload or update their profile
+                        #  permissions_list = ['can_view_dashboard', 'can_view_profile', 'can_upload_profile', 'can_update_profile', 'can_use_geolocation_api']
+                        permissions_list = ["can_verify_otp"]
+                        for permission in permissions_list:
+                            grant_permission_response = (
+                                grant_permission_to_verified_users(
+                                    permission_name=permission,
+                                    db=db,
+                                    Users=Users,
+                                    Permission=Permission,
+                                )
+                            )
+
+                        # if grant permission return successfully
+                        if grant_permission_response:
+                            # Generate JWT token and store it in cookies
+                            # query the permissions list in the user table with the user id
+                            permissions = [
+                                permission.name for permission in user.permissions
+                            ]
+                            global token
+                            global user_email
+                            user_email = user.verification
+                            token = jwt.encode(
+                                {
+                                    "id": str(user.user_id),
+                                    "username": user.username,
+                                    "verification_id": user.verification_method,
+                                    "verification_endpoint": user.verification,
+                                    "exp": datetime.now(pytz.timezone("EST"))
+                                    + timedelta(minutes=10),
+                                    "permissions": permissions,
+                                },
+                                secret_key,
+                                algorithm="HS256",
+                            )
+
+                            # if the user's verification option is an email address, then redirect the user to the enpoint of lambda functions to send OTP Verification code
+                            if user.verification_method == "Email":
+                                # store the token into the request header and send it to aws lambda function
+                                headers = {"Authorization": f"Bearer {token}"}
+
+                                response = requests.get(
+                                    url=aws_sending_otp, headers=headers
+                                )
+
+                                # if the GET request towards AWS API Gateway successfully
+                                if response.status_code == 200:
+                                    # save to verify token to the database along with the user_id
+                                    user.verify_otp_token = token
+
+                                    # object serialize for REST API
+                                    response_data = {
+                                        "message": f"An OTP code to verify {user.user_id} with email: {user.verification} has been sent successfully!",
+                                        "user_id": str(user.user_id),
+                                        "username": user.username,
+                                        "verification_method": user.verification_method,
+                                        "verification": user.verification,
+                                        "permissions": permissions,
+                                        "token": token,
+                                    }
+
+                                    response_json = json.dumps(response_data)
+                                    response = Response(
+                                        response=response_json,
+                                        status=200,
+                                        mimetype="application/json",
+                                    )
+
+                                    return response
+
+                                # if there is an error while sending the request to AWS Lambda function url
+                                else:
+                                    response_data = {
+                                        "message": f"Sending an OTP code to the user's email resulted in errors with status code: {response.status_code}"
+                                    }
+
+                                    response_json = json.dumps(response_data)
+                                    response = Response(
+                                        response=response_json,
+                                        status=response.status_code,
+                                        mimetype="application/json",
+                                    )
+
+                                    return response
+
+                            # Store the token in cookie local storage if the user choose sms for verification
+                            response = make_response()
+                            response.set_cookie(
+                                "token",
+                                value=token,
+                                expires=datetime.now(pytz.timezone("EST"))
+                                + timedelta(minutes=30),
+                                httponly=True,
+                            )
+
+                            # Redirect to the dashboard and some restricted resource
+                            return response
+
+                        # if cannot grant permission due to any server error
+                        else:
+                            response_data = {
+                                "message": f"There is an internal server error while granting the permission for the user!"
+                            }
+                            response_json = json.dumps(response_data)
+                            response = Response(
+                                response=response_json,
+                                status=500,
+                                mimetype="application/json",
+                            )
+                            return response
+
+                    # if correct username but wrong password
                     else:
                         signin_errors[
-                            "signIn_username"
-                        ] = f"Sorry! We cannot find any user with this username and password! If you are a new user, click on the link below to register with us!"
+                            "signIn_password"
+                        ] = f"Password is invalid! Please enter again, if you forget your password, please click on the link below to reset your password!"
                         response_data = {
-                            "error": signin_errors["signIn_username"],
+                            "error": signin_errors["signIn_password"],
                             "validated_fields": validated_fields,
                         }
 
                         response_json = json.dumps(response_data)
                         response = Response(
                             response=response_json,
-                            status=404,
+                            status=401,
                             mimetype="application/json",
                         )
                         return response
 
-                # handle any internal server error
-                except Exception as error:
+                # User credentials are invalid
+                # Return error response or redirect to login page wit error message
+                else:
+                    signin_errors[
+                        "signIn_username"
+                    ] = f"Sorry! We cannot find any user with this username and password! If you are a new user, click on the link below to register with us!"
                     response_data = {
-                        "message": f"Sorry! The server cannot process the request due to an internal server error: {error}"
+                        "error": signin_errors["signIn_username"],
+                        "validated_fields": validated_fields,
                     }
+
                     response_json = json.dumps(response_data)
                     response = Response(
-                        response=response_json, status=500, mimetype="application/json"
+                        response=response_json,
+                        status=404,
+                        mimetype="application/json",
                     )
                     return response
+
+            # handle any internal server error
+            except Exception as error:
+                response_data = {
+                    "message": f"Sorry! The server cannot process the request due to an internal server error: {error}"
+                }
+                response_json = json.dumps(response_data)
+                response = Response(
+                    response=response_json, status=500, mimetype="application/json"
+                )
+                return response
 
 
 # create a resource for the Rest API to handle the GET request to the AWS Verify OTP Lambda function to verify the user's otp code

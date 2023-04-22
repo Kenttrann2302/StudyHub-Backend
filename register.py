@@ -50,13 +50,13 @@ register_app.config[
 engine = create_engine(
     f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
 )
-inspector = Inspector.from_engine(engine)
+# inspector = Inspector.from_engine(engine)
 
 # # create the sqlalchemy database object
 db.init_app(register_app)
 
 # create the registration table according to the registration model
-create_all_tables(app=register_app, inspector=inspector, db=db, engine=engine)
+# create_all_tables(app=register_app, inspector=inspector, db=db, engine=engine)
 
 # global variables
 # initialize all the a dictionary of validated fields for user inputs

@@ -40,7 +40,7 @@ user_profile_app.config[
 engine = create_engine(
     f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
 )
-inspector = Inspector.from_engine(engine)
+# inspector = Inspector.from_engine(engine)
 
 # Create the SQLAlchemy database object
 db.init_app(user_profile_app)
@@ -351,26 +351,6 @@ class UserInformationResource(Resource):
                 if not errors and addressChecking.is_valid_address():
                     # query the database to check if there is any user that already exists with the same information
                     result = UserInformation.query.filter_by(
-                        first_name=first_name,
-                        middle_name=mid_name,
-                        last_name=last_name,
-                        age=age,
-                        date_of_birth=birth_day,
-                        address_line_1=address_line_1,
-                        address_line_2=address_line_2,
-                        city=city,
-                        province=province,
-                        country=country,
-                        postal_code=postal_code,
-                        gender=gender,
-                        religion=religion,
-                        profile_image=profile_image,
-                        education_institutions=education_institution,
-                        education_majors=education_majors,
-                        education_degrees=education_degrees,
-                        graduation_date=graduation_date,
-                        identification_option=identification_option,
-                        identification_material=identification_material,
                         user_id=user_id,
                     ).first()
 
@@ -404,7 +384,7 @@ class UserInformationResource(Resource):
                         identification_material=identification_material,
                         user_id=user_id,
                     )
-                    pdb.set_trace()
+
                     # add new user into users model
                     db.session.add(new_user)
                     # commit the change to the database -> 201 if successful
