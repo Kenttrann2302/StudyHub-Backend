@@ -17,7 +17,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine.reflection import Inspector
 
 # import other files
-from API.locationAPI import checkAddress
+from API.locationAPI import LocationValidator
 from database.users_models import UserInformation, db
 from get_env import (
     database_host,
@@ -349,7 +349,7 @@ class UserInformationResource(Resource):
 
                 # after getting the address, check for the validation using Google Maps Geocoding API before execute the insert the element
                 # if the address is not valid
-                addressChecking = checkAddress(
+                addressChecking = LocationValidator(
                     errors,
                     first_address=first_address,
                     second_address=second_address,
@@ -484,23 +484,6 @@ class UserInformationResource(Resource):
                 errors = {}
 
                 # check if each argument is in the update_args -> yes (update the database field), no (leave them)
-                # validate each input field if they are included
-                # validate_users_information(
-                #     errors,
-                #     update_args['first_name'],
-                #     update_args['last_name'],
-                #     update_args['age'],
-                #     update_args['birth_day'],
-                #     update_args['gender'],
-                #     update_args['profile_image'],
-                #     update_args['education_institutions'],
-                #     update_args['education_majors'],
-                #     update_args['education_degrees'],
-                #     update_args['graduation_date'],
-                #     update_args['identification_option'],
-                #     update_args['identification_material']
-                # )
-
                 # check to see if the address is corrected
                 # create 2 python dictionaries
                 existing_location_data = {
@@ -522,19 +505,13 @@ class UserInformationResource(Resource):
 
                 update_location_data.update(existing_location_data)
 
-                geolocation_api_result = checkAddress(
+                location_validator = LocationValidator(
                     errors,
                     **update_location_data,
-                    # update_args['first_address'],
-                    # update_args['city'],
-                    # update_args['province'],
-                    # update_args['country'],
-                    # update_args['postal_code'],
-                    # update_args['second_address']
                 )
 
                 # if all the fields are valid
-                if not errors and geolocation_api_result.is_valid_address():
+                if not errors and location_validator.is_valid_address():
                     for args_names, args_values in update_args.items():
                         if args_values:
                             setattr(
@@ -554,9 +531,9 @@ class UserInformationResource(Resource):
                 else:
                     raise ValueError
 
-            except ValueError as error:
+            except ValueError:
                 db.session.rollback()
-                abort(400, message=f"{error}")
+                abort(400, message=json.dumps(errors))
 
             # catch the 404 error
             except Conflict as conflict_error:

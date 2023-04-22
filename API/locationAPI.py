@@ -15,17 +15,11 @@ from flask import Flask, request
 from get_env import google_api_secret_key
 
 
-class checkAddress:
+class LocationValidator:
     def __init__(
         self,
         errors,
         **kwargs,
-        # first_address=None,
-        # second_address=None,
-        # city=None,
-        # province=None,
-        # country=None,
-        # postal_code=None,
     ) -> None:
         self.errors = errors
         self.address_line_1 = kwargs.get("first_address", None)
