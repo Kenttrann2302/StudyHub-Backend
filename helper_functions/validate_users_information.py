@@ -122,7 +122,7 @@ def validate_users_information(
         ] = f"Please choose which your method of student verification!"
 
     # validate user's identification material if the user's choose to upload the image
-    if identification_option != "Student Email Address":
+    if identification_option != "Student Email Address" and identification_option is not None:
         if not validate_files_upload(identification_material):
             errors[
                 "identification_material"
