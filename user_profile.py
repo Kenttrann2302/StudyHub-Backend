@@ -57,39 +57,35 @@ inspector = Inspector.from_engine(engine)
 # Create the SQLAlchemy database object
 db.init_app(user_profile_app)
 
+# resources fields to serialize the response object
+_user_information_resource_fields = {
+    "first_name": fields.String,
+    "middle_name": fields.String,
+    "last_name": fields.String,
+    "age": fields.Integer,
+    "date_of_birth": fields.DateTime(dt_format="iso8601"),
+    "address_line_1": fields.String,
+    "address_line_2": fields.String,
+    "city": fields.String,
+    "province": fields.String,
+    "country": fields.String,
+    "postal_code": fields.String,
+    "gender": fields.String,
+    "religion": fields.String,
+    "profile_image": fields.String,
+    "user_bio": fields.String,
+    "interests": fields.String,
+    "education_institutions": fields.String,
+    "education_majors": fields.String,
+    "education_degrees": fields.String,
+    "graduation_date": fields.DateTime(dt_format="iso8601"),
+    "identification_option": fields.String,
+    "identification_material": fields.String,
+}
 
 
 # Querying and inserting into user profile database Flask_Restful API
 class UserInformationResource(Resource):
-
-    # resources fields to serialize the response object
-    _user_information_resource_fields = {
-        'first_name': fields.String,
-        'middle_name': fields.String,
-        'last_name': fields.String,
-        'age': fields.Integer,
-        'date_of_birth': fields.DateTime(dt_format='iso8601'),
-        'address_line_1': fields.String,
-        'address_line_2': fields.String,
-        'city': fields.String,
-        'province': fields.String,
-        'country': fields.String,
-        'postal_code': fields.String,
-        'gender': fields.String,
-        'religion': fields.String,
-        'profile_image': fields.String,
-        'user_bio': fields.String,
-        'interests': fields.String,
-        'education_institutions': fields.String,
-        'education_majors': fields.String,
-        'education_degrees': fields.String,
-        'graduation_date': fields.DateTime(dt_format='iso8601'),
-        'identification_option': fields.String,
-        'identification_material': fields.String
-    }
-    def __init__(self) -> None:
-        super().__init__()
-
     # private methods that abort if user information exists and not exists
     def __abort_if_user_profile_exists(self, user_id) -> None:
         if user_id:
@@ -140,9 +136,7 @@ class UserInformationResource(Resource):
             help="Second address is required",
             required=False,
         )
-        form_data.add_argument(
-            "city", type=str, help="City is required", required=True
-        )
+        form_data.add_argument("city", type=str, help="City is required", required=True)
         form_data.add_argument(
             "province", type=str, help="Province is required", required=True
         )
@@ -206,112 +200,77 @@ class UserInformationResource(Resource):
 
     # a private method that parse the update form data
     def __update_form_data_add_arguments(self, update_form_data):
-        update_form_data.add_argument(
-            "first_name",
-            type=str
-        )
+        update_form_data.add_argument("first_name", type=str)
         update_form_data.add_argument("mid_name", type=str)
+        update_form_data.add_argument("last_name", type=str)
         update_form_data.add_argument(
-            "last_name",
-            type=str
+            "age", type=int, help="Age must be larger than 18"
         )
         update_form_data.add_argument(
-            "age",
-            type=int,
-            help="Age must be larger than 18"
+            "birth_day", type=inputs.date, help="Birthday format must be YYYY-MM-DD"
         )
+        update_form_data.add_argument("first_address", type=str)
+        update_form_data.add_argument("second_address", type=str)
+        update_form_data.add_argument("city", type=str)
+        update_form_data.add_argument("province", type=str)
+        update_form_data.add_argument("country", type=str)
+        update_form_data.add_argument("postal_code", type=str)
+        update_form_data.add_argument("gender", type=str)
         update_form_data.add_argument(
-            "birth_day",
-            type=inputs.date,
-            help="Birthday format must be YYYY-MM-DD"
-        )
-        update_form_data.add_argument(
-            "first_address",
-            type=str
-        )
-        update_form_data.add_argument(
-            "second_address",
-            type=str
-        )
-        update_form_data.add_argument(
-            "city", type=str
-        )
-        update_form_data.add_argument(
-            "province", type=str
-        )
-        update_form_data.add_argument(
-            "country", type=str
-        )
-        update_form_data.add_argument(
-            "postal_code",
-            type=str
-        )
-        update_form_data.add_argument(
-            "gender", type=str
-        )
-        update_form_data.add_argument(
-            "profile_image",
-            type=str,
-            help="This will be an image in bytes"
+            "profile_image", type=str, help="This will be an image in bytes"
         )
         update_form_data.add_argument("religion", type=str)
         update_form_data.add_argument("user_bio", type=str)
         update_form_data.add_argument("user_interest", type=str)
-        update_form_data.add_argument(
-            "education_institutions",
-            type=str
-        )
-        update_form_data.add_argument(
-            "education_majors",
-            type=str
-        )
-        update_form_data.add_argument(
-            "education_degrees",
-            type=str
-        )
-        update_form_data.add_argument(
-            "graduation_date",
-            type=inputs.date
-        )
-        update_form_data.add_argument(
-            "identification_option",
-            type=str
-        )
+        update_form_data.add_argument("education_institutions", type=str)
+        update_form_data.add_argument("education_majors", type=str)
+        update_form_data.add_argument("education_degrees", type=str)
+        update_form_data.add_argument("graduation_date", type=inputs.date)
+        update_form_data.add_argument("identification_option", type=str)
         update_form_data.add_argument(
             "identification_material",
             type=str,
-            help="Identification material uploads will be convert to bytes"
+            help="Identification material uploads will be convert to bytes",
         )
 
     # a get method to get the user profile and return to the client
-    @token_required(permission_list=[
-        "can_view_dashboard",
-        "can_view_profile",
-        "can_change_profile"
-    ], secret_key=secret_key)
+    @token_required(
+        permission_list=[
+            "can_view_dashboard",
+            "can_view_profile",
+            "can_change_profile",
+        ],
+        secret_key=secret_key,
+    )
     @marshal_with(_user_information_resource_fields)  # serialize the instance object
     def get(self):
         with user_profile_app.app_context():
             # get the token from cookies
             try:
                 token = request.cookies.get("token")
-                decoded_token = jwt.decode(token, secret_key, algorithms=['HS256'])
-                user_id = decoded_token['id']  # get the user's id
+                decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
+                user_id = decoded_token["id"]  # get the user's id
                 # query the database to get the user with the user id
                 user = UserInformation.query.filter_by(user_id=user_id).first()
                 if user:
                     return user, 200
                 else:
                     raise Conflict
-            except Conflict as conflict_error: # -> no user's found in the database (user has not added their profile)
+            except (
+                Conflict
+            ) as conflict_error:  # -> no user's found in the database (user has not added their profile)
                 abort(404, message=f"{conflict_error}")
 
-            except Exception as error: # -> any error being caught such as jwt token value error, signature error,...
-                response_data = ({
-                    'message' : f"{error}" # return the error message to the client
-                })
+            except (
+                Exception
+            ) as error:  # -> any error being caught such as jwt token value error, signature error,...
+                response_data = {
+                    "message": f"{error}"  # return the error message to the client
+                }
                 response_json = json.dumps(response_data)
-                response = Response(response=response_json, status=500, mimetype='application/json')
+                response = Response(
+                    response=response_json, status=500, mimetype="application/json"
+                )
                 return response
 
     # handle the POST request from the form data
@@ -323,7 +282,7 @@ class UserInformationResource(Resource):
         ],
         secret_key=secret_key,
     )
-    @marshal_with(_user_information_resource_fields)   # serialize the response object
+    @marshal_with(_user_information_resource_fields)  # serialize the response object
     def post(self):
         with user_profile_app.app_context():
             # get the token from cookies to get the user id
@@ -339,7 +298,9 @@ class UserInformationResource(Resource):
             try:
                 # get the user's input from the form data
                 form_data = reqparse.RequestParser()
-                self.__form_data_add_arguments(form_data) # call the method to add all the arguments
+                self.__form_data_add_arguments(
+                    form_data
+                )  # call the method to add all the arguments
 
                 args = form_data.parse_args()
                 first_name = args["first_name"]
@@ -390,12 +351,12 @@ class UserInformationResource(Resource):
                 # if the address is not valid
                 addressChecking = checkAddress(
                     errors,
-                    first_address,
-                    city,
-                    province,
-                    country,
-                    postal_code,
-                    second_address,
+                    first_address=first_address,
+                    second_address=second_address,
+                    city=city,
+                    province=province,
+                    country=country,
+                    postal_code=postal_code,
                 )
 
                 # if all the fields are valid
@@ -430,44 +391,61 @@ class UserInformationResource(Resource):
 
                     # if the users information didn't exist in the database yet
                     # create a list of new user instance
-                    new_user = UserInformation(first_name=first_name, middle_name=mid_name, last_name=last_name, age=age, date_of_birth=birth_day, address_line_1=first_address, address_line_2=second_address, city=city, province=province, country=country, postal_code=postal_code, gender=gender, religion=religion, profile_image=profile_image, user_bio=user_bio, interests=user_interest, education_institutions=education_institution, education_majors=education_majors, education_degrees=education_degrees, graduation_date=graduation_date, identification_option=identification_option, identification_material=identification_material, user_id=user_id)
-
+                    new_user = UserInformation(
+                        first_name=first_name,
+                        middle_name=mid_name,
+                        last_name=last_name,
+                        age=age,
+                        date_of_birth=birth_day,
+                        address_line_1=first_address,
+                        address_line_2=second_address,
+                        city=city,
+                        province=province,
+                        country=country,
+                        postal_code=postal_code,
+                        gender=gender,
+                        religion=religion,
+                        profile_image=profile_image,
+                        user_bio=user_bio,
+                        interests=user_interest,
+                        education_institutions=education_institution,
+                        education_majors=education_majors,
+                        education_degrees=education_degrees,
+                        graduation_date=graduation_date,
+                        identification_option=identification_option,
+                        identification_material=identification_material,
+                        user_id=user_id,
+                    )
+                    pdb.set_trace()
                     # add new user into users model
                     db.session.add(new_user)
                     # commit the change to the database -> 201 if successful
                     db.session.commit()
-                    return new_user, 201
+
+                    find_user_information = UserInformation.query.filter_by(
+                        user_id=user_id
+                    ).first()
+
+                    return find_user_information, 201
 
                 # if there is any invalid field is being caught (including address, profile image(if any)), send the error to the client with a 400 bad request status
                 else:
-                    db.session.rollback()
-                    response_data = {
-                        "message": json.dumps(errors) # errors that are caught with the invalid fields -> users need to enter them again
-                    }
-                    response_json = json.dumps(response_data)
-                    response = Response(
-                        response=response_json,
-                        status=400,
-                        mimetype="application/json",
-                    )
-                    return response
+                    raise ValueError
+
+            # catch 400 bad request error
+            except ValueError:
+                db.session.rollback()
+                abort(400, message=json.dumps(errors))
 
             # catch the 409 conflict error
             except Conflict as conflict_error:
                 db.session.rollback()
-                abort(409, message=f'{conflict_error}')
+                abort(409, message=f"{conflict_error}")
 
             # catch the error if there is an internal server error
             except Exception as e:
                 db.session.rollback()
-                response_data = {
-                    "message": f"There is an internal server error: {e}"
-                }
-                response_json = json.dumps(response_data)
-                response = Response(
-                    response=response_json, status=500, mimetype="application/json"
-                )
-                return response
+                abort(500, message=f"{e}")
 
     # a method to handle the UPDATE request
     @token_required(
@@ -483,15 +461,17 @@ class UserInformationResource(Resource):
         with user_profile_app.app_context():
             try:
                 # get the token from cookies
-                token = request.cookies.get('token')
+                token = request.cookies.get("token")
                 # decode the token
-                decoded_token = jwt.decode(token, secret_key, algorithms=['HS256'])
-                user_id = decoded_token['id']
+                decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
+                user_id = decoded_token["id"]
                 # query the user_information table to see if the user id already has profile
-                user = UserInformation.query.filter_by(user_id=user_id).first()
+                user_information = UserInformation.query.filter_by(
+                    user_id=user_id
+                ).first()
 
                 # if no user information found
-                self.__abort_if_user_profile_does_not_exists(user)
+                self.__abort_if_user_profile_does_not_exists(user_information)
 
                 # get the user's input from the form data
                 update_form_data = reqparse.RequestParser()
@@ -522,113 +502,125 @@ class UserInformationResource(Resource):
                 # )
 
                 # check to see if the address is corrected
-                # create a table
-                table = {
-                    'first_address' : None,
-                    'city' : None,
-                    'province' : None,
-                    'country' : None,
-                    'postal_code' : None,
-                    'second_address' : None
+                # create 2 python dictionaries
+                existing_location_data = {
+                    "first_address": user_information.address_line_1,
+                    "second_address": user_information.address_line_2,
+                    "city": user_information.city,
+                    "country": user_information.country,
+                    "postal_code": user_information.postal_code,
                 }
 
+                update_location_data = {
+                    "first_address": update_args["first_address"],
+                    "second_address": update_args["second_address"],
+                    "city": update_args["city"],
+                    "province": update_args["province"],
+                    "country": update_args["country"],
+                    "postal_code": update_args["postal_code"],
+                }
 
+                update_location_data.update(existing_location_data)
 
-                    geolocation_api_result = checkAddress(
-                        errors,
-                        update_args['first_address'],
-                        update_args['city'],
-                        update_args['province'],
-                        update_args['country'],
-                        update_args['postal_code'],
-                        update_args['second_address']
-                    )
+                geolocation_api_result = checkAddress(
+                    errors,
+                    **update_location_data,
+                    # update_args['first_address'],
+                    # update_args['city'],
+                    # update_args['province'],
+                    # update_args['country'],
+                    # update_args['postal_code'],
+                    # update_args['second_address']
+                )
 
                 # if all the fields are valid
                 if not errors and geolocation_api_result.is_valid_address():
                     for args_names, args_values in update_args.items():
                         if args_values:
-                          setattr(user, args_names, args_values) # set the attributes of the arguments
+                            setattr(
+                                user_information, args_names, args_values
+                            )  # set the attributes of the arguments
 
                     # commit the change to the database
                     db.session.commit()
 
-                    update_user = UserInformation.query.filter_by(user_id=user_id).first()
+                    update_user = UserInformation.query.filter_by(
+                        user_id=user_id
+                    ).first()
 
                     # return a response to the client
-                    return update_user
+                    return update_user, 201
 
                 else:
                     raise ValueError
-            except ValueError:
-                response_data = ({
-                    'message' : json.dumps(errors) # send the errors to the client
-                })
-                response_json = json.dumps(response_data)
-                response = Response(response_json, status=400, mimetype='application/json')
-                return response
+
+            except ValueError as error:
+                db.session.rollback()
+                abort(400, message=f"{error}")
 
             # catch the 404 error
             except Conflict as conflict_error:
                 db.session.rollback()
-                abort(404, message=f'{conflict_error}')
+                abort(404, message=f"{conflict_error}")
 
             except Exception as error:
-                response_data = ({
-                    'message' : f'{error}'
-                })
-                response_json = json.dumps(response_data)
-                response = Response(response_json, status=500, mimetype='application/json')
-                return response
-
+                db.session.rollback()
+                abort(500, message=f"{error}")
 
     # a method to delete a user's profile
-    @token_required(permission_list=
-    [
-        "can_view_dashboard",
-        "can_view_profile",
-        "can_change_profile"
-    ], secret_key=secret_key)
+    @token_required(
+        permission_list=[
+            "can_view_dashboard",
+            "can_view_profile",
+            "can_change_profile",
+        ],
+        secret_key=secret_key,
+    )
     @marshal_with(_user_information_resource_fields)
     def delete(self):
         with user_profile_app.app_context():
             # get the token from cookies
             try:
-                token = request.cookies.get('token')
-                decoded_token = jwt.decode(token, secret_key, algorithms=['HS256']) # decode the jwt token
+                token = request.cookies.get("token")
+                decoded_token = jwt.decode(
+                    token, secret_key, algorithms=["HS256"]
+                )  # decode the jwt token
                 # get the user id
-                user_id = decoded_token['id']
+                user_id = decoded_token["id"]
 
                 # query the database to see if the user has the profile
-                find_user_profile = UserInformation.query.filter_by(user_id=user_id).first()
+                find_user_profile = UserInformation.query.filter_by(
+                    user_id=user_id
+                ).first()
 
                 # abort if no profile found
                 self.__abort_if_user_profile_does_not_exists(find_user_profile)
 
-                db.session.query(UserInformation).filter(UserInformation.user_id==user_id).delete()
+                db.session.query(UserInformation).filter(
+                    UserInformation.user_id == user_id
+                ).delete()
                 # commit the change to the database
                 db.session.commit()
 
                 # return the response to the client if there is no error occured
-                response_data = ({
-                    'message' : f'User information has been successfully deleted!'
-                })
+                response_data = {
+                    "message": f"User information has been successfully deleted!"
+                }
                 response_json = json.dumps(response_data)
-                response = Response(response_json, status=HTTPStatus.CREATED, mimetype='application/json')
+                response = Response(
+                    response_json,
+                    status=HTTPStatus.CREATED,
+                    mimetype="application/json",
+                )
                 return response
 
             # except 404 conflict error
             except Conflict as conflict_error:
                 db.session.rollback()
-                abort(404, message=f'{conflict_error}')
+                abort(404, message=f"{conflict_error}")
 
-            except Exception as error: # try to catch the error and display to the client
-                response_data = ({
-                    'message' : 'Cannot delete the user information due to an internal server error!',
-                    'error' : error
-                })
-                response_json = json.dumps(response_data)
-                response = Response(response_json, status=500, mimetype='application/json')
-                return response
-
-
+            except (
+                Exception
+            ) as error:  # try to catch the error and display to the client
+                db.session.rollback()
+                abort(500, message=f"{error}")
