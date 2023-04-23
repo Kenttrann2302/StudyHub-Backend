@@ -4,14 +4,16 @@ import json
 from http import HTTPStatus
 
 import jwt
-from flask import Flask, Response, request
+import pytz
+from flask import Flask, Response, request, make_response
 from flask_migrate import Migrate
 from flask_restful import Resource, abort, fields, inputs, marshal_with, reqparse
 from sqlalchemy import create_engine
 from werkzeug.exceptions import Conflict
+from datetime import datetime, timedelta
 
 from API.locationAPI import LocationValidator
-from database.users_models import UserInformation, db
+from database.users_models import Users, UserInformation, Permission, db
 from get_env import (
     database_host,
     database_name,
@@ -268,17 +270,14 @@ class UserInformationResource(Resource):
     @marshal_with(_user_information_resource_fields)  # serialize the response object
     def post(self):
         with user_profile_app.app_context():
-            # get the token from cookies to get the user id
-            user_token = request.cookies.get("token")
-            # encode the token from string to bytes
-            # bytes_token = bytes(user_token, 'utf-8')
-            # decode the token
-            decoded_user_token = jwt.decode(
-                user_token, secret_key, algorithms=["HS256"]
-            )
-            user_id = decoded_user_token["id"]
-            # get the users inputs
             try:
+                # get the token from cookies to get the user id
+                user_token = request.cookies.get("token")
+                # decode the token
+                decoded_user_token = jwt.decode(
+                    user_token, secret_key, algorithms=["HS256"]
+                )
+                user_id = decoded_user_token["id"]
                 # get the user's input from the form data
                 form_data = reqparse.RequestParser()
                 self.__form_data_add_arguments(
@@ -382,6 +381,26 @@ class UserInformationResource(Resource):
 
                     # add new user into users model
                     db.session.add(new_user)
+
+                    # give user the permission to view and change the study preferences
+                    permission_lists = [
+                        "can_view_study_preferences",
+                        "can_change_study_preferences",
+                        "can_view_availability_schedule",
+                        "can_change_availability_schedule"
+                    ]
+                    for permission in permission_lists:
+                        # get the user's permission list from the db
+                        give_permission = Permission.query.filter_by(
+                            user_id=user_id, name=permission
+                        ).first()
+                        # grant the permission if it is not in there yet
+                        if not give_permission:
+                            give_permission = Permission(
+                                name=permission, user_id=user_id
+                            )
+                            db.session.add(give_permission)
+
                     # commit the change to the database -> 201 if successful
                     db.session.commit()
 
@@ -389,7 +408,28 @@ class UserInformationResource(Resource):
                         user_id=user_id
                     ).first()
 
-                    return find_user_information, 201
+                    # query the permissions list in the user table with the user id
+                    user = Users.query.filter_by(user_id=user_id).first()
+
+                    permissions = [permission.name for permission in user.permissions]
+
+                    # generate new jwt token with new permissions to authenticate the user if they can view and change study preferences
+                    new_token = jwt.encode({
+                        "id" : str(user_id),
+                        "permissions" : permissions,
+                        "exp" : datetime.now(pytz.timezone("EST")) + timedelta(minutes=30) # set the token to be expired after 30 minutes
+                    }, secret_key, algorithm="HS256")
+
+                    # store the token into cookies
+                    new_token_in_cookies = make_response((find_user_information, 201))
+                    new_token_in_cookies.set_cookie(
+                        "token",
+                        value=new_token,
+                        expires=datetime.now(pytz.timezone('EST')) + timedelta(minutes=30),
+                        httponly=True
+                    )
+
+                    return new_token_in_cookies
 
                 # if there is any invalid field is being caught (including address, profile image(if any)), send the error to the client with a 400 bad request status
                 else:

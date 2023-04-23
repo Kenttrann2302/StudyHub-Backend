@@ -25,6 +25,9 @@ from register import (  # -> REST API for registration
 from user_profile import (
     UserInformationResource,  # -> REST API for user to post their user's profile
 )
+from study_preferences import (
+    StudyPreferencesResource # -> REST API for user to post their study preferences
+)
 
 app = Flask(__name__)
 app.config["SERVER_NAME"] = "127.0.0.1:5000"
@@ -48,6 +51,7 @@ api.add_resource(RegistrationResource, "/studyhub/createaccount/")
 api.add_resource(SignInResource, "/studyhub/validateuser/")
 api.add_resource(verifyOTP, "/studyhub/verify-otp/<int:otp_code>/")
 api.add_resource(UserInformationResource, "/studyhub/user-profile/user-information/")
+api.add_resource(StudyPreferencesResource, "/studyhub/user-profile/study-preferences/")
 
 app.register_blueprint(registration_routes)
 

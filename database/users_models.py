@@ -76,6 +76,9 @@ class Permission(db.Model):
         UUID(as_uuid=True), db.ForeignKey("users.user_id"), nullable=False
     )
 
+    def __repr__(self) -> str:
+        return "<Permission %r>" % self.name
+
 
 ################################### USER'S PROFILE MODEL ###################################
 # a list of majors in university
@@ -234,7 +237,7 @@ for i in range(12):
     list_study_env.append(study_env["Study_env_preferences"][f"{i+1}"])
     list_study_time.append(
         study_time["Study_time_preferences"][f"{i+1}"]["Time"]
-        + "-"
+        + " - "
         + study_time["Study_time_preferences"][f"{i+1}"]["Frame"]
     )
 

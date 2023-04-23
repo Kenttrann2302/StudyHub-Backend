@@ -4,6 +4,10 @@ import uuid
 
 import requests
 
+
+################################# USER PROFILE #################################
+
+################################# USER INFORMATION #################################
 date_str = "2003-04-01"
 grad_day_str = "2027-04-30"
 date = datetime.date.fromisoformat(date_str)
@@ -27,6 +31,7 @@ print(response.json())
 cookie = response.cookies.get_dict()
 headers = {"Cookie": f"token={cookie['token']}"}
 
+# POST REQUEST
 data = [
     {
         "first_name": "Kent",
@@ -54,19 +59,25 @@ data = [
 
 # test the post request which insert the data into the database
 for i in range(len(data)):
-    response = requests.post(
+    post_user_information_response = requests.post(
         BASE + "/studyhub/user-profile/user-information/", headers=headers, data=data[i]
     )
     print("Post data:")
-    print(response.json())
+    print(post_user_information_response.json())
 
+# get the new token from cookies
+new_cookie = post_user_information_response.cookies.get_dict()
+new_headers = {"Cookie": f"token={cookie['token']}"}
+
+# GET REQUEST
 # test the get request which query the database and get the user information
 get_userProfile_response = requests.get(
-    BASE + "/studyhub/user-profile/user-information/", headers=headers
+    BASE + "/studyhub/user-profile/user-information/", headers=new_headers
 )
 print("Get data:")
 print(get_userProfile_response.json())
 
+# UPDATE REQUEST
 # test the patch request which update the fields in the user information
 update_data = {
     "education_majors": "Chemical Engineering",
@@ -74,7 +85,45 @@ update_data = {
 }
 
 update_response = requests.patch(
-    BASE + "/studyhub/user-profile/user-information/", headers=headers, data=update_data
+    BASE + "/studyhub/user-profile/user-information/", headers=new_headers, data=update_data
 )
 print("Update data:")
 print(update_response.json())
+
+
+
+################################# STUDY PREFERENCES #################################
+# POST REQUEST
+post_user_study_preferences = [
+    # all fields are included and correct -> 201 response
+    {
+        "study_env_preferences" : "Quiet study areas",
+        "study_time_preferences" : "Early morning - (5am-8am)",
+        "time_management_preferences" : "Pomodoro technique",
+        "study_techniques_preferences" : "The Feynman Technique",
+        "courses_preferences" : ["MATH115", "MTE121", "MTE140"],
+        "communication_preferences" : "Facebook"
+    }
+]
+
+for i in len(post_user_study_preferences):
+    post_study_pref_response = requests.post(BASE + "/studyhub/user-profile/study-preferences/", headers=new_headers, data=post_user_study_preferences[i])
+    print(response.json())
+
+# GET REQUEST
+get_study_pref_response = requests.get(BASE + "/studyhub/user-profile/study-preferences/", headers=new_headers)
+print(get_study_pref_response.json())
+
+update_user_study_preferences = [
+    # all update fields are correct
+    {
+        "communication_preferences" : "Twitter",
+        "study_env_preferences" : "Outdoors"
+    }
+]
+
+# PATCH REQUEST
+for i in range(len(update_user_study_preferences)):
+    patch_study_pref_response = requests.patch(BASE + "/studyhub/user-profile/study-preferences/", headers=new_headers, data=update_user_study_preferences[i])
+    print(patch_study_pref_response.json())
+
