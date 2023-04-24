@@ -11,6 +11,7 @@ from flask_migrate import Migrate
 from flask_restful import Resource, inputs, reqparse, fields, marshal_with, abort
 from sqlalchemy import create_engine
 from sqlalchemy.engine.reflection import Inspector
+from marshmallow import Schema, fields
 
 # import other files in the root directory
 from database.users_models import StudyPreferences, db
@@ -88,7 +89,7 @@ class StudyPreferencesResource(Resource):
 
         post_form_data.add_argument(
             "courses_preferences",
-            type= fields.List(fields.Nested(fields.String)),
+            type=str,
             help="Student has to choose the maximum of 8 courses",
             required=True
         )
@@ -113,9 +114,11 @@ class StudyPreferencesResource(Resource):
     def __validate_form_data(self, errors, **kwargs) -> None:
         for key, value in kwargs.items():
             if key == 'courses_preferences':
-                if len(value) > 8:
+                # split the string into an array of string represents courses codes
+                course_count = value.split(', ')
+                if len(course_count) > 8:
                     errors[key] = f'Student must choose at most 8 favorite courses.'
-                else:
+                elif len(course_count) < 1:
                     errors[key] = f'Student must choose at least 1 favorite course.'
             else:
                 if value == '--select--':
@@ -144,7 +147,7 @@ class StudyPreferencesResource(Resource):
                 # query the study preferences table to get the user with the user id
                 user_study_pref = StudyPreferences.query.filter_by(user_id=user_id).first()
                 # if user record for study preferences found
-                if user:
+                if user_study_pref:
                     return user_study_pref, 200
                 # if user record for study preferences is not found
                 else:
@@ -173,6 +176,8 @@ class StudyPreferencesResource(Resource):
         with current_app.app_context():
             # get the token from cookies
             try:
+                import pdb
+                pdb.set_trace()
                 token = request.cookies.get("token")
                 # decode the token to get the user information
                 decoded_token = jwt.decode(
@@ -197,7 +202,7 @@ class StudyPreferencesResource(Resource):
 
                 # Validate the form data, if not -> send the error messages to front-end
                 # validate the users input before inserting the data into the database
-                __validate_form_data_add_argument(errors, args)
+                self.__validate_form_data(errors, **args)
 
                 # if no errors found in the form data
                 if not errors:
@@ -218,7 +223,7 @@ class StudyPreferencesResource(Resource):
                         time_management_preferences=time_management_pref,
                         study_techniques_preferences=study_techniques_pref,
                         courses_preferences=courses_pref,
-                        communication_pref=communication_pref
+                        communication_preferences=communication_pref
                     )
 
                     # add new study preferences for this user to the database
@@ -292,7 +297,7 @@ class StudyPreferencesResource(Resource):
 
                 # check if each argument is in the update_args -> if yes -> update the database field, if no -> leave
 
-                __validate_form_date(errors, update_args)
+                self.__validate_form_data(errors, update_args)
 
                 # if all the fields are valid
                 if not errors:

@@ -237,7 +237,7 @@ for i in range(12):
     list_study_env.append(study_env["Study_env_preferences"][f"{i+1}"])
     list_study_time.append(
         study_time["Study_time_preferences"][f"{i+1}"]["Time"]
-        + " - "
+        + " "
         + study_time["Study_time_preferences"][f"{i+1}"]["Frame"]
     )
 
@@ -275,7 +275,7 @@ class StudyPreferences(db.Model):
     )  # form a one to one relationship with the user's profile
 
     # study environment preferences
-    study_env_prefereces = db.Column(
+    study_env_preferences = db.Column(
         db.Enum(*list_study_env, name="list_study_env"), nullable=False
     )
 
@@ -297,11 +297,11 @@ class StudyPreferences(db.Model):
 
     # courses preferences
     courses_preferences = db.Column(
-        db.ARRAY(db.String(10), dimensions=8), nullable=False
+        db.String(500), nullable=False
     )  # user can choose up to 8 favorite courses
 
     # favorite communication social media platform -> connect with people that will be matched to form a study group
-    communication_prefereces = db.Column(
+    communication_preferences = db.Column(
         db.Enum(*list_social_media, name="list_social_media"), nullable=False
     )
 

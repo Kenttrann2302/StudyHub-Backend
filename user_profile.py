@@ -5,12 +5,14 @@ from http import HTTPStatus
 
 import jwt
 import pytz
-from flask import Flask, Response, request, make_response
+from flask import Flask, Response, request, make_response, jsonify
 from flask_migrate import Migrate
-from flask_restful import Resource, abort, fields, inputs, marshal_with, reqparse
+from flask_restful import Resource, abort, inputs, marshal_with, reqparse, marshal, fields
 from sqlalchemy import create_engine
 from werkzeug.exceptions import Conflict
 from datetime import datetime, timedelta
+
+from marshmallow import Schema
 
 from API.locationAPI import LocationValidator
 from database.users_models import Users, UserInformation, Permission, db
@@ -68,6 +70,30 @@ _user_information_resource_fields = {
     "identification_material": fields.String,
 }
 
+# create a schema to serialize an return an object after setting cookies in POST REQUEST
+class UserInformationSchema(Schema):
+    first_name = fields.String,
+    middle_name = fields.String,
+    last_name = fields.String,
+    age = fields.Integer,
+    date_of_birth = fields.DateTime(dt_format="iso8601"),
+    address_line_1 = fields.String,
+    address_line_2 = fields.String,
+    city = fields.String,
+    province = fields.String,
+    country = fields.String,
+    postal_code = fields.String,
+    gender = fields.String,
+    religion = fields.String,
+    profile_image = fields.String,
+    user_bio = fields.String,
+    interests = fields.String,
+    education_institutions = fields.String,
+    education_majors = fields.String,
+    education_degrees = fields.String,
+    graduation_date = fields.DateTime(dt_format="iso8601"),
+    identification_option = fields.String,
+    identification_material = fields.String
 
 # Querying and inserting into user profile database Flask_Restful API
 class UserInformationResource(Resource):
@@ -420,15 +446,20 @@ class UserInformationResource(Resource):
                         "exp" : datetime.now(pytz.timezone("EST")) + timedelta(minutes=30) # set the token to be expired after 30 minutes
                     }, secret_key, algorithm="HS256")
 
+                    find_user_information_schema = UserInformationSchema() 
+                    user_information = find_user_information_schema.dump(find_user_information)
+
                     # store the token into cookies
-                    new_token_in_cookies = make_response((find_user_information, 201))
+                    new_token_in_cookies = make_response(user_information)
                     new_token_in_cookies.set_cookie(
                         "token",
                         value=new_token,
                         expires=datetime.now(pytz.timezone('EST')) + timedelta(minutes=30),
                         httponly=True
                     )
-
+                    new_token_in_cookies.status_code = HTTPStatus.CREATED
+                    
+                    # return new_token_in_cookies
                     return new_token_in_cookies
 
                 # if there is any invalid field is being caught (including address, profile image(if any)), send the error to the client with a 400 bad request status

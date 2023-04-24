@@ -98,15 +98,15 @@ post_user_study_preferences = [
     # all fields are included and correct -> 201 response
     {
         "study_env_preferences" : "Quiet study areas",
-        "study_time_preferences" : "Early morning - (5am-8am)",
+        "study_time_preferences" : "Early morning (5am-8am)",
         "time_management_preferences" : "Pomodoro technique",
         "study_techniques_preferences" : "The Feynman Technique",
-        "courses_preferences" : ["MATH115", "MTE121", "MTE140"],
+        "courses_preferences" : "MATH115, MTE121, MTE140",
         "communication_preferences" : "Facebook"
     }
 ]
 
-for i in len(post_user_study_preferences):
+for i in range(len(post_user_study_preferences)):
     post_study_pref_response = requests.post(BASE + "/studyhub/user-profile/study-preferences/", headers=new_headers, data=post_user_study_preferences[i])
     print(response.json())
 
