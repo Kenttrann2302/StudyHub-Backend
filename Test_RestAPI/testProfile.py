@@ -57,6 +57,11 @@ data = [
     }
 ]
 
+print("\n")
+print("-"*10)
+print("USER INFORMATION MANUAL TEST")
+print("\n\n")
+
 # test the post request which insert the data into the database
 for i in range(len(data)):
     post_user_information_response = requests.post(
@@ -67,7 +72,9 @@ for i in range(len(data)):
 
 # get the new token from cookies
 new_cookie = post_user_information_response.cookies.get_dict()
-new_headers = {"Cookie": f"token={cookie['token']}"}
+new_headers = {"Cookie": f"token={new_cookie['token']}"}
+
+print("\n\n")
 
 # GET REQUEST
 # test the get request which query the database and get the user information
@@ -77,6 +84,8 @@ get_userProfile_response = requests.get(
 print("Get data:")
 print(get_userProfile_response.json())
 
+
+print("\n\n")
 # UPDATE REQUEST
 # test the patch request which update the fields in the user information
 update_data = {
@@ -94,6 +103,11 @@ print(update_response.json())
 
 ################################# STUDY PREFERENCES #################################
 # POST REQUEST
+print("\n\n\n")
+print('-'*10)
+print("STUDY PREFERENCES MANUAL TEST")
+print("\n\n")
+print("Post data: ")
 post_user_study_preferences = [
     # all fields are included and correct -> 201 response
     {
@@ -110,7 +124,9 @@ for i in range(len(post_user_study_preferences)):
     post_study_pref_response = requests.post(BASE + "/studyhub/user-profile/study-preferences/", headers=new_headers, data=post_user_study_preferences[i])
     print(response.json())
 
+print("\n\n")
 # GET REQUEST
+print("Get data: ")
 get_study_pref_response = requests.get(BASE + "/studyhub/user-profile/study-preferences/", headers=new_headers)
 print(get_study_pref_response.json())
 
@@ -122,6 +138,8 @@ update_user_study_preferences = [
     }
 ]
 
+print("\n\n")
+print("Update data:")
 # PATCH REQUEST
 for i in range(len(update_user_study_preferences)):
     patch_study_pref_response = requests.patch(BASE + "/studyhub/user-profile/study-preferences/", headers=new_headers, data=update_user_study_preferences[i])

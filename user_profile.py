@@ -12,7 +12,7 @@ from sqlalchemy import create_engine
 from werkzeug.exceptions import Conflict
 from datetime import datetime, timedelta
 
-from marshmallow import Schema
+from marshmallow import Schema, fields as ma_fields
 
 from API.locationAPI import LocationValidator
 from database.users_models import Users, UserInformation, Permission, db
@@ -72,28 +72,29 @@ _user_information_resource_fields = {
 
 # create a schema to serialize an return an object after setting cookies in POST REQUEST
 class UserInformationSchema(Schema):
-    first_name = fields.String,
-    middle_name = fields.String,
-    last_name = fields.String,
-    age = fields.Integer,
-    date_of_birth = fields.DateTime(dt_format="iso8601"),
-    address_line_1 = fields.String,
-    address_line_2 = fields.String,
-    city = fields.String,
-    province = fields.String,
-    country = fields.String,
-    postal_code = fields.String,
-    gender = fields.String,
-    religion = fields.String,
-    profile_image = fields.String,
-    user_bio = fields.String,
-    interests = fields.String,
-    education_institutions = fields.String,
-    education_majors = fields.String,
-    education_degrees = fields.String,
-    graduation_date = fields.DateTime(dt_format="iso8601"),
-    identification_option = fields.String,
-    identification_material = fields.String
+    first_name = ma_fields.String()
+    middle_name = ma_fields.String()
+    last_name = ma_fields.String()
+    age = ma_fields.Integer()
+    date_of_birth = ma_fields.Date()
+    address_line_1 = ma_fields.String()
+    address_line_2 = ma_fields.String()
+    city = ma_fields.String()
+    province = ma_fields.String()
+    country = ma_fields.String()
+    postal_code = ma_fields.String()
+    gender = ma_fields.String()
+    religion = ma_fields.String()
+    profile_image = ma_fields.String()
+    user_bio = ma_fields.String()
+    interests = ma_fields.String()
+    education_institutions = ma_fields.String()
+    education_majors = ma_fields.String()
+    education_degrees = ma_fields.String()
+    graduation_date = ma_fields.Date()
+    identification_option = ma_fields.String()
+    identification_material = ma_fields.String()
+    
 
 # Querying and inserting into user profile database Flask_Restful API
 class UserInformationResource(Resource):
@@ -293,7 +294,7 @@ class UserInformationResource(Resource):
         ],
         secret_key=secret_key,
     )
-    @marshal_with(_user_information_resource_fields)  # serialize the response object
+    # @marshal_with(_user_information_resource_fields)  # serialize the response object
     def post(self):
         with user_profile_app.app_context():
             try:
@@ -442,6 +443,7 @@ class UserInformationResource(Resource):
                     # generate new jwt token with new permissions to authenticate the user if they can view and change study preferences
                     new_token = jwt.encode({
                         "id" : str(user_id),
+                        "user_information_id" : str(find_user_information.id), # id of user_information model
                         "permissions" : permissions,
                         "exp" : datetime.now(pytz.timezone("EST")) + timedelta(minutes=30) # set the token to be expired after 30 minutes
                     }, secret_key, algorithm="HS256")

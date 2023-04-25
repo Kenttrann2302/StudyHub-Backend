@@ -77,11 +77,8 @@ register_errors = {}
 
 # define a resource fields to serialize the object (user's login information) to make sure that all the identifications have been inserted success
 user_resource_fields = {
-    "user_id": fields.String,
     "username": fields.String,
-    "password": fields.String,
-    "verification_method": fields.String,
-    "verification": fields.String,
+    "verification_method": fields.String
 }
 
 
@@ -90,11 +87,17 @@ class RegistrationResource(Resource):
     def __init__(self) -> None:
         super().__init__()
 
+    # private method that will abort if no user found
+    def __abort_if_user_does_not_exist(self, user_id):
+        with register_app.app_context():
+            if not user_id:
+                raise Conflict
+
     # this is a method to handle the GET request from the database after inserting the user's login information into the database
     @marshal_with(user_resource_fields)
     def get(self) -> None:
         with register_app.app_context():
-            # get all the users from the database
+            # get all the usernames and verification method from the database
             try:
                 all_users = Users.query.all()
                 if all_users:
@@ -328,6 +331,10 @@ class RegistrationResource(Resource):
                     response=response_json, status=500, mimetype="application/json"
                 )
                 return response
+
+    # this is a function that update the user information if the user forgot their username or password
+    
+            
 
 
 # a get request to perform a query string to get the token from the url and decode to get the email address and code to verify the user's email

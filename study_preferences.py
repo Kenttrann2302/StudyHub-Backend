@@ -11,29 +11,18 @@ from flask_migrate import Migrate
 from flask_restful import Resource, inputs, reqparse, fields, marshal_with, abort
 from sqlalchemy import create_engine
 from sqlalchemy.engine.reflection import Inspector
-from marshmallow import Schema, fields
+from marshmallow import Schema
 
 # import other files in the root directory
 from database.users_models import StudyPreferences, db
 from get_env import (
-    database_host,
-    database_name,
-    database_password,
-    database_port,
-    database_type,
-    database_username,
     secret_key
 )
 from helper_functions.middleware_functions import token_required
 
-# # connect flask to postgres database using SQLALCHEMY
-# current_app.config[
-#     "SQLALCHEMY_DATABASE_URI"
-# ] = f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
 
 # resources fields to serialize the response object
 _study_preferences_resource_fields = {
-    "user_id" : fields.String,
     "study_env_preferences" : fields.String,
     "study_time_preferences" : fields.String,
     "time_management_preferences" : fields.String,
@@ -112,8 +101,9 @@ class StudyPreferencesResource(Resource):
 
     # a private method to validate the user input data before inserting them into the database
     def __validate_form_data(self, errors, **kwargs) -> None:
+        pdb.set_trace()
         for key, value in kwargs.items():
-            if key == 'courses_preferences':
+            if key == 'courses_preferences' and value:
                 # split the string into an array of string represents courses codes
                 course_count = value.split(', ')
                 if len(course_count) > 8:
@@ -143,9 +133,9 @@ class StudyPreferencesResource(Resource):
                 token = request.cookies.get('token')
                 # decode the token to get the user information
                 decoded_token = jwt.decode(token, secret_key, algorithms=['HS256'])
-                user_id = decoded_token["id"]
+                user_information_id = decoded_token["user_information_id"]
                 # query the study preferences table to get the user with the user id
-                user_study_pref = StudyPreferences.query.filter_by(user_id=user_id).first()
+                user_study_pref = StudyPreferences.query.filter_by(user_id=user_information_id).first()
                 # if user record for study preferences found
                 if user_study_pref:
                     return user_study_pref, 200
@@ -176,14 +166,12 @@ class StudyPreferencesResource(Resource):
         with current_app.app_context():
             # get the token from cookies
             try:
-                import pdb
-                pdb.set_trace()
                 token = request.cookies.get("token")
                 # decode the token to get the user information
                 decoded_token = jwt.decode(
                     token, secret_key, algorithms=["HS256"]
                 )
-                user_id = decoded_token["id"]
+                user_information_id = decoded_token["user_information_id"]
                 # get the users input from the post form data
 
                 post_form_data = reqparse.RequestParser()
@@ -208,7 +196,7 @@ class StudyPreferencesResource(Resource):
                 if not errors:
                     # query the database to check if there is any user that already exists with the same id
                     result = StudyPreferences.query.filter_by(
-                        user_id=user_id
+                        user_id=user_information_id
                     ).first()
 
                     # abort if the result is already in the database -> has to use update method
@@ -217,7 +205,7 @@ class StudyPreferencesResource(Resource):
                     # if the user didn't have any study preferences record
                     # create a list of new study preferences for user
                     new_study_preferences = StudyPreferences(
-                        user_id=user_id,
+                        user_id=user_information_id,
                         study_env_preferences=study_env_pref,
                         study_time_preferences=study_time_pref,
                         time_management_preferences=time_management_pref,
@@ -233,7 +221,7 @@ class StudyPreferencesResource(Resource):
 
                     # query the user study preferences in order to serialize the response to the client
                     query_user_study_preferences = StudyPreferences.query.filter_by(
-                        user_id=user_id
+                        user_id=user_information_id
                     ).first()
 
                     return query_user_study_preferences, 201
@@ -277,9 +265,9 @@ class StudyPreferencesResource(Resource):
                 # decode the token to get the user's study preferences
                 decoded_token = jwt.decode(token, secret_key, algorithms=['HS256'])
                 # get the user_id from the token
-                user_id = decoded_token["id"]
+                user_information_id = decoded_token["user_information_id"]
                 # query the study preferences table to see if the user's study preferences record has already been in the database
-                user_study_pref = StudyPreferences.query.filter_by(user_id=user_id).first()
+                user_study_pref = StudyPreferences.query.filter_by(user_id=user_information_id).first()
 
                 # if no user study preference record found
                 self.__abort_if_user_profile_does_not_exists(user_study_pref)
@@ -297,7 +285,7 @@ class StudyPreferencesResource(Resource):
 
                 # check if each argument is in the update_args -> if yes -> update the database field, if no -> leave
 
-                self.__validate_form_data(errors, update_args)
+                self.__validate_form_data(errors, **update_args)
 
                 # if all the fields are valid
                 if not errors:
@@ -312,7 +300,7 @@ class StudyPreferencesResource(Resource):
 
                     # query the database to get the information of the user after updating
                     update_user = StudyPreferences.query.filter_by(
-                        user_id = user_id
+                        user_id = user_information_id
                     ).first()
 
                     # return a response to the client
@@ -355,18 +343,18 @@ class StudyPreferencesResource(Resource):
                     token, secret_key, algorithms=["HS256"]
                 ) # decode the jwt token
                 # get the user id
-                user_id = decoded_token["id"]
+                user_information_id = decoded_token["user_information_id"]
 
                 # query the database to see if the user has the study preferences
                 user_study_pref = StudyPreferences.query.filter_by(
-                    user_id=user_id
+                    user_id=user_information_id
                 ).first()
 
                 # abort if no profile found
                 self.__abort_if_user_profile_does_not_exists(user_study_pref)
 
                 db.session.query(StudyPreferences).filter(
-                    StudyPreferences.user_id == user_id
+                    StudyPreferences.user_id == user_information_id
                 ).delete()
 
                 # commit the change to the database
