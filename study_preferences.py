@@ -3,7 +3,7 @@
 import json
 import pdb
 from http import HTTPStatus
-from werkzeug.exceptions import Conflict
+from werkzeug.exceptions import Conflict, BadRequest, NotFound
 
 import jwt
 from flask import Flask, Response, jsonify, request, current_app
@@ -42,7 +42,7 @@ class StudyPreferencesResource(Resource):
     # private method that abort if user didn't have study preferences record -> get, patch, delete
     def __abort_if_user_profile_does_not_exists(self, user_id) -> None:
         if not user_id:
-            raise Conflict
+            raise NotFound
         return
 
 
@@ -101,7 +101,6 @@ class StudyPreferencesResource(Resource):
 
     # a private method to validate the user input data before inserting them into the database
     def __validate_form_data(self, errors, **kwargs) -> None:
-        pdb.set_trace()
         for key, value in kwargs.items():
             if key == 'courses_preferences' and value:
                 # split the string into an array of string represents courses codes
@@ -136,18 +135,18 @@ class StudyPreferencesResource(Resource):
                 user_information_id = decoded_token["user_information_id"]
                 # query the study preferences table to get the user with the user id
                 user_study_pref = StudyPreferences.query.filter_by(user_id=user_information_id).first()
-                # if user record for study preferences found
-                if user_study_pref:
-                    return user_study_pref, 200
-                # if user record for study preferences is not found
-                else:
-                    raise Conflict
 
-            except Conflict as conflict_error: # try to catch the conflict error (no user's record found!)
-                abort(404, message=f"{conflict_error}")
+                # if user record for study preferences is not found
+                self.__abort_if_user_profile_does_not_exists(user_study_pref)
+
+                # if user record for study preferences found
+                return user_study_pref, HTTPStatus.OK
+
+            except NotFound as not_found_error: # try to catch the not found error (no user's record found!)
+                abort(HTTPStatus.NOT_FOUND, message=f"{not_found_error}")
 
             except Exception as server_error: # try to catch any internal server error
-                abort(500, message=f"{server_error}")
+                abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
 
 
     # a POST method to get the user study preferences from the form data that was sent by the client
@@ -192,6 +191,7 @@ class StudyPreferencesResource(Resource):
                 # validate the users input before inserting the data into the database
                 self.__validate_form_data(errors, **args)
 
+                pdb.set_trace()
                 # if no errors found in the form data
                 if not errors:
                     # query the database to check if there is any user that already exists with the same id
@@ -224,26 +224,26 @@ class StudyPreferencesResource(Resource):
                         user_id=user_information_id
                     ).first()
 
-                    return query_user_study_preferences, 201
+                    return query_user_study_preferences, HTTPStatus.CREATED
 
                 # if there are errors in the form data
                 else:
-                    raise ValueError
+                    raise BadRequest
 
             # catch the Value Error
-            except ValueError:
+            except BadRequest as bad_request_error:
                 db.session.rollback()
-                abort(400, message=json.dumps(errors))
+                abort(HTTPStatus.BAD_REQUEST, message=json.dumps(errors))
 
             # catch the 409 conflict error
             except Conflict as conflict_error:
                 db.session.rollback()
-                abort(409, message=f"{conflict_error}")
+                abort(HTTPStatus.CONFLICT, message=f"{conflict_error}")
 
             # catch the server error
             except Exception as server_error:
                 db.session.rollback
-                abort(500, message=f"{server_error}")
+                abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
 
 
     # a PATCH method to update the user study preferences from the update form data that was sent by the client
@@ -304,25 +304,25 @@ class StudyPreferencesResource(Resource):
                     ).first()
 
                     # return a response to the client
-                    return update_user, 201
+                    return update_user, HTTPStatus.CREATED
 
                 # raise Value Error if any client field is invalid
                 else:
-                    raise ValueError
+                    raise BadRequest
 
-            except ValueError: # catch any 400 bad request error
+            except BadRequest as bad_request_error: # catch any 400 bad request error
                 db.session.rollback()
-                abort(400, message=json.dumps(errors))
+                abort(HTTPStatus.BAD_REQUEST, message=json.dumps(errors))
 
             # catch the 404 user's study preferences record not found error
-            except Conflict as conflict_error:
+            except NotFound as not_found_error:
                 db.session.rollback()
-                abort(404, message=f"{conflict_error}")
+                abort(HTTPStatus.NOT_FOUND, message=f"{not_found_error}")
 
             # catch any server error
             except Exception as server_error:
                 db.session.rollback()
-                abort(500, message=f"{server_error}")
+                abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
 
     # a DELETE method to delete the study preferences record
     @token_required(
@@ -372,13 +372,13 @@ class StudyPreferencesResource(Resource):
                 )
                 return response
 
-            # except 404 conflict error
-            except Conflict as conflict_error:
+            # except 404 not found error
+            except NotFound as not_found_error:
                 db.session.rollback()
-                abort(404, message=f"{conflict_error}")
+                abort(HTTPStatus.NOT_FOUND, message=f"{not_found_error}")
 
             # except the internal server error
             except Exception as server_error:
                 db.session.rollback()
-                abort(500, message=f"{server_error}")
+                abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
 

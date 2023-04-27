@@ -43,16 +43,21 @@ app.config[
 ] = f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
 db.init_app(app)
 
+# create all the tables inside the database
+with app.app_context():
+    db.create_all()
+
 migrate = Migrate(app, db)
 
 # adding APIs to one resource
 api = Api(app)
-api.add_resource(RegistrationResource, "/studyhub/createaccount/")
+api.add_resource(RegistrationResource, "/studyhub/user-account/")
 api.add_resource(SignInResource, "/studyhub/validateuser/")
 api.add_resource(verifyOTP, "/studyhub/verify-otp/<int:otp_code>/")
 api.add_resource(UserInformationResource, "/studyhub/user-profile/user-information/")
 api.add_resource(StudyPreferencesResource, "/studyhub/user-profile/study-preferences/")
 
+# blueprint routes
 app.register_blueprint(registration_routes)
 
 if __name__ == "__main__":

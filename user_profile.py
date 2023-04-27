@@ -5,11 +5,11 @@ from http import HTTPStatus
 
 import jwt
 import pytz
-from flask import Flask, Response, request, make_response, jsonify
+from flask import Flask, Response, request, make_response, jsonify, current_app
 from flask_migrate import Migrate
 from flask_restful import Resource, abort, inputs, marshal_with, reqparse, marshal, fields
 from sqlalchemy import create_engine
-from werkzeug.exceptions import Conflict
+from werkzeug.exceptions import Conflict, NotFound, InternalServerError, BadRequest
 from datetime import datetime, timedelta
 
 from marshmallow import Schema, fields as ma_fields
@@ -17,32 +17,10 @@ from marshmallow import Schema, fields as ma_fields
 from API.locationAPI import LocationValidator
 from database.users_models import Users, UserInformation, Permission, db
 from get_env import (
-    database_host,
-    database_name,
-    database_password,
-    database_port,
-    database_type,
-    database_username,
-    secret_key,
+    secret_key
 )
 from helper_functions.middleware_functions import token_required
 from helper_functions.validate_users_information import validate_users_information
-
-user_profile_app = Flask(__name__)
-
-migrate = Migrate(user_profile_app, db)
-
-# connect flask to postgres database using SQLALCHEMY
-user_profile_app.config[
-    "SQLALCHEMY_DATABASE_URI"
-] = f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
-engine = create_engine(
-    f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
-)
-# inspector = Inspector.from_engine(engine)
-
-# Create the SQLAlchemy database object
-db.init_app(user_profile_app)
 
 # resources fields to serialize the response object
 _user_information_resource_fields = {
@@ -106,7 +84,7 @@ class UserInformationResource(Resource):
 
     def __abort_if_user_profile_does_not_exists(self, user_id) -> None:
         if not user_id:
-            raise Conflict
+            raise NotFound
         return
 
     # private method to add argument into the form data
@@ -256,7 +234,7 @@ class UserInformationResource(Resource):
     )
     @marshal_with(_user_information_resource_fields)  # serialize the instance object
     def get(self):
-        with user_profile_app.app_context():
+        with current_app.app_context():
             # get the token from cookies
             try:
                 token = request.cookies.get("token")
@@ -265,25 +243,21 @@ class UserInformationResource(Resource):
                 # query the database to get the user with the user id
                 user = UserInformation.query.filter_by(user_id=user_id).first()
                 if user:
-                    return user, 200
+                    return user, HTTPStatus.OK
                 else:
-                    raise Conflict
+                    raise NotFound
+
             except (
-                Conflict
-            ) as conflict_error:  # -> no user's found in the database (user has not added their profile)
-                abort(404, message=f"{conflict_error}")
+                NotFound
+            ) as not_found_error:  # -> no user's found in the database (user has not added their profile)
+                db.session.rollback()
+                abort(HTTPStatus.NOT_FOUND, message=f"{not_found_error}")
 
             except (
                 Exception
-            ) as error:  # -> any error being caught such as jwt token value error, signature error,...
-                response_data = {
-                    "message": f"{error}"  # return the error message to the client
-                }
-                response_json = json.dumps(response_data)
-                response = Response(
-                    response=response_json, status=500, mimetype="application/json"
-                )
-                return response
+            ) as internal_server_error:  # -> any error being caught such as jwt token value error, signature error,...
+                db.session.rollback()
+                abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{internal_server_error}")
 
     # handle the POST request from the form data
     @token_required(
@@ -294,9 +268,9 @@ class UserInformationResource(Resource):
         ],
         secret_key=secret_key,
     )
-    # @marshal_with(_user_information_resource_fields)  # serialize the response object
+
     def post(self):
-        with user_profile_app.app_context():
+        with current_app.app_context():
             try:
                 # get the token from cookies to get the user id
                 user_token = request.cookies.get("token")
@@ -466,22 +440,22 @@ class UserInformationResource(Resource):
 
                 # if there is any invalid field is being caught (including address, profile image(if any)), send the error to the client with a 400 bad request status
                 else:
-                    raise ValueError
+                    raise BadRequest
 
             # catch 400 bad request error
-            except ValueError:
+            except BadRequest as bad_request_errors:
                 db.session.rollback()
-                abort(400, message=json.dumps(errors))
+                abort(HTTPStatus.BAD_REQUEST, message=json.dumps(errors))
 
             # catch the 409 conflict error
             except Conflict as conflict_error:
                 db.session.rollback()
-                abort(409, message=f"{conflict_error}")
+                abort(HTTPStatus.CONFLICT, message=f"{conflict_error}")
 
             # catch the error if there is an internal server error
-            except Exception as e:
+            except Exception as server_error:
                 db.session.rollback()
-                abort(500, message=f"{e}")
+                abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
 
     # a method to handle the UPDATE request
     @token_required(
@@ -494,7 +468,7 @@ class UserInformationResource(Resource):
     )
     @marshal_with(_user_information_resource_fields)
     def patch(self):
-        with user_profile_app.app_context():
+        with current_app.app_context():
             try:
                 # get the token from cookies
                 token = request.cookies.get("token")
@@ -562,23 +536,23 @@ class UserInformationResource(Resource):
                     ).first()
 
                     # return a response to the client
-                    return update_user, 201
+                    return update_user, HTTPStatus.CREATED
 
                 else:
-                    raise ValueError
+                    raise BadRequest
 
-            except ValueError:
+            except BadRequest as bad_request_error:
                 db.session.rollback()
-                abort(400, message=json.dumps(errors))
+                abort(HTTPStatus.BAD_REQUEST, message=json.dumps(errors))
 
             # catch the 404 error
-            except Conflict as conflict_error:
+            except NotFound as not_found_error:
                 db.session.rollback()
-                abort(404, message=f"{conflict_error}")
+                abort(HTTPStatus.NOT_FOUND, message=f"{not_found_error}")
 
-            except Exception as error:
+            except Exception as server_error:
                 db.session.rollback()
-                abort(500, message=f"{error}")
+                abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
 
     # a method to delete a user's profile
     @token_required(
@@ -591,7 +565,7 @@ class UserInformationResource(Resource):
     )
     @marshal_with(_user_information_resource_fields)
     def delete(self):
-        with user_profile_app.app_context():
+        with current_app.app_context():
             # get the token from cookies
             try:
                 token = request.cookies.get("token")
@@ -627,13 +601,13 @@ class UserInformationResource(Resource):
                 )
                 return response
 
-            # except 404 conflict error
-            except Conflict as conflict_error:
+            # except 404 error
+            except NotFound as not_found_error:
                 db.session.rollback()
-                abort(404, message=f"{conflict_error}")
+                abort(HTTPStatus.NOT_FOUND, message=f"{not_found_error}")
 
             except (
                 Exception
-            ) as error:  # try to catch the error and display to the client
+            ) as server_error:  # try to catch the error and display to the client
                 db.session.rollback()
-                abort(500, message=f"{error}")
+                abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")

@@ -122,7 +122,7 @@ post_user_study_preferences = [
 
 for i in range(len(post_user_study_preferences)):
     post_study_pref_response = requests.post(BASE + "/studyhub/user-profile/study-preferences/", headers=new_headers, data=post_user_study_preferences[i])
-    print(response.json())
+    print(post_study_pref_response.json())
 
 print("\n\n")
 # GET REQUEST
