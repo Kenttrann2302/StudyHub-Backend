@@ -6,56 +6,26 @@ import time
 
 import bcrypt
 import jwt
-from flask import Blueprint, Flask, Response, request
+from flask import Blueprint, Flask, Response, request, current_app
 from flask_migrate import Migrate
-from flask_restful import Resource, fields, marshal_with, reqparse
+from flask_restful import Resource, fields, marshal_with, reqparse, abort
 from sqlalchemy import create_engine
+from http import HTTPStatus
+from werkzeug.exceptions import Conflict, NotFound, BadRequest, Forbidden, Unauthorized
 
+# import from files
 from database.users_models import Users, db
-from get_env import (
-    database_host,
-    database_name,
-    database_password,
-    database_port,
-    database_type,
-    database_username,
-    secret_key,
-)
+from get_env import secret_key
+from helper_functions.registerformValidation import checkpassword, checkpasswordconfirm
 from helper_functions.registerformValidation import validate_registration_form
-from helper_functions.users_tables_create import create_all_tables
-from helper_functions.validate_users_information import create_validated_fields_dict
 from Twilio.twilio_send_email import sendgrid_verification_email
-
-register_app = Flask(__name__)
-# register_app.config['SERVER_NAME'] = '127.0.0.1:5000'
-# register_app.config['APPLICATION_ROOT'] = '/'
-# register_app.config['PREFERRED_URL_SCHEME'] = 'http'
-# register_app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-# register_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 
 # register the app instance with the endpoints we are using for this app
 registration_routes = Blueprint("registration_routes", __name__)
 
 # Add a test configuration
-register_app.config["TESTING"] = True
-register_app.config["WTF_CSRF_ENABLED"] = False
-
-migrate = Migrate(register_app, db)
-
-# connect to the userdatabase where will store all the users data
-register_app.config[
-    "SQLALCHEMY_DATABASE_URI"
-] = f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
-engine = create_engine(
-    f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
-)
-# inspector = Inspector.from_engine(engine)
-
-# # create the sqlalchemy database object
-db.init_app(register_app)
-
-# create the registration table according to the registration model
-# create_all_tables(app=register_app, inspector=inspector, db=db, engine=engine)
+# register_app.config["TESTING"] = True
+# register_app.config["WTF_CSRF_ENABLED"] = False
 
 # global variables
 # initialize all the a dictionary of validated fields for user inputs
@@ -71,52 +41,36 @@ validated_fields = {
 register_errors = {}
 
 # define a resource fields to serialize the object (user's login information) to make sure that all the identifications have been inserted success
-user_resource_fields = {
-    "user_id": fields.String,
+_user_resource_fields = {
     "username": fields.String,
-    "password": fields.String,
     "verification_method": fields.String,
-    "verification": fields.String,
 }
 
 
 # create a resource for rest api to handle the post request
 class RegistrationResource(Resource):
-    def __init__(self) -> None:
-        super().__init__()
-
     # this is a method to handle the GET request from the database after inserting the user's login information into the database
-    @marshal_with(user_resource_fields)
+    @marshal_with(_user_resource_fields)
     def get(self) -> None:
-        with register_app.app_context():
-            # get all the users from the database
+        with current_app.app_context():
+            # get all the usernames and verification method from the database
             try:
                 all_users = Users.query.all()
                 if all_users:
                     return all_users
                 else:
-                    raise ValueError
-            except ValueError:
-                response_data = {
-                    "message": f"There is no user has been inserted into the database!"
-                }
-                response_json = json.dumps(response_data)
-                response = Response(
-                    response_json, status=404, mimetype="application/json"
+                    raise NotFound
+
+            except NotFound as not_found_error:
+                abort(HTTPStatus.NOT_FOUND, message=f"{not_found_error}")
+
+            except Exception as internal_server_error:
+                abort(
+                    HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{internal_server_error}"
                 )
-                return response
-            except Exception as e:
-                response_data = {
-                    "message": f"There is an error with the server when querying the database: {e}"
-                }
-                response_json = json.dumps(response_data)
-                response = Response(
-                    response_json, status=500, mimetype="application/json"
-                )
-                return response
 
     # a function generate a random 6 digits otp code
-    def generate_otp(self):
+    def __generate_otp(self):
         otp = ""
         for i in range(6):
             otp += str(random.randint(0, 9))
@@ -124,263 +78,422 @@ class RegistrationResource(Resource):
 
     # this is a function to handle the POST request from the registration form and insert the registration fields into the database
     def post(self) -> None:
-        with register_app.app_context():
-            if request.method == "POST":
-                try:
-                    # get the registration form data and validate them before inserting into the database
-                    registerForm = reqparse.RequestParser()
-                    registerForm.add_argument(
-                        "username", type=str, help="Username is required", required=True
-                    )
-                    registerForm.add_argument(
-                        "password", type=str, help="Password is required", required=True
-                    )
-                    registerForm.add_argument(
-                        "password_confirmation",
-                        type=str,
-                        help="Password confirmation is required",
-                        required=True,
-                    )
-                    registerForm.add_argument(
-                        "verification_method",
-                        type=str,
-                        help="Verification method option is required",
-                        required=True,
-                    )
-                    registerForm.add_argument("areacode_id", type=str, required=False)
-                    registerForm.add_argument(
-                        "verification",
-                        type=str,
-                        help="Email, SMS or Device Information is required",
-                        required=True,
-                    )
+        with current_app.app_context():
+            try:
+                # get the registration form data and validate them before inserting into the database
+                registerForm = reqparse.RequestParser()
+                registerForm.add_argument(
+                    "username", type=str, help="Username is required", required=True
+                )
+                registerForm.add_argument(
+                    "password", type=str, help="Password is required", required=True
+                )
+                registerForm.add_argument(
+                    "password_confirmation",
+                    type=str,
+                    help="Password confirmation is required",
+                    required=True,
+                )
+                registerForm.add_argument(
+                    "verification_method",
+                    type=str,
+                    help="Verification method option is required",
+                    required=True,
+                )
+                registerForm.add_argument("areacode_id", type=str, required=False)
+                registerForm.add_argument(
+                    "verification",
+                    type=str,
+                    help="Email, SMS or Device Information is required",
+                    required=True,
+                )
 
-                    args = registerForm.parse_args()
-                    username = args["username"]
-                    password = args["password"]
-                    password_confirmation = args["password_confirmation"]
-                    verification_method = args["verification_method"]
-                    areacode_id = args["areacode_id"]
-                    verification = args["verification"]
+                args = registerForm.parse_args()
+                username = args["username"]
+                password = args["password"]
+                password_confirmation = args["password_confirmation"]
+                verification_method = args["verification_method"]
+                areacode_id = args["areacode_id"]
+                verification = args["verification"]
 
-                    new_user = [username, password, password_confirmation, verification]
+                new_user = [username, password, password_confirmation, verification]
 
-                    # validate the form data, if not -> send error messages to the website
-                    # validate the users registration input on front-end before inserting the data into the database
-                    validated_registration = validate_registration_form(
-                        new_user=new_user,
-                        errors=register_errors,
-                        verification_id=verification_method,
-                        areacode_id=areacode_id,
-                    )
+                # validate the form data, if not -> send error messages to the website
+                # validate the users registration input on front-end before inserting the data into the database
+                validated_registration = validate_registration_form(
+                    new_user=new_user,
+                    errors=register_errors,
+                    verification_id=verification_method,
+                    areacode_id=areacode_id,
+                )
 
-                    # create a dictionary to store the validated fields by calling the helper function
-                    create_validated_fields_dict(
-                        validated_fields,
-                        firstName="",
-                        midName="",
-                        lastName="",
-                        age="",
-                        birthDay="",
-                        firstAddress="",
-                        secondAdress="",
-                        city="",
-                        province="",
-                        country="",
-                        postalCode="",
-                        gender="",
-                        religion="",
-                        verification="",
-                        verification_material="",
-                        username=username,
-                        password=password,
-                        password_confirmation=password_confirmation,
-                        verification_id=verification_method,
-                        verification_method=verification,
+                # handle appropriate validated_registration -> check if the username and password already existed
+                if len(validated_registration) == 4 and not register_errors:
+                    # genrate the salt for the hashed_password
+                    salt = bcrypt.gensalt()
+                    # hash the password using bcrypt hashing algorithm
+                    hashed_password = bcrypt.hashpw(password.encode("utf-8"), salt)
+
+                    decoded_hashed_password = hashed_password.decode("utf-8")
+
+                    # query each field to make sure each of them is unique
+                    username_taken = (
+                        Users.query.filter(Users.username == username).first()
+                        is not None
                     )
 
-                    # handle appropriate validated_registration
-                    if len(validated_registration) == 4 and len(register_errors) == 0:
-                        # genrate the salt for the hashed_password
-                        salt = bcrypt.gensalt()
-                        # hash the password using bcrypt hashing algorithm
-                        hashed_password = bcrypt.hashpw(password.encode("utf-8"), salt)
+                    password_taken = (
+                        Users.query.filter(
+                            Users.password == decoded_hashed_password
+                        ).first()
+                        is not None
+                    )
 
-                        decoded_hashed_password = hashed_password.decode("utf-8")
+                    verification_method_taken = (
+                        Users.query.filter(
+                            Users.verification_method == verification_method,
+                            Users.verification == verification,
+                        ).first()
+                        is not None
+                    )
 
-                        # query each field to make sure each of them is unique
-                        username_taken = (
-                            Users.query.filter(Users.username == username).first()
-                            is not None
+                    # check if there is the users input already in the database
+                    if username_taken:
+                        register_errors[
+                            "username"
+                        ] = f"Sorry! This username already exists!"
+                        response_data = {"message": register_errors}
+                        response_json = json.dumps(response_data)
+                        response = Response(
+                            response=response_json,
+                            status=HTTPStatus.CONFLICT,
+                            mimetype="application/json",
                         )
+                        return response
 
-                        password_taken = (
-                            Users.query.filter(
-                                Users.password == decoded_hashed_password
-                            ).first()
-                            is not None
+                    elif password_taken:
+                        register_errors[
+                            "password"
+                        ] = f"Sorry! This password already exists!"
+                        response_data = {"message": register_errors}
+                        response_json = json.dumps(response_data)
+                        response = Response(
+                            response=response_json,
+                            status=HTTPStatus.CONFLICT,
+                            mimetype="application/json",
                         )
+                        return response
 
-                        verification_method_taken = (
-                            Users.query.filter(
-                                Users.verification_method == verification_method,
-                                Users.verification == verification,
-                            ).first()
-                            is not None
-                        )
+                    elif verification_method_taken:
+                        switch = {
+                            verification_method
+                            == "Email": f"Sorry! This email has been registered in our system!",
+                            verification_method
+                            == "Phone number": f"Sorry! This phone number has been registered in our system!",
+                            verification_method
+                            == "Device Push Notification": f"Sorry! This device has been registered in our system!",
+                        }
 
-                        # check if there is the users input already in the database
-                        if username_taken:
-                            register_errors[
-                                "username"
-                            ] = f"Sorry! This username already exists!"
-                            # return render_template('registration.html', verification_options=verification_options, errors=register_errors, validated_fields=validated_fields)
-                            response_data = {
-                                "message": f"This username has been taken, please choose another username!",
-                                "error": register_errors,
-                                "validated_fields": validated_fields,
-                            }
+                        error_message = switch.get(True, "None")
+                        if error_message is not None:
+                            register_errors["verification"] = error_message
+                            response_data = {"message": register_errors}
                             response_json = json.dumps(response_data)
                             response = Response(
                                 response=response_json,
-                                status=409,
+                                status=HTTPStatus.CONFLICT,
                                 mimetype="application/json",
                             )
                             return response
 
-                        elif password_taken:
-                            register_errors[
-                                "password"
-                            ] = f"Sorry! This password already exists!"
-                            # return render_template('registration.html', verification_options=verification_options, errors=register_errors, validated_fields=validated_fields)
-                            response_data = {
-                                "message": f"This password has been taken, please choose another password!",
-                                "error": register_errors,
-                                "validated_fields": validated_fields,
-                            }
-                            response_json = json.dumps(response_data)
-                            response = Response(
-                                response=response_json,
-                                status=409,
-                                mimetype="application/json",
+                    else:  # if no field existed before
+                        # create an instance to add the new user into the database
+                        new_user = Users(
+                            username=validated_registration[0],
+                            password=decoded_hashed_password,
+                            verification_method=verification_method,
+                            verification=validated_registration[3],
+                        )
+                        # add new user to the registration model
+                        db.session.add(new_user)
+
+                        # send a confirmation email to the user to verify their account using Twillio
+                        if verification_method == "Email":
+                            (
+                                response_status,
+                                response_message,
+                                temp_token,
+                            ) = sendgrid_verification_email(
+                                user_email=new_user.verification,
+                                studyhub_code=self.__generate_otp(),
+                                request_type="post",
                             )
-                            return response
 
-                        elif verification_method_taken:
-                            switch = {
-                                verification_method
-                                == "Email": f"Sorry! This email has been registered in our system!",
-                                verification_method
-                                == "Phone number": f"Sorry! This phone number has been registered in our system!",
-                                verification_method
-                                == "Device Push Notification": f"Sorry! This device has been registered in our system!",
-                            }
+                            # store the user's temporary token into the database
+                            new_user.temp_token = temp_token
+                            # commit the change to the database
+                            db.session.commit()
 
-                            error_message = switch.get(True, "None")
-                            if error_message is not None:
-                                register_errors["verification"] = error_message
-                                # return render_template('registration.html', verification_options=verification_options, errors=register_errors, validated_fields=validated_fields)
+                            # check if the response_message is True -> verification sent successfully!
+                            if (
+                                response_status == HTTPStatus.OK
+                                or response_status == HTTPStatus.CREATED
+                            ):
                                 response_data = {
-                                    "message": f"This {verification} has been taken! Please choose another email or phone number!",
-                                    "error": register_errors,
-                                    "validated_fields": validated_fields,
+                                    "message": f"Successfully!",
                                 }
                                 response_json = json.dumps(response_data)
                                 response = Response(
                                     response=response_json,
-                                    status=409,
+                                    status=HTTPStatus.CREATED,
                                     mimetype="application/json",
                                 )
                                 return response
 
+                            # raise and Exception error if Twilio cannot be sent
+                            else:
+                                raise Exception(f"{response_message}")
+
+                        # handle the response if the verification method is not Email -> this will be done later
+
+                else:  # if there is an invalid input from the form data
+                    raise BadRequest
+
+            # catch the 400 bad request error
+            except BadRequest as bad_request_error:
+                db.session.rollback()
+                abort(HTTPStatus.BAD_REQUEST, message=f"{bad_request_error}")
+
+            # handle the errors if there is any errors when validating the inputs on the form
+            except Exception as server_error:
+                db.session.rollback()
+                abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
+
+    # this is a function that update the user information if the user forgot their username or password
+    def patch(self):
+        with current_app.app_context():
+            try:
+                # get the form data and parse it to get the value of the key
+                update_data_form = reqparse.RequestParser()
+                update_data_form.add_argument(
+                    "username", type=str, help="Username is required", required=True
+                )  # get the username
+                update_data_form.add_argument(
+                    "new_password", type=str, help="Password is required", required=True
+                )  # get the password
+                update_data_form.add_argument(
+                    "new_password_confirmation",
+                    type=str,
+                    help="Password confirmation is required",
+                    required=True,
+                )  # get the password confirmation
+
+                # parse the form data
+                update_args = update_data_form.parse_args()
+                username = update_args["username"]
+                password = update_args["new_password"]
+                password_confirmation = update_args["new_password_confirmation"]
+
+                # find the user in the database
+                find_user_query = Users.query.filter_by(username=username).first()
+
+                # abort if the user doesn't exist
+                if not find_user_query:
+                    raise NotFound
+
+                # initialize a validate fields for validate the new password
+                validate_new_user = []
+                errors = {}
+
+                # if user is found in the database
+                # validate the password and password confirmation before change them in the database
+                checkpassword(
+                    username=username,
+                    password=password,
+                    errors=errors,
+                    validate_new_user=validate_new_user,
+                )
+                checkpasswordconfirm(
+                    confirmed_password=password_confirmation,
+                    password=password,
+                    errors=errors,
+                    validate_new_user=validate_new_user,
+                )
+
+                # if there is no error in the errors dictionary -> handle appropriate form data
+                if len(validate_new_user) == 2 and not errors:
+                    # genrate the salt for the hashed_password
+                    salt = bcrypt.gensalt()
+                    # hash the password using bcrypt hashing algorithm
+                    hashed_password = bcrypt.hashpw(password.encode("utf-8"), salt)
+
+                    decoded_hashed_password = hashed_password.decode("utf-8")
+
+                    # query the database to check if the password is not none
+                    password_taken = (
+                        Users.query.filter(
+                            Users.password == decoded_hashed_password
+                        ).first()
+                        is not None
+                    )
+
+                    # raise conflict if the password already exists in the userdatabase
+                    if password_taken:
+                        raise Conflict
+
+                    # if no user took this password in the database
+                    # abort forbidden if the user hasn't verified their email or sms
+                    if find_user_query.account_verified == False:
+                        raise Forbidden
+
+                    # send an otp to user's email to verify if the authenticated user made this change
+                    if find_user_query.verification_method == "Email":
+                        (
+                            response_status,
+                            response_message,
+                            temp_token,
+                        ) = sendgrid_verification_email(
+                            user_email=find_user_query.verification,
+                            studyhub_code=self.__generate_otp(),
+                            request_type="patch",
+                            new_password=decoded_hashed_password,
+                        )
+
+                        # store the user's temporary token into the database
+                        find_user_query.temp_token = temp_token
+                        # commit the change to the database
+                        db.session.commit()
+
+                        # check if the response_message is True -> verification sent successfully!
+                        if (
+                            response_status == HTTPStatus.OK
+                            or response_status == HTTPStatus.CREATED
+                        ):
+                            response_data = {
+                                "message": f"Sending email successfully!",
+                            }
+                            response_json = json.dumps(response_data)
+                            response = Response(
+                                response=response_json,
+                                status=HTTPStatus.CREATED,
+                                mimetype="application/json",
+                            )
+                            return response
+
+                        # raise and Exception error if Twilio cannot be sent
                         else:
-                            # create an instance to add the new user into the database
-                            new_user = Users(
-                                username=validated_registration[0],
-                                password=decoded_hashed_password,
-                                verification_method=verification_method,
-                                verification=validated_registration[3],
-                            )
-                            # add new user to the registration model
-                            try:
-                                db.session.add(new_user)
+                            raise Exception(f"{response_message}")
 
-                                # send a confirmation email to the user to verify their account using Twillio
-                                if verification_method == "Email":
-                                    (
-                                        response_status,
-                                        response_message,
-                                        temp_token,
-                                    ) = sendgrid_verification_email(
-                                        user_email=new_user.verification,
-                                        studyhub_code=self.generate_otp(),
-                                    )
+                else:
+                    raise BadRequest
 
-                                    # store the user's temporary token into the database
-                                    new_user.temp_token = temp_token
-                                    # commit the change to the database
-                                    db.session.commit()
+            # catch the not found error
+            except NotFound as not_found_error:
+                db.session.rollback()
+                abort(HTTPStatus.NOT_FOUND, message=f"{not_found_error}")
 
-                                    # check if the response_message is True -> verification sent successfully!
-                                    if response_status and response_message is not None:
-                                        response_data = {
-                                            "message1": f"User with id: {new_user.user_id} has been inserted successfully in to the Users table!",
-                                            "message2": f"Sending email confirmation to {verification} successfully!",
-                                        }
-                                        response_json = json.dumps(response_data)
-                                        response = Response(
-                                            response=response_json,
-                                            status=201,
-                                            mimetype="application/json",
-                                        )
-                                        return response
+            # catch the conflict error
+            except Conflict as conflict_error:
+                db.session.rollback()
+                abort(HTTPStatus.CONFLICT, message=f"{conflict_error}")
 
-                                    else:
-                                        raise ValueError(
-                                            f"Cannot proccess confirmation protocol!"
-                                        )
+            # catch the forbidden error
+            except Forbidden as forbidden_error:
+                db.session.rollback()
+                abort(HTTPStatus.FORBIDDEN, message=f"{forbidden_error}")
 
-                            except BaseException as error:
-                                # handle the problem while inserting user registration into the database
-                                db.session.rollback()
-                                print(
-                                    f"Cannot send a confirmation to user {new_user.user_id}'s {new_user.verification}! There might be some external errors with the server!"
-                                )
-                                response_data = {
-                                    "message": f"Error with Twilio Client: {error}!"
-                                }
-                                response_json = json.dumps(response_data)
-                                response = Response(
-                                    response=response_json,
-                                    status=400,
-                                    mimetype="application/json",
-                                )
-                                return response
+            # catch the bad request error
+            except BadRequest as bad_request_errrors:
+                db.session.rollback()
+                abort(HTTPStatus.BAD_REQUEST, message=json.dumps(errors))
 
-                    else:
-                        raise ValueError(f"There is an error in the form data!")
+            # catch the server error
+            except Exception as server_error:
+                db.session.rollback()
+                abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
 
-                # handle the errors if there is any errors when validating the inputs on the form
-                except BaseException as error:
-                    db.session.rollback()
-                    # # re-render the form for users to retype the non-validated fields
-                    # return render_template('registration.html', verification_options=verification_options, errors=register_errors, validated_fields=validated_fields)
-                    response_data = {
-                        "message": f"User {username} cannot be added due to the internal server error: {error}",
-                        "error_message": register_errors,
-                        "validated_fields": validated_fields,
-                        "validated_errors": register_errors,
-                    }
-                    response_json = json.dumps(response_data)
-                    response = Response(
-                        response=response_json, status=500, mimetype="application/json"
+    # a delete method for user to delete the account, this method
+    def delete(self):
+        with current_app.app_context():
+            try:
+                # get the username from the form
+                user_account_delete_form = reqparse.RequestParser()
+                user_account_delete_form.add_argument(
+                    "username", type=str, help="Username is required", required=True
+                )  # get the username
+
+                user_account_delete_form.parse_args()
+                username = user_account_delete_form["username"]
+
+                # query the database to get the user
+                find_user_query = Users.query.filter_by(username=username).first()
+
+                # abort if user not found in the database
+                if not find_user_query:
+                    raise NotFound
+
+                # if the user is found in the database
+                # abort forbidden if the user hasn't verified their email or sms
+                if find_user_query.account_verified == False:
+                    raise Forbidden
+
+                # send a verification to user's information to see if the user created this action
+                if find_user_query.verification_method == "Email":
+                    (
+                        response_status,
+                        response_message,
+                        temp_token,
+                    ) = sendgrid_verification_email(
+                        user_email=find_user_query.verification,
+                        studyhub_code=self.__generate_otp(),
+                        request_type="delete",
+                        user_id=find_user_query.user_id,
                     )
-                    return response
+
+                    # store the user's temporary token into the database
+                    find_user_query.temp_token = temp_token
+                    # commit the change to the database
+                    db.session.commit()
+
+                    # check if the response_message is True -> verification sent successfully!
+                    if (
+                        response_status == HTTPStatus.OK
+                        or response_status == HTTPStatus.CREATED
+                    ):
+                        response_data = {
+                            "message": f"Sending email successfully!",
+                        }
+                        response_json = json.dumps(response_data)
+                        response = Response(
+                            response=response_json,
+                            status=HTTPStatus.CREATED,
+                            mimetype="application/json",
+                        )
+                        return response
+
+                    # raise and Exception error if Twilio cannot be sent
+                    else:
+                        raise Exception(f"{response_message}")
+
+            # catch the forbidden error
+            except Forbidden as forbidden_error:
+                db.session.rollback()
+                abort(HTTPStatus.FORBIDDEN, message=f"{forbidden_error}")
+
+            # catch the not found error
+            except NotFound as not_found_error:
+                db.session.rollback()
+                abort(HTTPStatus.NOT_FOUND, message=f"{not_found_error}")
+
+            # catch the internal server error
+            except Exception as server_error:
+                db.session.rollback()
+                abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
 
 
 # a get request to perform a query string to get the token from the url and decode to get the email address and code to verify the user's email
 @registration_routes.route("/studyhub/confirm-email", methods=["GET"])
-def email_verifcation():
+def email_verification():
     try:
         # get the token from the query string
         token = request.args.get("token")
@@ -413,50 +526,138 @@ def email_verifcation():
                 }
                 response_json = json.dumps(response_data)
                 response = Response(
-                    response=response_json, status=201, mimetype="application/json"
+                    response=response_json,
+                    status=HTTPStatus.CREATED,
+                    mimetype="application/json",
                 )
                 return response
 
             # if the user email is invalid -> not verified
             else:
-                response_data = {
-                    "message": f"User with email {user_email} is not verified and is invalid!"
-                }
+                raise Unauthorized
+
+    except Unauthorized as unauthorized_error:
+        db.session.rollback()
+        abort(HTTPStatus.UNAUTHORIZED, message=f"{unauthorized_error}")
+
+    except jwt.ExpiredSignatureError as expired_token_error:
+        db.session.rollback()
+        abort(HTTPStatus.FORBIDDEN, message=f"{expired_token_error}")
+
+    except Exception as server_error:
+        # internal server error
+        db.session.rollback()
+        abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
+
+
+# a route for user to confirm a change on their password
+@registration_routes.route("/studyhub/confirm-password-change", methods=["GET"])
+def confirm_password_change():
+    try:
+        # get the token from the query string
+        token = request.args.get("token")
+
+        # decode the token
+        decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
+
+        # Check if the expiration time is more than the current time
+        exp_time = decoded_token["exp"]
+        current_time = int(time.time())
+
+        if exp_time > current_time:
+            # check if the email address and the temporary token is correct with the record inside the database
+            user_email = decoded_token["email"]
+
+            # query the database to see if the user_email contains the correct token
+            result = Users.query.filter_by(verification=user_email).first()
+
+            if result.temp_token == token:
+                # update the user's password
+                new_password = decoded_token["new_password"]
+                # hashed the password and store the decoded password into the database
+                result.password = new_password
+
+                db.session.commit()
+
+                # return the json response
+                response_data = {"message": f"Password updated!"}
                 response_json = json.dumps(response_data)
                 response = Response(
-                    response=response_json, status=400, mimetype="application/json"
+                    response=response_json,
+                    status=HTTPStatus.CREATED,
+                    mimetype="application/json",
                 )
                 return response
 
-    except jwt.ExpiredSignatureError:
-        # the token has expired
-        response_data = {
-            "message": f"This token has been expired, please generate a new token",
-        }
-        response_json = json.dumps(response_data)
-        response = Response(
-            response=response_json, status=401, mimetype="application/json"
-        )
-        return response
+            # if the user email is invalid -> not verified
+            else:
+                raise Unauthorized
 
-    except Exception as error:
-        response_data = {
-            "message": f"There is an internal server error while verifying user's email",
-            "error": error,
-        }
-        response_json = json.dumps(response_data)
-        response = Response(
-            response=response_json, status=500, mimetype="application/json"
-        )
-        return response
+    except Unauthorized as unauthorized_error:
+        db.session.rollback()
+        abort(HTTPStatus.UNAUTHORIZED, message=f"{unauthorized_error}")
+
+    except jwt.ExpiredSignatureError as expired_token_error:
+        db.session.rollback()
+        abort(HTTPStatus.FORBIDDEN, message=f"{expired_token_error}")
+
+    except Exception as server_error:
+        db.session.rollback()
+        # internal server error
+        abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
 
 
-# add registration resource to rest api
-# api.add_resource(RegistrationResource, '/studyhub/createaccount/')
+# a route for user to confirm an account deletion
+@registration_routes.route("/studyhub/confirm-account-deletion", methods=["GET"])
+def confirm_account_deletion():
+    try:
+        # get the token from the query string
+        token = request.args.get("token")
 
-# # Register the routes
-# registration_routes.add_url_rule('/studyhub/register/', view_func=VerificationMethodsResource.as_view('verification_methods'))
-# registration_routes.add_url_rule('/studyhub/createaccount/', view_func=RegistrationResource.as_view('registration'))
+        # decode the token
+        decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
 
-# # register the blueprint with the app instance
-# register_app.register_blueprint(registration_routes)
+        # check if the expiration time is more than the current time
+        exp_time = decoded_token["exp"]
+        current_time = int(time.time())
+
+        if exp_time > current_time:
+            # check if the email address and the temporary token is correct with the record inside the database
+            user_email = decoded_token["email"]
+            user_id = decoded_token["user_id"]
+
+            # query the database to see if the user_email contains the correct token
+            result = Users.query.filter_by(verification=user_email).first()
+
+            if result.temp_token == token:
+                # procceed to account deletion
+                db.session.query(Users).filter(Users.user_id == user_id).delete()
+                # commit the change to the database
+                db.session.commit()
+
+                # return the json response to the client
+                response_data = {"message": f"Successfully deleted user!"}
+                response_json = json.dumps(response_data)
+                response = Response(
+                    response=response_json,
+                    status=HTTPStatus.CREATED,
+                    mimetype="application/json",
+                )
+                return response
+
+            # if the user email is invalid -> not verified
+            else:
+                raise Unauthorized
+
+    except Unauthorized as unauthorized_error:
+        db.session.rollback()
+        abort(HTTPStatus.UNAUTHORIZED, message=f"{unauthorized_error}")
+
+    except jwt.ExpiredSignatureError as expired_token_error:
+        db.session.rollback()
+        abort(HTTPStatus.FORBIDDEN, message=f"{expired_token_error}")
+
+    except Exception as server_error:
+        db.session.rollback()
+        # internal server error
+        abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")

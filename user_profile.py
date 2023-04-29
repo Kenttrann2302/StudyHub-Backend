@@ -1,47 +1,32 @@
-########## SIGN UP PAGE FOR USERS INPUT FOR MACHINE LEARNING ALGORITHM FOR SAVING STRATEGIES #########
+########## SIGN UP PAGE FOR USERS INPUT FOR MACHINE LEARNING ALGORITHM FOR RECOMMENDATION ENGINE #########
 # import libraries
 import json
 from http import HTTPStatus
 
 import jwt
-from flask import Flask, Response, request
+import pytz
+from flask import Flask, Response, request, make_response, jsonify, current_app
 from flask_migrate import Migrate
-from flask_restful import Resource, abort, fields, inputs, marshal_with, reqparse
+from flask_restful import (
+    Resource,
+    abort,
+    inputs,
+    marshal_with,
+    reqparse,
+    marshal,
+    fields,
+)
 from sqlalchemy import create_engine
-from werkzeug.exceptions import Conflict
+from werkzeug.exceptions import Conflict, NotFound, InternalServerError, BadRequest
+from datetime import datetime, timedelta
+
+from marshmallow import Schema, fields as ma_fields
 
 from API.locationAPI import LocationValidator
-from database.users_models import UserInformation, db
-from get_env import (
-    database_host,
-    database_name,
-    database_password,
-    database_port,
-    database_type,
-    database_username,
-    secret_key,
-)
+from database.users_models import Users, UserInformation, Permission, db
+from get_env import secret_key
 from helper_functions.middleware_functions import token_required
 from helper_functions.validate_users_information import validate_users_information
-
-user_profile_app = Flask(__name__)
-
-migrate = Migrate(user_profile_app, db)
-
-# change the size for accepting files in the requests
-user_profile_app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 megabytes
-
-# connect flask to postgres database using SQLALCHEMY
-user_profile_app.config[
-    "SQLALCHEMY_DATABASE_URI"
-] = f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
-engine = create_engine(
-    f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
-)
-# inspector = Inspector.from_engine(engine)
-
-# Create the SQLAlchemy database object
-db.init_app(user_profile_app)
 
 # resources fields to serialize the response object
 _user_information_resource_fields = {
@@ -70,6 +55,32 @@ _user_information_resource_fields = {
 }
 
 
+# create a schema to serialize an return an object after setting cookies in POST REQUEST
+class UserInformationSchema(Schema):
+    first_name = ma_fields.String()
+    middle_name = ma_fields.String()
+    last_name = ma_fields.String()
+    age = ma_fields.Integer()
+    date_of_birth = ma_fields.Date()
+    address_line_1 = ma_fields.String()
+    address_line_2 = ma_fields.String()
+    city = ma_fields.String()
+    province = ma_fields.String()
+    country = ma_fields.String()
+    postal_code = ma_fields.String()
+    gender = ma_fields.String()
+    religion = ma_fields.String()
+    profile_image = ma_fields.String()
+    user_bio = ma_fields.String()
+    interests = ma_fields.String()
+    education_institutions = ma_fields.String()
+    education_majors = ma_fields.String()
+    education_degrees = ma_fields.String()
+    graduation_date = ma_fields.Date()
+    identification_option = ma_fields.String()
+    identification_material = ma_fields.String()
+
+
 # Querying and inserting into user profile database Flask_Restful API
 class UserInformationResource(Resource):
     # private methods that abort if user information exists and not exists
@@ -80,7 +91,7 @@ class UserInformationResource(Resource):
 
     def __abort_if_user_profile_does_not_exists(self, user_id) -> None:
         if not user_id:
-            raise Conflict
+            raise NotFound
         return
 
     # private method to add argument into the form data
@@ -230,7 +241,7 @@ class UserInformationResource(Resource):
     )
     @marshal_with(_user_information_resource_fields)  # serialize the instance object
     def get(self):
-        with user_profile_app.app_context():
+        with current_app.app_context():
             # get the token from cookies
             try:
                 token = request.cookies.get("token")
@@ -239,25 +250,23 @@ class UserInformationResource(Resource):
                 # query the database to get the user with the user id
                 user = UserInformation.query.filter_by(user_id=user_id).first()
                 if user:
-                    return user, 200
+                    return user, HTTPStatus.OK
                 else:
-                    raise Conflict
+                    raise NotFound
+
             except (
-                Conflict
-            ) as conflict_error:  # -> no user's found in the database (user has not added their profile)
-                abort(404, message=f"{conflict_error}")
+                NotFound
+            ) as not_found_error:  # -> no user's found in the database (user has not added their profile)
+                db.session.rollback()
+                abort(HTTPStatus.NOT_FOUND, message=f"{not_found_error}")
 
             except (
                 Exception
-            ) as error:  # -> any error being caught such as jwt token value error, signature error,...
-                response_data = {
-                    "message": f"{error}"  # return the error message to the client
-                }
-                response_json = json.dumps(response_data)
-                response = Response(
-                    response=response_json, status=500, mimetype="application/json"
+            ) as internal_server_error:  # -> any error being caught such as jwt token value error, signature error,...
+                db.session.rollback()
+                abort(
+                    HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{internal_server_error}"
                 )
-                return response
 
     # handle the POST request from the form data
     @token_required(
@@ -268,20 +277,16 @@ class UserInformationResource(Resource):
         ],
         secret_key=secret_key,
     )
-    @marshal_with(_user_information_resource_fields)  # serialize the response object
     def post(self):
-        with user_profile_app.app_context():
-            # get the token from cookies to get the user id
-            user_token = request.cookies.get("token")
-            # encode the token from string to bytes
-            # bytes_token = bytes(user_token, 'utf-8')
-            # decode the token
-            decoded_user_token = jwt.decode(
-                user_token, secret_key, algorithms=["HS256"]
-            )
-            user_id = decoded_user_token["id"]
-            # get the users inputs
+        with current_app.app_context():
             try:
+                # get the token from cookies to get the user id
+                user_token = request.cookies.get("token")
+                # decode the token
+                decoded_user_token = jwt.decode(
+                    user_token, secret_key, algorithms=["HS256"]
+                )
+                user_id = decoded_user_token["id"]
                 # get the user's input from the form data
                 form_data = reqparse.RequestParser()
                 self.__form_data_add_arguments(
@@ -385,6 +390,26 @@ class UserInformationResource(Resource):
 
                     # add new user into users model
                     db.session.add(new_user)
+
+                    # give user the permission to view and change the study preferences
+                    permission_lists = [
+                        "can_view_study_preferences",
+                        "can_change_study_preferences",
+                        "can_view_availability_schedule",
+                        "can_change_availability_schedule",
+                    ]
+                    for permission in permission_lists:
+                        # get the user's permission list from the db
+                        give_permission = Permission.query.filter_by(
+                            user_id=user_id, name=permission
+                        ).first()
+                        # grant the permission if it is not in there yet
+                        if not give_permission:
+                            give_permission = Permission(
+                                name=permission, user_id=user_id
+                            )
+                            db.session.add(give_permission)
+
                     # commit the change to the database -> 201 if successful
                     db.session.commit()
 
@@ -392,26 +417,65 @@ class UserInformationResource(Resource):
                         user_id=user_id
                     ).first()
 
-                    return find_user_information, 201
+                    # query the permissions list in the user table with the user id
+                    user = Users.query.filter_by(user_id=user_id).first()
+
+                    permissions = [permission.name for permission in user.permissions]
+
+                    # generate new jwt token with new permissions to authenticate the user if they can view and change study preferences
+                    new_token = jwt.encode(
+                        {
+                            "id": str(user_id),
+                            "user_information_id": str(
+                                find_user_information.id
+                            ),  # id of user_information model
+                            "permissions": permissions,
+                            "exp": datetime.now(pytz.timezone("EST"))
+                            + timedelta(
+                                minutes=30
+                            ),  # set the token to be expired after 30 minutes
+                        },
+                        secret_key,
+                        algorithm="HS256",
+                    )
+
+                    find_user_information_schema = UserInformationSchema()
+                    user_information = find_user_information_schema.dump(
+                        find_user_information
+                    )
+
+                    # store the token into cookies
+                    new_token_in_cookies = make_response(user_information)
+                    new_token_in_cookies.set_cookie(
+                        "token",
+                        value=new_token,
+                        expires=datetime.now(pytz.timezone("EST"))
+                        + timedelta(minutes=30),
+                        httponly=True,
+                    )
+                    new_token_in_cookies.status_code = HTTPStatus.CREATED
+
+                    # return new_token_in_cookies
+                    return new_token_in_cookies
 
                 # if there is any invalid field is being caught (including address, profile image(if any)), send the error to the client with a 400 bad request status
                 else:
-                    raise ValueError
+                    raise BadRequest
 
             # catch 400 bad request error
-            except ValueError:
+            except BadRequest as bad_request_errors:
                 db.session.rollback()
-                abort(400, message=json.dumps(errors))
+                abort(HTTPStatus.BAD_REQUEST, message=json.dumps(errors))
 
             # catch the 409 conflict error
             except Conflict as conflict_error:
                 db.session.rollback()
-                abort(409, message=f"{conflict_error}")
+                abort(HTTPStatus.CONFLICT, message=f"{conflict_error}")
 
             # catch the error if there is an internal server error
-            except Exception as e:
+            except Exception as server_error:
                 db.session.rollback()
-                abort(500, message=f"{e}")
+                abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
 
     # a method to handle the UPDATE request
     @token_required(
@@ -424,7 +488,7 @@ class UserInformationResource(Resource):
     )
     @marshal_with(_user_information_resource_fields)
     def patch(self):
-        with user_profile_app.app_context():
+        with current_app.app_context():
             try:
                 # get the token from cookies
                 token = request.cookies.get("token")
@@ -492,23 +556,23 @@ class UserInformationResource(Resource):
                     ).first()
 
                     # return a response to the client
-                    return update_user, 201
+                    return update_user, HTTPStatus.CREATED
 
                 else:
-                    raise ValueError
+                    raise BadRequest
 
-            except ValueError:
+            except BadRequest as bad_request_error:
                 db.session.rollback()
-                abort(400, message=json.dumps(errors))
+                abort(HTTPStatus.BAD_REQUEST, message=json.dumps(errors))
 
             # catch the 404 error
-            except Conflict as conflict_error:
+            except NotFound as not_found_error:
                 db.session.rollback()
-                abort(404, message=f"{conflict_error}")
+                abort(HTTPStatus.NOT_FOUND, message=f"{not_found_error}")
 
-            except Exception as error:
+            except Exception as server_error:
                 db.session.rollback()
-                abort(500, message=f"{error}")
+                abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
 
     # a method to delete a user's profile
     @token_required(
@@ -521,7 +585,7 @@ class UserInformationResource(Resource):
     )
     @marshal_with(_user_information_resource_fields)
     def delete(self):
-        with user_profile_app.app_context():
+        with current_app.app_context():
             # get the token from cookies
             try:
                 token = request.cookies.get("token")
@@ -557,13 +621,13 @@ class UserInformationResource(Resource):
                 )
                 return response
 
-            # except 404 conflict error
-            except Conflict as conflict_error:
+            # except 404 error
+            except NotFound as not_found_error:
                 db.session.rollback()
-                abort(404, message=f"{conflict_error}")
+                abort(HTTPStatus.NOT_FOUND, message=f"{not_found_error}")
 
             except (
                 Exception
-            ) as error:  # try to catch the error and display to the client
+            ) as server_error:  # try to catch the error and display to the client
                 db.session.rollback()
-                abort(500, message=f"{error}")
+                abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")

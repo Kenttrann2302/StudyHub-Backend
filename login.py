@@ -6,57 +6,24 @@ import bcrypt
 import jwt
 import pytz
 import requests
-from flask import Blueprint, Flask, Response, make_response, request
-from flask_restful import Resource, fields, reqparse
+from flask import Blueprint, Flask, Response, make_response, request, current_app
+from flask_restful import Resource, fields, reqparse, abort
 from sqlalchemy import create_engine
+from http import HTTPStatus
+from werkzeug.exceptions import Forbidden
 
 # import the users models from the models.py
 from database.users_models import Permission, Users, db
-from get_env import (
-    aws_sending_otp,
-    aws_verify_otp,
-    database_host,
-    database_name,
-    database_password,
-    database_port,
-    database_type,
-    database_username,
-    secret_key,
-)
+from get_env import aws_sending_otp, aws_verify_otp, secret_key
 from helper_functions.grant_permission import grant_permission_to_verified_users
 from helper_functions.validate_users_information import create_validated_fields_dict
-
-# login app configuration
-login_app = Flask(__name__)
-# login_app.config['SERVER_NAME'] = '127.0.0.1:5000'
-# login_app.config['APPLICATION_ROOT'] = '/'
-# login_app.config['PREFERRED_URL_SCHEME'] = 'http'
-# login_app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-# login_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # register the app instance with the endpoints we are using for this app
 login_routes = Blueprint("login_routes", __name__)
 
 # Add an API Test Configuration
-login_app.config["TESTING"] = True
-login_app.config["WTF_CSRF_ENABLED"] = False
-
-# connect to the userdatabase where storing all the username, password, email and phone number
-login_app.config[
-    "SQLALCHEMY_DATABASE_URI"
-] = f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
-engine = create_engine(
-    f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
-)
-
-db.init_app(login_app)
-
-# global variables
-# initialize an errors dictionary to notify the error message on the front-end for the user
-signin_errors = {}
-
-# initialize all the a dictionary of validated fields for user inputs
-validated_fields = {"username": "", "password": ""}
+# login_app.config["TESTING"] = True
+# login_app.config["WTF_CSRF_ENABLED"] = False
 
 # define a resource field to serialize the response when perform a POST request to validate the user's credentials
 user_resource_fields = {
@@ -75,36 +42,34 @@ user_email = None
 
 
 class SignInResource(Resource):
-    def __init__(self) -> None:
-        super().__init__()
-
     # this is a function to handle the GET request to get the token
     def get(self) -> None:
-        with login_app.app_context():
-            if request.method == "GET":
-                try:
-                    global token
-                    response_data = {"token": token, "user_email": user_email}
-                    response_json = json.dumps(response_data)
-                    response = Response(
-                        response=response_json, status=200, mimetype="application/json"
-                    )
-                    return response
+        with current_app.app_context():
+            try:
+                global token
+                response_data = {"token": token, "user_email": user_email}
+                response_json = json.dumps(response_data)
+                response = Response(
+                    response=response_json,
+                    status=HTTPStatus.OK,
+                    mimetype="application/json",
+                )
+                return response
 
-                # catch the errors if found
-                except Exception as error:
-                    response_data = {
-                        "message": f"There is an error occured while handling the GET request to server: {error}"
-                    }
-                    response_json = json.dumps(response_data)
-                    response = Response(
-                        response=response_json, status=500, mimetype="application/json"
-                    )
-                    return response
+            # catch the errors if found
+            except Exception as error:
+                response_data = {"message": f"Server error: {error}"}
+                response_json = json.dumps(response_data)
+                response = Response(
+                    response=response_json,
+                    status=HTTPStatus.INTERNAL_SERVER_ERROR,
+                    mimetype="application/json",
+                )
+                return response
 
     # this is a function to handle the POST request from the login form data and validate them against the registration table to see if the user is already registered in the system
     def post(self) -> None:
-        with login_app.app_context():
+        with current_app.app_context():
             try:
                 # get the form data include username and password and validate them against the database
                 signInForm = reqparse.RequestParser()
@@ -125,12 +90,8 @@ class SignInResource(Resource):
                 signIn_username = args["signIn_username"]
                 signIn_password = args["signIn_password"]
 
-                # Get the fields that are validated
-                create_validated_fields_dict(
-                    validated_fields=validated_fields,
-                    username=signIn_username,
-                    password=signIn_password,
-                )
+                # a dictionary to store the user's errors fields
+                signin_errors = {}
 
                 # Query user record from database
                 user = Users.query.filter(Users.username == signIn_username).first()
@@ -146,20 +107,9 @@ class SignInResource(Resource):
                         # verified if the user's verification method has been verified with StudyHub system
                         if user.account_verified == False:
                             # abort if the user did not verify their email or sms or device push notification
-                            response_data = {
-                                "message": f"Sorry! But it seems like you need to verify your {user.verification_method} with our system!"
-                            }
-                            response_json = json.dumps(response_data)
-                            response = Response(
-                                response_json,
-                                status=403,
-                                mimetype="application/json",
-                            )
-                            return response
+                            raise Forbidden
 
-                        # grant permissions for the users to view the dashboard, use geolocation, view, upload and update their own profile
-                        # give the user the permission to view, upload or update their profile
-                        #  permissions_list = ['can_view_dashboard', 'can_view_profile', 'can_upload_profile', 'can_update_profile', 'can_use_geolocation_api']
+                        # grant the permission for the user
                         permissions_list = ["can_verify_otp"]
                         for permission in permissions_list:
                             grant_permission_response = (
@@ -205,10 +155,7 @@ class SignInResource(Resource):
                                 )
 
                                 # if the GET request towards AWS API Gateway successfully
-                                if response.status_code == 200:
-                                    # save to verify token to the database along with the user_id
-                                    user.verify_otp_token = token
-
+                                if response.status_code == HTTPStatus.OK:
                                     # object serialize for REST API
                                     response_data = {
                                         "message": f"An OTP code to verify {user.user_id} with email: {user.verification} has been sent successfully!",
@@ -223,7 +170,7 @@ class SignInResource(Resource):
                                     response_json = json.dumps(response_data)
                                     response = Response(
                                         response=response_json,
-                                        status=200,
+                                        status=HTTPStatus.OK,
                                         mimetype="application/json",
                                     )
 
@@ -231,18 +178,7 @@ class SignInResource(Resource):
 
                                 # if there is an error while sending the request to AWS Lambda function url
                                 else:
-                                    response_data = {
-                                        "message": f"Sending an OTP code to the user's email resulted in errors with status code: {response.status_code}"
-                                    }
-
-                                    response_json = json.dumps(response_data)
-                                    response = Response(
-                                        response=response_json,
-                                        status=response.status_code,
-                                        mimetype="application/json",
-                                    )
-
-                                    return response
+                                    raise Exception
 
                             # Store the token in cookie local storage if the user choose sms for verification
                             response = make_response()
@@ -259,16 +195,7 @@ class SignInResource(Resource):
 
                         # if cannot grant permission due to any server error
                         else:
-                            response_data = {
-                                "message": f"There is an internal server error while granting the permission for the user!"
-                            }
-                            response_json = json.dumps(response_data)
-                            response = Response(
-                                response=response_json,
-                                status=500,
-                                mimetype="application/json",
-                            )
-                            return response
+                            raise Exception
 
                     # if correct username but wrong password
                     else:
@@ -277,13 +204,12 @@ class SignInResource(Resource):
                         ] = f"Password is invalid! Please enter again, if you forget your password, please click on the link below to reset your password!"
                         response_data = {
                             "error": signin_errors["signIn_password"],
-                            "validated_fields": validated_fields,
                         }
 
                         response_json = json.dumps(response_data)
                         response = Response(
                             response=response_json,
-                            status=401,
+                            status=HTTPStatus.UNAUTHORIZED,
                             mimetype="application/json",
                         )
                         return response
@@ -294,29 +220,25 @@ class SignInResource(Resource):
                     signin_errors[
                         "signIn_username"
                     ] = f"Sorry! We cannot find any user with this username and password! If you are a new user, click on the link below to register with us!"
-                    response_data = {
-                        "error": signin_errors["signIn_username"],
-                        "validated_fields": validated_fields,
-                    }
+                    response_data = {"error": signin_errors["signIn_username"]}
 
                     response_json = json.dumps(response_data)
                     response = Response(
                         response=response_json,
-                        status=404,
+                        status=HTTPStatus.NOT_FOUND,
                         mimetype="application/json",
                     )
                     return response
 
+            # handle forbidden error
+            except Forbidden as forbidden_error:
+                db.session.rollback()
+                abort(HTTPStatus.FORBIDDEN, message=f"{forbidden_error}")
+
             # handle any internal server error
-            except Exception as error:
-                response_data = {
-                    "message": f"Sorry! The server cannot process the request due to an internal server error: {error}"
-                }
-                response_json = json.dumps(response_data)
-                response = Response(
-                    response=response_json, status=500, mimetype="application/json"
-                )
-                return response
+            except Exception as server_error:
+                db.session.rollback()
+                abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
 
 
 # create a resource for the Rest API to handle the GET request to the AWS Verify OTP Lambda function to verify the user's otp code
@@ -332,13 +254,13 @@ class verifyOTP(Resource):
         response = requests.get(get_token_url)
 
         # if response is unsuccessful
-        if response.status_code != 200:
-            response_data = {
-                "message": f"Failed to get the token from the url with status code: {response.status_code}"
-            }
+        if response.status_code != HTTPStatus.OK:
+            response_data = {"message": f"Fail to send request to AWS Client"}
             response_json = json.dumps(response_data)
             response = Response(
-                response=response_json, status=500, mimetype="application/json"
+                response=response_json,
+                status=HTTPStatus.INTERNAL_SERVER_ERROR,
+                mimetype="application/json",
             )
             return response
 
@@ -357,7 +279,7 @@ class verifyOTP(Resource):
             response = requests.get(aws_verify_otp + f"{otp_code}", headers=headers)
 
             # if the request was made successfully
-            if response.status_code == 200:
+            if response.status_code == HTTPStatus.OK:
                 # give the users permission to view the dashboard, use geolocation api, view and change their profile for the algorithms
                 permission_lists = [
                     "can_view_dashboard",
@@ -421,9 +343,7 @@ class verifyOTP(Resource):
 
         except ValueError:  # if there is an error with AWS Lambda Client
             response_dict = json.loads(response.content.decode("utf-8"))
-            response_data = {
-                "message": f"Failed to verify user with user email: {user_email} : {response_dict}!"
-            }
+            response_data = {"message": f"{response_dict}!"}
             response_json = json.dumps(response_data)
             response = Response(
                 response=response_json,
@@ -435,14 +355,8 @@ class verifyOTP(Resource):
         except (
             Exception
         ) as error:  # if the server catches the server-side error during handling the request
-            response_data = {
-                "message": f"There is an internal server error while verifying user otp: {error}"
-            }
-            response_json = json.dumps(response_data)
-            response = Response(
-                response=response_json, status=500, mimetype="application/json"
-            )
-            return response
+            db.session.rollback()
+            abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"Server error: {error}")
 
 
 # add login_routes to write the unit test the rest api

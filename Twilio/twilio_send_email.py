@@ -5,21 +5,35 @@ import jwt
 import pytz
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+from http import HTTPStatus
 
 from get_env import secret_key, twilio_api_key
 
 
 # function send the verification email along with the link for the user to verify their email address with StudyHub resource
-def sendgrid_verification_email(user_email, studyhub_code) -> bool:
+def sendgrid_verification_email(
+    user_email, studyhub_code, request_type, new_password=None, user_id=None
+) -> any:
     # read the HTML template file
-    with open("Twilio/twilio_email_template.html", "r") as f:
-        template = f.read()
+    if request_type == "post":  # template for register new user
+        with open("Twilio/templates/twilio_post_template.html", "r") as f:
+            template = f.read()
+
+    elif request_type == "patch":  # template for user to update their password
+        with open("Twilio/templates/twilio_update_template.html", "r") as f:
+            template = f.read()
+
+    else:  # template to user to confirm if they want to delete their account
+        with open("Twilio/templates/twilio_delete_template.html", "r") as f:
+            template = f.read()
 
     # generate a JWT token that stores the user email address and the random otp string and valid for 10 minutes
     token = jwt.encode(
         {
             "email": user_email,
             "studyhub_code": studyhub_code,
+            "user_id": user_id,
+            "new_password": new_password,
             "exp": datetime.now(pytz.timezone("EST")) + timedelta(minutes=10),
         },
         secret_key,
@@ -41,10 +55,10 @@ def sendgrid_verification_email(user_email, studyhub_code) -> bool:
         sg = SendGridAPIClient(twilio_api_key)
         response = sg.send(message)
         return (
-            True,
+            HTTPStatus.CREATED,
             response,
             token,
         )  # return True indicated that the message has been sent successfully!
     except Exception as e:
         # return false indicates there was an error when send a verification email along with the error message and the status code
-        return False, str(e), 500
+        return 500, f"{e}", token
