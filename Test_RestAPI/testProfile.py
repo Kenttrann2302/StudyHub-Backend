@@ -58,7 +58,7 @@ data = [
 ]
 
 print("\n")
-print("-"*10)
+print("-" * 10)
 print("USER INFORMATION MANUAL TEST")
 print("\n\n")
 
@@ -94,54 +94,61 @@ update_data = {
 }
 
 update_response = requests.patch(
-    BASE + "/studyhub/user-profile/user-information/", headers=new_headers, data=update_data
+    BASE + "/studyhub/user-profile/user-information/",
+    headers=new_headers,
+    data=update_data,
 )
 print("Update data:")
 print(update_response.json())
 
 
-
 ################################# STUDY PREFERENCES #################################
 # POST REQUEST
 print("\n\n\n")
-print('-'*10)
+print("-" * 10)
 print("STUDY PREFERENCES MANUAL TEST")
 print("\n\n")
 print("Post data: ")
 post_user_study_preferences = [
     # all fields are included and correct -> 201 response
     {
-        "study_env_preferences" : "Quiet study areas",
-        "study_time_preferences" : "Early morning (5am-8am)",
-        "time_management_preferences" : "Pomodoro technique",
-        "study_techniques_preferences" : "The Feynman Technique",
-        "courses_preferences" : "MATH115, MTE121, MTE140",
-        "communication_preferences" : "Facebook"
+        "study_env_preferences": "Quiet study areas",
+        "study_time_preferences": "Early morning (5am-8am)",
+        "time_management_preferences": "Pomodoro technique",
+        "study_techniques_preferences": "The Feynman Technique",
+        "courses_preferences": "MATH115, MTE121, MTE140",
+        "communication_preferences": "Facebook",
     }
 ]
 
 for i in range(len(post_user_study_preferences)):
-    post_study_pref_response = requests.post(BASE + "/studyhub/user-profile/study-preferences/", headers=new_headers, data=post_user_study_preferences[i])
+    post_study_pref_response = requests.post(
+        BASE + "/studyhub/user-profile/study-preferences/",
+        headers=new_headers,
+        data=post_user_study_preferences[i],
+    )
     print(post_study_pref_response.json())
 
 print("\n\n")
 # GET REQUEST
 print("Get data: ")
-get_study_pref_response = requests.get(BASE + "/studyhub/user-profile/study-preferences/", headers=new_headers)
+get_study_pref_response = requests.get(
+    BASE + "/studyhub/user-profile/study-preferences/", headers=new_headers
+)
 print(get_study_pref_response.json())
 
 update_user_study_preferences = [
     # all update fields are correct
-    {
-        "communication_preferences" : "Twitter",
-        "study_env_preferences" : "Outdoors"
-    }
+    {"communication_preferences": "Twitter", "study_env_preferences": "Outdoors"}
 ]
 
 print("\n\n")
 print("Update data:")
 # PATCH REQUEST
 for i in range(len(update_user_study_preferences)):
-    patch_study_pref_response = requests.patch(BASE + "/studyhub/user-profile/study-preferences/", headers=new_headers, data=update_user_study_preferences[i])
+    patch_study_pref_response = requests.patch(
+        BASE + "/studyhub/user-profile/study-preferences/",
+        headers=new_headers,
+        data=update_user_study_preferences[i],
+    )
     print(patch_study_pref_response.json())
-

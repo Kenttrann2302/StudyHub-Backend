@@ -26,7 +26,7 @@ from user_profile import (
     UserInformationResource,  # -> REST API for user to post their user's profile
 )
 from study_preferences import (
-    StudyPreferencesResource # -> REST API for user to post their study preferences
+    StudyPreferencesResource,  # -> REST API for user to post their study preferences
 )
 
 app = Flask(__name__)

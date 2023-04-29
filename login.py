@@ -14,11 +14,7 @@ from werkzeug.exceptions import Forbidden
 
 # import the users models from the models.py
 from database.users_models import Permission, Users, db
-from get_env import (
-    aws_sending_otp,
-    aws_verify_otp,
-    secret_key
-)
+from get_env import aws_sending_otp, aws_verify_otp, secret_key
 from helper_functions.grant_permission import grant_permission_to_verified_users
 from helper_functions.validate_users_information import create_validated_fields_dict
 
@@ -44,29 +40,32 @@ user_resource_fields = {
 token = None
 user_email = None
 
+
 class SignInResource(Resource):
     # this is a function to handle the GET request to get the token
     def get(self) -> None:
         with current_app.app_context():
-                try:
-                    global token
-                    response_data = {"token": token, "user_email": user_email}
-                    response_json = json.dumps(response_data)
-                    response = Response(
-                        response=response_json, status=HTTPStatus.OK, mimetype="application/json"
-                    )
-                    return response
+            try:
+                global token
+                response_data = {"token": token, "user_email": user_email}
+                response_json = json.dumps(response_data)
+                response = Response(
+                    response=response_json,
+                    status=HTTPStatus.OK,
+                    mimetype="application/json",
+                )
+                return response
 
-                # catch the errors if found
-                except Exception as error:
-                    response_data = {
-                        "message": f"Server error: {error}"
-                    }
-                    response_json = json.dumps(response_data)
-                    response = Response(
-                        response=response_json, status=HTTPStatus.INTERNAL_SERVER_ERROR, mimetype="application/json"
-                    )
-                    return response
+            # catch the errors if found
+            except Exception as error:
+                response_data = {"message": f"Server error: {error}"}
+                response_json = json.dumps(response_data)
+                response = Response(
+                    response=response_json,
+                    status=HTTPStatus.INTERNAL_SERVER_ERROR,
+                    mimetype="application/json",
+                )
+                return response
 
     # this is a function to handle the POST request from the login form data and validate them against the registration table to see if the user is already registered in the system
     def post(self) -> None:
@@ -157,7 +156,6 @@ class SignInResource(Resource):
 
                                 # if the GET request towards AWS API Gateway successfully
                                 if response.status_code == HTTPStatus.OK:
-
                                     # object serialize for REST API
                                     response_data = {
                                         "message": f"An OTP code to verify {user.user_id} with email: {user.verification} has been sent successfully!",
@@ -222,9 +220,7 @@ class SignInResource(Resource):
                     signin_errors[
                         "signIn_username"
                     ] = f"Sorry! We cannot find any user with this username and password! If you are a new user, click on the link below to register with us!"
-                    response_data = {
-                        "error": signin_errors["signIn_username"]
-                    }
+                    response_data = {"error": signin_errors["signIn_username"]}
 
                     response_json = json.dumps(response_data)
                     response = Response(
@@ -233,7 +229,7 @@ class SignInResource(Resource):
                         mimetype="application/json",
                     )
                     return response
-            
+
             # handle forbidden error
             except Forbidden as forbidden_error:
                 db.session.rollback()
@@ -243,6 +239,7 @@ class SignInResource(Resource):
             except Exception as server_error:
                 db.session.rollback()
                 abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
+
 
 # create a resource for the Rest API to handle the GET request to the AWS Verify OTP Lambda function to verify the user's otp code
 class verifyOTP(Resource):
@@ -258,12 +255,12 @@ class verifyOTP(Resource):
 
         # if response is unsuccessful
         if response.status_code != HTTPStatus.OK:
-            response_data = {
-                "message": f"Fail to send request to AWS Client"
-            }
+            response_data = {"message": f"Fail to send request to AWS Client"}
             response_json = json.dumps(response_data)
             response = Response(
-                response=response_json, status=HTTPStatus.INTERNAL_SERVER_ERROR, mimetype="application/json"
+                response=response_json,
+                status=HTTPStatus.INTERNAL_SERVER_ERROR,
+                mimetype="application/json",
             )
             return response
 
@@ -346,9 +343,7 @@ class verifyOTP(Resource):
 
         except ValueError:  # if there is an error with AWS Lambda Client
             response_dict = json.loads(response.content.decode("utf-8"))
-            response_data = {
-                "message": f"{response_dict}!"
-            }
+            response_data = {"message": f"{response_dict}!"}
             response_json = json.dumps(response_data)
             response = Response(
                 response=response_json,
@@ -362,5 +357,6 @@ class verifyOTP(Resource):
         ) as error:  # if the server catches the server-side error during handling the request
             db.session.rollback()
             abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"Server error: {error}")
+
 
 # add login_routes to write the unit test the rest api

@@ -15,9 +15,7 @@ from werkzeug.exceptions import Conflict, NotFound, BadRequest, Forbidden, Unaut
 
 # import from files
 from database.users_models import Users, db
-from get_env import (
-    secret_key
-)
+from get_env import secret_key
 from helper_functions.registerformValidation import checkpassword, checkpasswordconfirm
 from helper_functions.registerformValidation import validate_registration_form
 from Twilio.twilio_send_email import sendgrid_verification_email
@@ -45,8 +43,9 @@ register_errors = {}
 # define a resource fields to serialize the object (user's login information) to make sure that all the identifications have been inserted success
 _user_resource_fields = {
     "username": fields.String,
-    "verification_method": fields.String
+    "verification_method": fields.String,
 }
+
 
 # create a resource for rest api to handle the post request
 class RegistrationResource(Resource):
@@ -66,7 +65,9 @@ class RegistrationResource(Resource):
                 abort(HTTPStatus.NOT_FOUND, message=f"{not_found_error}")
 
             except Exception as internal_server_error:
-                abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{internal_server_error}")
+                abort(
+                    HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{internal_server_error}"
+                )
 
     # a function generate a random 6 digits otp code
     def __generate_otp(self):
@@ -161,24 +162,20 @@ class RegistrationResource(Resource):
                         register_errors[
                             "username"
                         ] = f"Sorry! This username already exists!"
-                        response_data = {
-                            "message": register_errors
-                        }
+                        response_data = {"message": register_errors}
                         response_json = json.dumps(response_data)
                         response = Response(
                             response=response_json,
                             status=HTTPStatus.CONFLICT,
                             mimetype="application/json",
                         )
-                        return response 
+                        return response
 
                     elif password_taken:
                         register_errors[
                             "password"
                         ] = f"Sorry! This password already exists!"
-                        response_data = {
-                            "message": register_errors
-                        }
+                        response_data = {"message": register_errors}
                         response_json = json.dumps(response_data)
                         response = Response(
                             response=response_json,
@@ -200,9 +197,7 @@ class RegistrationResource(Resource):
                         error_message = switch.get(True, "None")
                         if error_message is not None:
                             register_errors["verification"] = error_message
-                            response_data = {
-                                "message": register_errors
-                            }
+                            response_data = {"message": register_errors}
                             response_json = json.dumps(response_data)
                             response = Response(
                                 response=response_json,
@@ -211,7 +206,7 @@ class RegistrationResource(Resource):
                             )
                             return response
 
-                    else: # if no field existed before
+                    else:  # if no field existed before
                         # create an instance to add the new user into the database
                         new_user = Users(
                             username=validated_registration[0],
@@ -231,7 +226,7 @@ class RegistrationResource(Resource):
                             ) = sendgrid_verification_email(
                                 user_email=new_user.verification,
                                 studyhub_code=self.__generate_otp(),
-                                request_type='post'
+                                request_type="post",
                             )
 
                             # store the user's temporary token into the database
@@ -240,7 +235,10 @@ class RegistrationResource(Resource):
                             db.session.commit()
 
                             # check if the response_message is True -> verification sent successfully!
-                            if response_status == HTTPStatus.OK or response_status == HTTPStatus.CREATED:
+                            if (
+                                response_status == HTTPStatus.OK
+                                or response_status == HTTPStatus.CREATED
+                            ):
                                 response_data = {
                                     "message": f"Successfully!",
                                 }
@@ -258,7 +256,7 @@ class RegistrationResource(Resource):
 
                         # handle the response if the verification method is not Email -> this will be done later
 
-                else: # if there is an invalid input from the form data
+                else:  # if there is an invalid input from the form data
                     raise BadRequest
 
             # catch the 400 bad request error
@@ -275,14 +273,21 @@ class RegistrationResource(Resource):
     def patch(self):
         with current_app.app_context():
             try:
-                import pdb
-                pdb.set_trace()
                 # get the form data and parse it to get the value of the key
                 update_data_form = reqparse.RequestParser()
-                update_data_form.add_argument("username", type=str, help="Username is required", required=True) # get the username
-                update_data_form.add_argument("new_password", type=str, help="Password is required", required=True) # get the password
-                update_data_form.add_argument("new_password_confirmation", type=str, help="Password confirmation is required",required=True) # get the password confirmation
-                
+                update_data_form.add_argument(
+                    "username", type=str, help="Username is required", required=True
+                )  # get the username
+                update_data_form.add_argument(
+                    "new_password", type=str, help="Password is required", required=True
+                )  # get the password
+                update_data_form.add_argument(
+                    "new_password_confirmation",
+                    type=str,
+                    help="Password confirmation is required",
+                    required=True,
+                )  # get the password confirmation
+
                 # parse the form data
                 update_args = update_data_form.parse_args()
                 username = update_args["username"]
@@ -295,18 +300,28 @@ class RegistrationResource(Resource):
                 # abort if the user doesn't exist
                 if not find_user_query:
                     raise NotFound
-                
+
                 # initialize a validate fields for validate the new password
                 validate_new_user = []
                 errors = {}
-                
+
                 # if user is found in the database
                 # validate the password and password confirmation before change them in the database
-                checkpassword(username=username, password=password, errors=errors, validate_new_user=validate_new_user)
-                checkpasswordconfirm(confirmed_password=password_confirmation, password=password, errors=errors, validate_new_user=validate_new_user)
+                checkpassword(
+                    username=username,
+                    password=password,
+                    errors=errors,
+                    validate_new_user=validate_new_user,
+                )
+                checkpasswordconfirm(
+                    confirmed_password=password_confirmation,
+                    password=password,
+                    errors=errors,
+                    validate_new_user=validate_new_user,
+                )
 
                 # if there is no error in the errors dictionary -> handle appropriate form data
-                if len(validate_new_user) == 2 and not errors:      
+                if len(validate_new_user) == 2 and not errors:
                     # genrate the salt for the hashed_password
                     salt = bcrypt.gensalt()
                     # hash the password using bcrypt hashing algorithm
@@ -325,7 +340,7 @@ class RegistrationResource(Resource):
                     # raise conflict if the password already exists in the userdatabase
                     if password_taken:
                         raise Conflict
-                    
+
                     # if no user took this password in the database
                     # abort forbidden if the user hasn't verified their email or sms
                     if find_user_query.account_verified == False:
@@ -340,7 +355,8 @@ class RegistrationResource(Resource):
                         ) = sendgrid_verification_email(
                             user_email=find_user_query.verification,
                             studyhub_code=self.__generate_otp(),
-                            request_type='patch', new_password=decoded_hashed_password
+                            request_type="patch",
+                            new_password=decoded_hashed_password,
                         )
 
                         # store the user's temporary token into the database
@@ -349,7 +365,10 @@ class RegistrationResource(Resource):
                         db.session.commit()
 
                         # check if the response_message is True -> verification sent successfully!
-                        if response_status == HTTPStatus.OK or response_status == HTTPStatus.CREATED:
+                        if (
+                            response_status == HTTPStatus.OK
+                            or response_status == HTTPStatus.CREATED
+                        ):
                             response_data = {
                                 "message": f"Sending email successfully!",
                             }
@@ -364,10 +383,10 @@ class RegistrationResource(Resource):
                         # raise and Exception error if Twilio cannot be sent
                         else:
                             raise Exception(f"{response_message}")
-                
+
                 else:
                     raise BadRequest
-                
+
             # catch the not found error
             except NotFound as not_found_error:
                 db.session.rollback()
@@ -392,14 +411,16 @@ class RegistrationResource(Resource):
             except Exception as server_error:
                 db.session.rollback()
                 abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
-    
-    # a delete method for user to delete the account, this method 
+
+    # a delete method for user to delete the account, this method
     def delete(self):
         with current_app.app_context():
             try:
                 # get the username from the form
                 user_account_delete_form = reqparse.RequestParser()
-                user_account_delete_form.add_argument("username", type=str, help="Username is required", required=True) # get the username
+                user_account_delete_form.add_argument(
+                    "username", type=str, help="Username is required", required=True
+                )  # get the username
 
                 user_account_delete_form.parse_args()
                 username = user_account_delete_form["username"]
@@ -415,7 +436,7 @@ class RegistrationResource(Resource):
                 # abort forbidden if the user hasn't verified their email or sms
                 if find_user_query.account_verified == False:
                     raise Forbidden
-                
+
                 # send a verification to user's information to see if the user created this action
                 if find_user_query.verification_method == "Email":
                     (
@@ -425,7 +446,8 @@ class RegistrationResource(Resource):
                     ) = sendgrid_verification_email(
                         user_email=find_user_query.verification,
                         studyhub_code=self.__generate_otp(),
-                        request_type='delete', user_id=find_user_query.user_id
+                        request_type="delete",
+                        user_id=find_user_query.user_id,
                     )
 
                     # store the user's temporary token into the database
@@ -434,7 +456,10 @@ class RegistrationResource(Resource):
                     db.session.commit()
 
                     # check if the response_message is True -> verification sent successfully!
-                    if response_status == HTTPStatus.OK or response_status == HTTPStatus.CREATED:
+                    if (
+                        response_status == HTTPStatus.OK
+                        or response_status == HTTPStatus.CREATED
+                    ):
                         response_data = {
                             "message": f"Sending email successfully!",
                         }
@@ -454,7 +479,7 @@ class RegistrationResource(Resource):
             except Forbidden as forbidden_error:
                 db.session.rollback()
                 abort(HTTPStatus.FORBIDDEN, message=f"{forbidden_error}")
-            
+
             # catch the not found error
             except NotFound as not_found_error:
                 db.session.rollback()
@@ -464,7 +489,7 @@ class RegistrationResource(Resource):
             except Exception as server_error:
                 db.session.rollback()
                 abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
-            
+
 
 # a get request to perform a query string to get the token from the url and decode to get the email address and code to verify the user's email
 @registration_routes.route("/studyhub/confirm-email", methods=["GET"])
@@ -501,17 +526,19 @@ def email_verification():
                 }
                 response_json = json.dumps(response_data)
                 response = Response(
-                    response=response_json, status=HTTPStatus.CREATED, mimetype="application/json"
+                    response=response_json,
+                    status=HTTPStatus.CREATED,
+                    mimetype="application/json",
                 )
                 return response
 
-             # if the user email is invalid -> not verified
+            # if the user email is invalid -> not verified
             else:
                 raise Unauthorized
-    
+
     except Unauthorized as unauthorized_error:
         db.session.rollback()
-        abort(HTTPStatus.UNAUTHORIZED, message=f"{unauthorized_error}")    
+        abort(HTTPStatus.UNAUTHORIZED, message=f"{unauthorized_error}")
 
     except jwt.ExpiredSignatureError as expired_token_error:
         db.session.rollback()
@@ -521,6 +548,7 @@ def email_verification():
         # internal server error
         db.session.rollback()
         abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
+
 
 # a route for user to confirm a change on their password
 @registration_routes.route("/studyhub/confirm-password-change", methods=["GET"])
@@ -548,26 +576,26 @@ def confirm_password_change():
                 new_password = decoded_token["new_password"]
                 # hashed the password and store the decoded password into the database
                 result.password = new_password
-                
+
                 db.session.commit()
-        
+
                 # return the json response
-                response_data = {
-                    "message": f"Password updated!"
-                }
+                response_data = {"message": f"Password updated!"}
                 response_json = json.dumps(response_data)
                 response = Response(
-                    response=response_json, status=HTTPStatus.CREATED, mimetype="application/json"
+                    response=response_json,
+                    status=HTTPStatus.CREATED,
+                    mimetype="application/json",
                 )
                 return response
-            
-             # if the user email is invalid -> not verified
+
+            # if the user email is invalid -> not verified
             else:
                 raise Unauthorized
-    
+
     except Unauthorized as unauthorized_error:
         db.session.rollback()
-        abort(HTTPStatus.UNAUTHORIZED, message=f"{unauthorized_error}")        
+        abort(HTTPStatus.UNAUTHORIZED, message=f"{unauthorized_error}")
 
     except jwt.ExpiredSignatureError as expired_token_error:
         db.session.rollback()
@@ -578,6 +606,7 @@ def confirm_password_change():
         # internal server error
         abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
 
+
 # a route for user to confirm an account deletion
 @registration_routes.route("/studyhub/confirm-account-deletion", methods=["GET"])
 def confirm_account_deletion():
@@ -586,7 +615,7 @@ def confirm_account_deletion():
         token = request.args.get("token")
 
         # decode the token
-        decoded_token = jwt.decode(token, secret_key, algorithms=['HS256'])
+        decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
 
         # check if the expiration time is more than the current time
         exp_time = decoded_token["exp"]
@@ -602,29 +631,27 @@ def confirm_account_deletion():
 
             if result.temp_token == token:
                 # procceed to account deletion
-                db.session.query(Users).filter(
-                    Users.user_id == user_id
-                ).delete()
+                db.session.query(Users).filter(Users.user_id == user_id).delete()
                 # commit the change to the database
                 db.session.commit()
 
                 # return the json response to the client
-                response_data = {
-                    "message": f"Successfully deleted user!"
-                }
+                response_data = {"message": f"Successfully deleted user!"}
                 response_json = json.dumps(response_data)
                 response = Response(
-                    response=response_json, status=HTTPStatus.CREATED, mimetype="application/json"
+                    response=response_json,
+                    status=HTTPStatus.CREATED,
+                    mimetype="application/json",
                 )
                 return response
-            
-             # if the user email is invalid -> not verified
+
+            # if the user email is invalid -> not verified
             else:
                 raise Unauthorized
 
     except Unauthorized as unauthorized_error:
         db.session.rollback()
-        abort(HTTPStatus.UNAUTHORIZED, message=f"{unauthorized_error}")        
+        abort(HTTPStatus.UNAUTHORIZED, message=f"{unauthorized_error}")
 
     except jwt.ExpiredSignatureError as expired_token_error:
         db.session.rollback()

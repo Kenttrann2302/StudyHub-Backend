@@ -15,21 +15,20 @@ from marshmallow import Schema
 
 # import other files in the root directory
 from database.users_models import StudyPreferences, db
-from get_env import (
-    secret_key
-)
+from get_env import secret_key
 from helper_functions.middleware_functions import token_required
 
 
 # resources fields to serialize the response object
 _study_preferences_resource_fields = {
-    "study_env_preferences" : fields.String,
-    "study_time_preferences" : fields.String,
-    "time_management_preferences" : fields.String,
-    "study_techniques_preferences" : fields.String,
-    "courses_preferences" : fields.String,
-    "communication_preferences" : fields.String
+    "study_env_preferences": fields.String,
+    "study_time_preferences": fields.String,
+    "time_management_preferences": fields.String,
+    "study_techniques_preferences": fields.String,
+    "courses_preferences": fields.String,
+    "communication_preferences": fields.String,
 }
+
 
 # REST API for CRUD for user to interact with Study Preferences resources
 class StudyPreferencesResource(Resource):
@@ -45,49 +44,48 @@ class StudyPreferencesResource(Resource):
             raise NotFound
         return
 
-
     # private method to add arguments into the form data
     def __post_form_data_add_arguments(self, post_form_data) -> None:
         post_form_data.add_argument(
             "study_env_preferences",
             type=str,
             help="Student has to choose their favorite study environment.",
-            required=True
+            required=True,
         )
 
         post_form_data.add_argument(
             "study_time_preferences",
             type=str,
             help="Student has to choose their study time.",
-            required=True
+            required=True,
         )
 
         post_form_data.add_argument(
             "time_management_preferences",
             type=str,
             help="Student has to choose their favorite technique of managing the study session time.",
-            required=True
+            required=True,
         )
 
         post_form_data.add_argument(
             "study_techniques_preferences",
             type=str,
             help="Student has to choose their favorite studying technique.",
-            required=True
+            required=True,
         )
 
         post_form_data.add_argument(
             "courses_preferences",
             type=str,
             help="Student has to choose the maximum of 8 courses",
-            required=True
+            required=True,
         )
 
         post_form_data.add_argument(
             "communication_preferences",
-            type= str,
+            type=str,
             help="Student has to choose one of the communication methods",
-            required=True
+            required=True,
         )
 
     # a private method that parse the update form data
@@ -102,39 +100,44 @@ class StudyPreferencesResource(Resource):
     # a private method to validate the user input data before inserting them into the database
     def __validate_form_data(self, errors, **kwargs) -> None:
         for key, value in kwargs.items():
-            if key == 'courses_preferences' and value:
+            if key == "courses_preferences" and value:
                 # split the string into an array of string represents courses codes
-                course_count = value.split(', ')
+                course_count = value.split(", ")
                 if len(course_count) > 8:
-                    errors[key] = f'Student must choose at most 8 favorite courses.'
+                    errors[key] = f"Student must choose at most 8 favorite courses."
                 elif len(course_count) < 1:
-                    errors[key] = f'Student must choose at least 1 favorite course.'
+                    errors[key] = f"Student must choose at least 1 favorite course."
             else:
-                if value == '--select--':
-                    errors[key] = f'Student must choose one of the following options for {key}'
+                if value == "--select--":
+                    errors[
+                        key
+                    ] = f"Student must choose one of the following options for {key}"
         return
 
     # a GET method to get the user study preferences from the database and return it to the client
     @token_required(
-        permission_list = [
+        permission_list=[
             "can_view_dashboard",
             "can_view_profile",
             "can_change_profile",
             "can_view_study_preferences",
-            "can_change_study_preferences"
-        ], secret_key=secret_key
+            "can_change_study_preferences",
+        ],
+        secret_key=secret_key,
     )
-    @marshal_with(_study_preferences_resource_fields) # serialize the return object
+    @marshal_with(_study_preferences_resource_fields)  # serialize the return object
     def get(self):
         with current_app.app_context():
             try:
                 # get the token from cookies
-                token = request.cookies.get('token')
+                token = request.cookies.get("token")
                 # decode the token to get the user information
-                decoded_token = jwt.decode(token, secret_key, algorithms=['HS256'])
+                decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
                 user_information_id = decoded_token["user_information_id"]
                 # query the study preferences table to get the user with the user id
-                user_study_pref = StudyPreferences.query.filter_by(user_id=user_information_id).first()
+                user_study_pref = StudyPreferences.query.filter_by(
+                    user_id=user_information_id
+                ).first()
 
                 # if user record for study preferences is not found
                 self.__abort_if_user_profile_does_not_exists(user_study_pref)
@@ -142,41 +145,42 @@ class StudyPreferencesResource(Resource):
                 # if user record for study preferences found
                 return user_study_pref, HTTPStatus.OK
 
-            except NotFound as not_found_error: # try to catch the not found error (no user's record found!)
+            except (
+                NotFound
+            ) as not_found_error:  # try to catch the not found error (no user's record found!)
                 abort(HTTPStatus.NOT_FOUND, message=f"{not_found_error}")
 
-            except Exception as server_error: # try to catch any internal server error
+            except Exception as server_error:  # try to catch any internal server error
                 abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
-
 
     # a POST method to get the user study preferences from the form data that was sent by the client
     @token_required(
-        permission_list = [
+        permission_list=[
             "can_view_dashboard",
             "can_view_profile",
             "can_change_profile",
             "can_view_study_preferences",
-            "can_change_study_preferences"
+            "can_change_study_preferences",
         ],
-        secret_key=secret_key
+        secret_key=secret_key,
     )
-    @marshal_with(_study_preferences_resource_fields) # serialize the return object
+    @marshal_with(_study_preferences_resource_fields)  # serialize the return object
     def post(self):
         with current_app.app_context():
             # get the token from cookies
             try:
                 token = request.cookies.get("token")
                 # decode the token to get the user information
-                decoded_token = jwt.decode(
-                    token, secret_key, algorithms=["HS256"]
-                )
+                decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
                 user_information_id = decoded_token["user_information_id"]
                 # get the users input from the post form data
 
                 post_form_data = reqparse.RequestParser()
-                self.__post_form_data_add_arguments(post_form_data) # add all the arguments
+                self.__post_form_data_add_arguments(
+                    post_form_data
+                )  # add all the arguments
 
-                args = post_form_data.parse_args() # parse all the form data fields
+                args = post_form_data.parse_args()  # parse all the form data fields
                 study_env_pref = args["study_env_preferences"]
                 study_time_pref = args["study_time_preferences"]
                 time_management_pref = args["time_management_preferences"]
@@ -211,7 +215,7 @@ class StudyPreferencesResource(Resource):
                         time_management_preferences=time_management_pref,
                         study_techniques_preferences=study_techniques_pref,
                         courses_preferences=courses_pref,
-                        communication_preferences=communication_pref
+                        communication_preferences=communication_pref,
                     )
 
                     # add new study preferences for this user to the database
@@ -245,29 +249,33 @@ class StudyPreferencesResource(Resource):
                 db.session.rollback
                 abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
 
-
     # a PATCH method to update the user study preferences from the update form data that was sent by the client
     @token_required(
-        permission_list = [
+        permission_list=[
             "can_view_dashboard",
             "can_view_profile",
             "can_change_profile",
             "can_view_study_preferences",
-            "can_change_study_preferences"
-        ], secret_key=secret_key
+            "can_change_study_preferences",
+        ],
+        secret_key=secret_key,
     )
-    @marshal_with(_study_preferences_resource_fields) # serialize the response object to front-end
+    @marshal_with(
+        _study_preferences_resource_fields
+    )  # serialize the response object to front-end
     def patch(self):
         with current_app.app_context():
             # get the token from cookies
             try:
                 token = request.cookies.get("token")
                 # decode the token to get the user's study preferences
-                decoded_token = jwt.decode(token, secret_key, algorithms=['HS256'])
+                decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
                 # get the user_id from the token
                 user_information_id = decoded_token["user_information_id"]
                 # query the study preferences table to see if the user's study preferences record has already been in the database
-                user_study_pref = StudyPreferences.query.filter_by(user_id=user_information_id).first()
+                user_study_pref = StudyPreferences.query.filter_by(
+                    user_id=user_information_id
+                ).first()
 
                 # if no user study preference record found
                 self.__abort_if_user_profile_does_not_exists(user_study_pref)
@@ -291,16 +299,14 @@ class StudyPreferencesResource(Resource):
                 if not errors:
                     for args_names, args_values in update_args.items():
                         if args_values:
-                            setattr(
-                                user_study_pref, args_names, args_values
-                            )
+                            setattr(user_study_pref, args_names, args_values)
 
                     # commit the change to the database
                     db.session.commit()
 
                     # query the database to get the information of the user after updating
                     update_user = StudyPreferences.query.filter_by(
-                        user_id = user_information_id
+                        user_id=user_information_id
                     ).first()
 
                     # return a response to the client
@@ -310,7 +316,7 @@ class StudyPreferencesResource(Resource):
                 else:
                     raise BadRequest
 
-            except BadRequest as bad_request_error: # catch any 400 bad request error
+            except BadRequest as bad_request_error:  # catch any 400 bad request error
                 db.session.rollback()
                 abort(HTTPStatus.BAD_REQUEST, message=json.dumps(errors))
 
@@ -326,12 +332,12 @@ class StudyPreferencesResource(Resource):
 
     # a DELETE method to delete the study preferences record
     @token_required(
-        permission_list = [
+        permission_list=[
             "can_view_dashboard",
             "can_view_profile",
-            "can_change_profile"
+            "can_change_profile",
         ],
-        secret_key=secret_key
+        secret_key=secret_key,
     )
     @marshal_with(_study_preferences_resource_fields)
     def delete(self):
@@ -341,7 +347,7 @@ class StudyPreferencesResource(Resource):
                 token = request.cookies.get("token")
                 decoded_token = jwt.decode(
                     token, secret_key, algorithms=["HS256"]
-                ) # decode the jwt token
+                )  # decode the jwt token
                 # get the user id
                 user_information_id = decoded_token["user_information_id"]
 
@@ -362,13 +368,13 @@ class StudyPreferencesResource(Resource):
 
                 # return the response to the client if there is no error occured
                 response_data = {
-                    "message" : f"User study preference has been successfully deleted!"
+                    "message": f"User study preference has been successfully deleted!"
                 }
                 response_json = json.dumps(response_data)
                 response = Response(
                     response_json,
                     status=HTTPStatus.CREATED,
-                    mimetype="application/json"
+                    mimetype="application/json",
                 )
                 return response
 
@@ -381,4 +387,3 @@ class StudyPreferencesResource(Resource):
             except Exception as server_error:
                 db.session.rollback()
                 abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
-

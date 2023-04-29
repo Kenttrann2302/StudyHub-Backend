@@ -22,7 +22,7 @@ post_user_data = [
 ]
 
 print("\n\n\n")
-print('-'*10)
+print("-" * 10)
 print("REGISTRATION MANUAL TEST")
 print("\n\n")
 print("Post data: ")

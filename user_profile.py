@@ -7,7 +7,15 @@ import jwt
 import pytz
 from flask import Flask, Response, request, make_response, jsonify, current_app
 from flask_migrate import Migrate
-from flask_restful import Resource, abort, inputs, marshal_with, reqparse, marshal, fields
+from flask_restful import (
+    Resource,
+    abort,
+    inputs,
+    marshal_with,
+    reqparse,
+    marshal,
+    fields,
+)
 from sqlalchemy import create_engine
 from werkzeug.exceptions import Conflict, NotFound, InternalServerError, BadRequest
 from datetime import datetime, timedelta
@@ -16,9 +24,7 @@ from marshmallow import Schema, fields as ma_fields
 
 from API.locationAPI import LocationValidator
 from database.users_models import Users, UserInformation, Permission, db
-from get_env import (
-    secret_key
-)
+from get_env import secret_key
 from helper_functions.middleware_functions import token_required
 from helper_functions.validate_users_information import validate_users_information
 
@@ -48,6 +54,7 @@ _user_information_resource_fields = {
     "identification_material": fields.String,
 }
 
+
 # create a schema to serialize an return an object after setting cookies in POST REQUEST
 class UserInformationSchema(Schema):
     first_name = ma_fields.String()
@@ -72,7 +79,7 @@ class UserInformationSchema(Schema):
     graduation_date = ma_fields.Date()
     identification_option = ma_fields.String()
     identification_material = ma_fields.String()
-    
+
 
 # Querying and inserting into user profile database Flask_Restful API
 class UserInformationResource(Resource):
@@ -257,7 +264,9 @@ class UserInformationResource(Resource):
                 Exception
             ) as internal_server_error:  # -> any error being caught such as jwt token value error, signature error,...
                 db.session.rollback()
-                abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{internal_server_error}")
+                abort(
+                    HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{internal_server_error}"
+                )
 
     # handle the POST request from the form data
     @token_required(
@@ -268,7 +277,6 @@ class UserInformationResource(Resource):
         ],
         secret_key=secret_key,
     )
-
     def post(self):
         with current_app.app_context():
             try:
@@ -388,7 +396,7 @@ class UserInformationResource(Resource):
                         "can_view_study_preferences",
                         "can_change_study_preferences",
                         "can_view_availability_schedule",
-                        "can_change_availability_schedule"
+                        "can_change_availability_schedule",
                     ]
                     for permission in permission_lists:
                         # get the user's permission list from the db
@@ -415,26 +423,38 @@ class UserInformationResource(Resource):
                     permissions = [permission.name for permission in user.permissions]
 
                     # generate new jwt token with new permissions to authenticate the user if they can view and change study preferences
-                    new_token = jwt.encode({
-                        "id" : str(user_id),
-                        "user_information_id" : str(find_user_information.id), # id of user_information model
-                        "permissions" : permissions,
-                        "exp" : datetime.now(pytz.timezone("EST")) + timedelta(minutes=30) # set the token to be expired after 30 minutes
-                    }, secret_key, algorithm="HS256")
+                    new_token = jwt.encode(
+                        {
+                            "id": str(user_id),
+                            "user_information_id": str(
+                                find_user_information.id
+                            ),  # id of user_information model
+                            "permissions": permissions,
+                            "exp": datetime.now(pytz.timezone("EST"))
+                            + timedelta(
+                                minutes=30
+                            ),  # set the token to be expired after 30 minutes
+                        },
+                        secret_key,
+                        algorithm="HS256",
+                    )
 
-                    find_user_information_schema = UserInformationSchema() 
-                    user_information = find_user_information_schema.dump(find_user_information)
+                    find_user_information_schema = UserInformationSchema()
+                    user_information = find_user_information_schema.dump(
+                        find_user_information
+                    )
 
                     # store the token into cookies
                     new_token_in_cookies = make_response(user_information)
                     new_token_in_cookies.set_cookie(
                         "token",
                         value=new_token,
-                        expires=datetime.now(pytz.timezone('EST')) + timedelta(minutes=30),
-                        httponly=True
+                        expires=datetime.now(pytz.timezone("EST"))
+                        + timedelta(minutes=30),
+                        httponly=True,
                     )
                     new_token_in_cookies.status_code = HTTPStatus.CREATED
-                    
+
                     # return new_token_in_cookies
                     return new_token_in_cookies
 
