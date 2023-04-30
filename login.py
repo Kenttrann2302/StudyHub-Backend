@@ -6,24 +6,40 @@ import bcrypt
 import jwt
 import pytz
 import requests
-from flask import Blueprint, Flask, Response, make_response, request, current_app
+from flask import (
+    Blueprint,
+    Flask,
+    Response,
+    make_response,
+    request,
+    current_app,
+    redirect,
+    url_for,
+)
 from flask_restful import Resource, fields, reqparse, abort
 from sqlalchemy import create_engine
 from http import HTTPStatus
-from werkzeug.exceptions import Forbidden
+from werkzeug.exceptions import Forbidden, BadRequest
+
+# oauth2.0 libraries
+from oauthlib.oauth2 import WebApplicationClient
 
 # import the users models from the models.py
 from database.users_models import Permission, Users, db
-from get_env import aws_sending_otp, aws_verify_otp, secret_key
+from get_env import (
+    aws_sending_otp,
+    aws_verify_otp,
+    secret_key,
+    google_client_id,
+    google_client_secret,
+    google_discovery_url,
+)
 from helper_functions.grant_permission import grant_permission_to_verified_users
-from helper_functions.validate_users_information import create_validated_fields_dict
 
 # register the app instance with the endpoints we are using for this app
 login_routes = Blueprint("login_routes", __name__)
 
-# Add an API Test Configuration
-# login_app.config["TESTING"] = True
-# login_app.config["WTF_CSRF_ENABLED"] = False
+# User session management setup
 
 # define a resource field to serialize the response when perform a POST request to validate the user's credentials
 user_resource_fields = {
@@ -187,7 +203,6 @@ class SignInResource(Resource):
                                 value=token,
                                 expires=datetime.now(pytz.timezone("EST"))
                                 + timedelta(minutes=30),
-                                httponly=True,
                             )
 
                             # Redirect to the dashboard and some restricted resource
@@ -308,9 +323,6 @@ class verifyOTP(Resource):
                 new_token = jwt.encode(
                     {
                         "id": str(user.user_id),
-                        "username": user.username,
-                        "verification_id": user.verification_method,
-                        "verification_endpoint": user.verification,
                         "permissions": permissions,
                         "exp": datetime.now(pytz.timezone("EST"))
                         + timedelta(
@@ -333,7 +345,6 @@ class verifyOTP(Resource):
                     "token",
                     value=new_token,
                     expires=datetime.now(pytz.timezone("EST")) + timedelta(minutes=30),
-                    httponly=True,
                 )
 
                 return token_in_cookies
@@ -359,4 +370,173 @@ class verifyOTP(Resource):
             abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"Server error: {error}")
 
 
-# add login_routes to write the unit test the rest api
+######################### GOOGLE OAUTH 2.0 LOGIN #########################
+# OAuth2.0 client setup
+client = WebApplicationClient(google_client_id)
+
+
+# a helper get request function to retrieve Google's provider configuration
+def get_google_provider_cfg():
+    try:
+        return requests.get(google_discovery_url).json()
+    except Exception as server_error:
+        abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
+
+
+# a flask route for login with google-oauth2.0
+@login_routes.route("/studyhub/google-login/")
+def google_login():
+    # Find out what URL to hit for Google login
+    google_provider_cfg = get_google_provider_cfg()
+    authorization_endpoint = google_provider_cfg["authorization_endpoint"]
+
+    # Construct the request for Google login + provide scopes to retrieve user's profile from Google
+    request_uri = client.prepare_request_uri(
+        authorization_endpoint,
+        redirect_uri=request.base_url + "callback/",
+        scope=["openid", "email", "profile"],  # ask google to view user's basic profile
+    )
+    return redirect(request_uri)
+
+
+# define a flask endpoint to get the code sent from google
+@login_routes.route("/studyhub/google-login/callback/")
+def callback():
+    # Get the authorization code from the provider
+    google_authorization_code = request.args.get("code")
+
+    # find out what URL to hit to get tokens that allow studyhub to ask for things on behalf of a user
+    google_provider_cfg = get_google_provider_cfg()
+    token_endpoint = google_provider_cfg["token_endpoint"]
+
+    # Prepare and send a request to google to get the token with a post request
+    token_url, headers, body = client.prepare_token_request(
+        token_endpoint,
+        authorization_response=request.url,
+        redirect_url=request.base_url,
+        code=google_authorization_code,
+    )
+
+    token_response = requests.post(
+        token_url,
+        headers=headers,
+        data=body,
+        auth=(google_client_id, google_client_secret),
+    )
+
+    # parse the token
+    client.parse_request_body_response(json.dumps(token_response.json()))
+
+    # hit the URL from Google when it returns the user's profile information
+    user_info_endpoint = google_provider_cfg["userinfo_endpoint"]
+    uri, headers, body = client.add_token(user_info_endpoint)
+    user_info_response = requests.get(
+        uri, headers=headers, data=body
+    )  # GET request to get the response includes the user profile
+
+    # information that google gives -> subject, email, picture, given_name (first and last name)
+    # verify user's email through google
+    try:
+        if user_info_response.json().get("email_verified"):
+            unique_id = user_info_response.json()["sub"]
+            user_email = user_info_response.json()["email"]
+            user_picture = user_info_response.json()["picture"]
+            user_names = user_info_response.json()["given_name"]
+
+        # if user is not verified with Google
+        else:
+            raise BadRequest
+
+        # create a user instance in the database with the information provided by Google
+        # see if user has been in the database
+        user = Users.query.filter_by(google_id=unique_id).first()
+
+        # if user did not exist in the database -> create user
+        if not user:
+            new_user = Users(
+                google_id=unique_id,
+                google_user_name=user_names,
+                google_profile_image=user_picture,
+                verification_method="Email",
+                verification=user_email,
+                account_verified=True,
+                is_active=True,
+            )
+
+            db.session.add(new_user)
+            db.session.commit()
+
+        # log user in
+        # query the database to get the new user if this is the first time user use google to sign in with studyhub
+        find_user_query = Users.query.filter_by(google_id=unique_id).first()
+        # give user permissions to view dashboard, use geolocation api, view and change their profile
+        permission_lists = [
+            "can_view_dashboard",
+            "can_use_geolocation_api",
+            "can_view_profile",
+            "can_change_profile",
+        ]
+        for permission in permission_lists:
+            # query the database to see if the user with this google id
+            grant_permission = Permission.query.filter_by(
+                user_id=find_user_query.user_id, name=permission
+            ).first()
+            # if the permissions are not in yet => add the permissions in
+            if not grant_permission:
+                grant_permission = Permission(
+                    name=permission, user_id=find_user_query.user_id
+                )
+                db.session.add(grant_permission)
+
+        db.session.commit()
+
+        # query the permissions list in the user table with the user id
+        permissions = [permission.name for permission in find_user_query.permissions]
+
+        # generate a jwt token with new permissions to authenticate the user by using the  middleware function
+        jwt_token = jwt.encode(
+            {
+                "id": str(find_user_query.user_id),
+                "permissions": permissions,
+                "exp": datetime.now(pytz.timezone("EST"))
+                + timedelta(minutes=30),  # set the token to be expired after 30 minutes
+            },
+            secret_key,
+            algorithm="HS256",
+        )
+
+        response_data = {"google_name": user_names, "google_picture": user_picture}
+
+        response_json = json.dumps(response_data)
+        response = Response(
+            response=response_json,
+            status=HTTPStatus.CREATED,
+            mimetype="application/json",
+        )
+
+        # store the token into cookies
+        response = make_response(response)
+        response.set_cookie(
+            "token",
+            value=jwt_token,
+            expires=datetime.now(pytz.timezone("EST")) + timedelta(minutes=30),
+        )
+
+        return response, HTTPStatus.CREATED
+
+    except BadRequest as bad_request_message:
+        abort(HTTPStatus.BAD_REQUEST, message=f"{bad_request_message}")
+
+    except Exception as server_error:
+        abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
+
+
+################### LOGOUT ROUTE ####################
+@login_routes.route("/studyhub/logout/")
+def logout():
+    # get the token from cookies
+    token = request.cookies.get("token")
+    # set the token to be expired
+    response = make_response(redirect(url_for("login")))
+    response.set_cookie("token", value=token, expires=0, httponly=True)
+    return response

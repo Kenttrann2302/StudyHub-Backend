@@ -13,8 +13,11 @@ from get_env import (
     database_type,
     database_username,
 )
-from login import SignInResource  # REST API for login and verifying OTP code
-from login import verifyOTP
+from login import (
+    SignInResource,
+    login_routes,
+    verifyOTP,
+)  # REST API for login and verifying OTP code
 
 # import the REST APIs
 from register import (  # -> REST API for registration
@@ -32,10 +35,13 @@ from study_preferences import (
 app = Flask(__name__)
 app.config["SERVER_NAME"] = "127.0.0.1:5000"
 app.config["APPLICATION_ROOT"] = "/"
-app.config["PREFERRED_URL_SCHEME"] = "http"
+app.config["PREFERRED_URL_SCHEME"] = "https"
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 megabytes
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# testing purposes
+app.config["TESTING"] = True
+app.config["WTF_CSRF_ENABLED"] = False
 
 # database connection
 app.config[
@@ -59,6 +65,8 @@ api.add_resource(StudyPreferencesResource, "/studyhub/user-profile/study-prefere
 
 # blueprint routes
 app.register_blueprint(registration_routes)
+app.register_blueprint(login_routes)
+
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(ssl_context="adhoc", debug=True)
