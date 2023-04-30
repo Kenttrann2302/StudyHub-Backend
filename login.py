@@ -17,9 +17,9 @@ from flask import (
     url_for,
 )
 from flask_restful import Resource, fields, reqparse, abort
-from sqlalchemy import create_engine
 from http import HTTPStatus
-from werkzeug.exceptions import Forbidden, BadRequest
+from werkzeug.exceptions import Forbidden, BadRequest, NotFound
+from jwt.exceptions import ExpiredSignatureError, InvalidSignatureError
 
 # oauth2.0 libraries
 from oauthlib.oauth2 import WebApplicationClient
@@ -534,9 +534,24 @@ def callback():
 ################### LOGOUT ROUTE ####################
 @login_routes.route("/studyhub/logout/")
 def logout():
-    # get the token from cookies
-    token = request.cookies.get("token")
-    # set the token to be expired
-    response = make_response(redirect(url_for("login")))
-    response.set_cookie("token", value=token, expires=0, httponly=True)
-    return response
+    try:
+        # get the token from cookies
+        token = request.cookies.get("token")
+
+        # if token is not found -> user is not logging in
+        if not token:
+            raise NotFound("No token found!")
+
+        # set the token to be expired
+        response = make_response(redirect(url_for("login")))
+        response.set_cookie("token", value=token, expires=0, httponly=True)
+
+        return response
+
+    # catch not found token error
+    except NotFound as not_found_error:
+        abort(HTTPStatus.NOT_FOUND, message=f"{not_found_error}")
+
+    # catch the server error
+    except Exception as server_error:
+        abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
