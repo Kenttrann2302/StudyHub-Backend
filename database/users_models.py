@@ -245,9 +245,7 @@ list_social_media = []
 for i in range(12):
     list_study_env.append(study_env["Study_env_preferences"][f"{i+1}"])
     list_study_time.append(
-        study_time["Study_time_preferences"][f"{i+1}"]["Time"]
-        + " "
-        + study_time["Study_time_preferences"][f"{i+1}"]["Frame"]
+        f"{study_time['Study_time_preferences'][f'{i+1}']['Time']} {study_time['Study_time_preferences'][f'{i+1}']['Frame']}"
     )
 
 # append the list of time management methods and study techniques

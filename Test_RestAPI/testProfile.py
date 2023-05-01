@@ -19,7 +19,7 @@ new_uuid = uuid.uuid4()
 # Convert UUID to string
 uuid_str = str(new_uuid)
 
-BASE = "https://127.0.0.1:5000/"
+BASE = "http://127.0.0.1:5000/"
 
 # verifying otp and store the token into cookies
 otp_code = int(input("Please enter the OTP code: "))
