@@ -1,5 +1,7 @@
 .env
 backend/migrations
+ssl_certificate
+studyhub-env
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

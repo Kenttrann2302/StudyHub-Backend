@@ -25,8 +25,17 @@ class Users(db.Model):
         unique=True,
         nullable=False,
     )  # using universal unique identifier for best security practice
-    username = db.Column(db.String(500), nullable=False, unique=True)
-    password = db.Column(db.String(500), nullable=False, unique=True)
+    google_id = db.Column(
+        db.String(500), nullable=True, unique=True
+    )  # if the user chooses to sigin with Google account
+    google_user_name = db.Column(
+        db.String(500), nullable=True
+    )  # if the user chooses to login with their Gooogle account
+    google_profile_image = db.Column(
+        db.String(10000), nullable=True
+    )  # if the user chooses to login with their Google account
+    username = db.Column(db.String(500), nullable=True, unique=True)
+    password = db.Column(db.String(500), nullable=True, unique=True)
     verification_method = db.Column(
         db.Enum(
             "--select--",
@@ -236,7 +245,7 @@ list_social_media = []
 for i in range(12):
     list_study_env.append(study_env["Study_env_preferences"][f"{i+1}"])
     list_study_time.append(
-        study_time["Study_time_preferences"][f"{i+1}"]["Time"] + " " + study_time["Study_time_preferences"][f"{i+1}"]["Frame"]
+        f"{study_time['Study_time_preferences'][f'{i+1}']['Time']} {study_time['Study_time_preferences'][f'{i+1}']['Frame']}"
     )
 
 # append the list of time management methods and study techniques

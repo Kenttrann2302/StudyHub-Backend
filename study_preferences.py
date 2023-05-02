@@ -195,7 +195,6 @@ class StudyPreferencesResource(Resource):
                 # validate the users input before inserting the data into the database
                 self.__validate_form_data(errors, **args)
 
-                pdb.set_trace()
                 # if no errors found in the form data
                 if not errors:
                     # query the database to check if there is any user that already exists with the same id
