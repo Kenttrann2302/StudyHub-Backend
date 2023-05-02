@@ -7,6 +7,8 @@ services:
         condition: service_healthy
     ports:
       - 8080:5000
+    volumes:
+      - .:/app
 
   db:
     container_name: db
