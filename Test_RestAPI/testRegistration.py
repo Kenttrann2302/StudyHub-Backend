@@ -3,7 +3,7 @@ import uuid
 
 import requests
 
-BASE = "http://127.0.0.1:5000/"
+BASE = "http://0.0.0.0:8080"
 
 # generate a user's UUID
 test_user_uuid = uuid.uuid4()

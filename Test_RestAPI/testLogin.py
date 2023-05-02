@@ -1,7 +1,7 @@
 # test rest api for user's login credentials
 import requests
 
-BASE = "http://127.0.0.1:5000/"
+BASE = "http://0.0.0.0:8080/"
 
 user_login_data = [
     {
