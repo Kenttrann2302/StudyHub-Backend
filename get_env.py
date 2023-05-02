@@ -18,7 +18,7 @@ database_type = os.getenv("DB_TYPE")
 database_host = os.getenv("DB_HOST")
 database_username = os.getenv("DB_USER")
 database_password = os.getenv("DB_PASS")
-database_port = os.getenv("PORT")
+database_port = os.getenv("DB_PORT")
 database_name = os.getenv("DB_NAME")
 
 # AWS stuffs

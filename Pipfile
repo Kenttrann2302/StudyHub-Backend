@@ -56,7 +56,6 @@ pillow = "==9.4.0"
 platformdirs = "==2.6.2"
 pluggy = "==1.0.0"
 protobuf = "==4.21.12"
-psycopg2-binary = "==2.9.5"
 pyignite = "==0.6.1"
 pyjwt = "==2.6.0"
 pylogix = "==0.8.7"
@@ -87,6 +86,8 @@ werkzeug = "==1.0.1"
 flask-login = "==0.4.1"
 oauthlib = "==3.0.1"
 pyopenssl = "==19.0.0"
+marshmallow = "==3.19.0"
+psycopg2-binary = "*"
 
 [dev-packages]
 
