@@ -1,5 +1,6 @@
 services:
   backend:
+    container_name: server
     build: .
     depends_on:
       db:
@@ -8,6 +9,7 @@ services:
       - 8080:5000
 
   db:
+    container_name: db
     image: postgres
     restart: always
     user: postgres
