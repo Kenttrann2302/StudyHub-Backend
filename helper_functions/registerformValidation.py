@@ -50,6 +50,14 @@ def checkusername(username, errors, validate_new_user) -> None:
 # function check the password input to see if the password is valid to the constraints from the database
 def checkpassword(username, password, errors, validate_new_user) -> None:
     length = len(password)
+
+    has_digit = False
+    has_alpha = False
+    has_upper_char = False
+    has_lower_char = False
+    has_special_char = False
+    diff_username = False
+
     if any(char.isdigit() for char in password):
         has_digit = True
     if any(char.isalpha() for char in password):

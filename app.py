@@ -33,7 +33,6 @@ from study_preferences import (
 )
 
 app = Flask(__name__)
-app.config["SERVER_NAME"] = "127.0.0.1:5000"
 app.config["APPLICATION_ROOT"] = "/"
 app.config["PREFERRED_URL_SCHEME"] = "http"
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
@@ -47,7 +46,9 @@ app.config["WTF_CSRF_ENABLED"] = False
 app.config[
     "SQLALCHEMY_DATABASE_URI"
 ] = f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
+# raise ValueError(f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}")
 db.init_app(app)
+
 
 # create all the tables inside the database
 with app.app_context():
