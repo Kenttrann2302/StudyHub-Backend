@@ -46,7 +46,9 @@ app.config["WTF_CSRF_ENABLED"] = False
 app.config[
     "SQLALCHEMY_DATABASE_URI"
 ] = f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
+# raise ValueError(f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}")
 db.init_app(app)
+
 
 # create all the tables inside the database
 with app.app_context():

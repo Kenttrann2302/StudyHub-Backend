@@ -19,6 +19,7 @@ from flask_restful import (
 from sqlalchemy import create_engine
 from werkzeug.exceptions import Conflict, NotFound, InternalServerError, BadRequest
 from datetime import datetime, timedelta
+import datetime
 
 from marshmallow import Schema, fields as ma_fields
 
@@ -26,7 +27,11 @@ from API.locationAPI import LocationValidator
 from database.users_models import Users, UserInformation, Permission, db
 from get_env import secret_key
 from helper_functions.middleware_functions import token_required
-from helper_functions.validate_users_information import validate_users_information
+from helper_functions.validate_users_information import (
+    validate_users_information,
+    validate_files_size,
+    validate_files_upload,
+)
 
 # resources fields to serialize the response object
 _user_information_resource_fields = {
@@ -287,6 +292,9 @@ class UserInformationResource(Resource):
                     user_token, secret_key, algorithms=["HS256"]
                 )
                 user_id = decoded_user_token["id"]
+
+                # Initialize the errors dictionary:
+                errors = {}
                 # get the user's input from the form data
                 form_data = reqparse.RequestParser()
                 self.__form_data_add_arguments(
@@ -316,9 +324,6 @@ class UserInformationResource(Resource):
                 graduation_date = args["graduation_date"]
                 identification_option = args["identification_option"]
                 identification_material = args["identification_material"]
-
-                # Initialize the errors dictionary:
-                errors = {}
 
                 # Validate the form data, if not -> send the error messages to the front-end
                 # validate the users input before insert the data into the database
@@ -477,6 +482,54 @@ class UserInformationResource(Resource):
                 db.session.rollback()
                 abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
 
+    # a private method to validate the user input data before inserting them into the database
+    def __validate_form_data(self, errors, **kwargs):
+        for key, value in kwargs.items():
+            # validate the age
+            if key == "age" and int(value) < 18:
+                errors[
+                    "age"
+                ] = "Sorry! You must be at least 18 to register for this service!!!"
+
+            # validate the birthday
+            if key == "birthday" and datetime.datetime.now().year - int(value[:4]) < 18:
+                errors[
+                    "birthday"
+                ] = "Sorry! You must be at least 18 to register for this service!!!"
+
+            # validate the gender
+            if key == "gender":
+                if value == "--select--":
+                    errors["gender"] = f"Please select your gender!"
+
+            # validate the user's profile picture
+            if key == "profile_picture":
+                if not validate_files_upload(value):
+                    errors[
+                        "profile-image"
+                    ] = f"Invalid file. Allowed file types are .png, .jpg, .jpeg, .pdf!"
+                if not validate_files_size(value):
+                    errors[
+                        "profile-image"
+                    ] = f"File is too large! Please try again! The maximum size allowed is 10MB!"
+
+            # validate user's education institutions
+            if key == "education_institutions":
+                if value == "--select--":
+                    errors[
+                        "education_institutions"
+                    ] = f"Please select your university or college!"
+
+            # validate user's education majors
+            if key == "education_degrees":
+                if value == "--select--":
+                    errors["education_degrees"] = f"Please select your degree level!"
+
+            # validate user's graduation date
+            if key == "graduation_date":
+                if value == "--select--":
+                    errors["graduation_date"] = f"Please enter your graduation date!"
+
     # a method to handle the UPDATE request
     @token_required(
         permission_list=[
@@ -514,6 +567,8 @@ class UserInformationResource(Resource):
                 errors = {}
 
                 # check if each argument is in the update_args -> yes (update the database field), no (leave them)
+                self.__validate_form_data(errors, **update_args)
+
                 # check to see if the address is corrected
                 # create 2 python dictionaries
                 existing_location_data = {

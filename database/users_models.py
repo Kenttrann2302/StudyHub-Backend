@@ -82,7 +82,9 @@ class Permission(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, unique=True)
     name = db.Column(db.String(1000), nullable=False)
     user_id = db.Column(
-        UUID(as_uuid=True), db.ForeignKey("users.user_id"), nullable=False
+        UUID(as_uuid=True),
+        db.ForeignKey("users.user_id", ondelete="CASCADE"),
+        nullable=False,
     )
 
     def __repr__(self) -> str:
@@ -203,7 +205,9 @@ class UserInformation(db.Model):
 
     # relationship
     user_id = db.Column(
-        UUID(as_uuid=True), db.ForeignKey("users.user_id"), nullable=False
+        UUID(as_uuid=True),
+        db.ForeignKey("users.user_id", ondelete="CASCADE"),
+        nullable=False,
     )  # form a one-to-one relationship with the user's id in the users table (using foreign key contraint)
 
     study_preferences = db.relationship(
@@ -278,7 +282,9 @@ class StudyPreferences(db.Model):
     )
 
     user_id = db.Column(
-        UUID(as_uuid=True), db.ForeignKey("user_information.id"), nullable=False
+        UUID(as_uuid=True),
+        db.ForeignKey("user_information.id", ondelete="CASCADE"),
+        nullable=False,
     )  # form a one to one relationship with the user's profile
 
     # study environment preferences
@@ -339,7 +345,9 @@ class AvailabilitySchedule(db.Model):
         nullable=False,
     )
     user_id = db.Column(
-        UUID(as_uuid=True), db.ForeignKey("user_information.id"), nullable=False
+        UUID(as_uuid=True),
+        db.ForeignKey("user_information.id", ondelete="CASCADE"),
+        nullable=False,
     )
     timezone = db.Column(db.Integer, nullable=False)
     schedule = db.Column(

@@ -6,7 +6,7 @@ BASE = "http://0.0.0.0:8080/"
 user_login_data = [
     {
         "signIn_username": "kenttran2302",
-        "signIn_password": "Duykhang230204$@",  # correct user
+        "signIn_password": "Khangduy230204@$",  # correct user
     },
     {
         "signIn_username": "jnfenfeife",

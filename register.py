@@ -14,7 +14,14 @@ from http import HTTPStatus
 from werkzeug.exceptions import Conflict, NotFound, BadRequest, Forbidden, Unauthorized
 
 # import from files
-from database.users_models import Users, db
+from database.users_models import (
+    Users,
+    Permission,
+    UserInformation,
+    StudyPreferences,
+    AvailabilitySchedule,
+    db,
+)
 from get_env import secret_key
 from helper_functions.registerformValidation import checkpassword, checkpasswordconfirm
 from helper_functions.registerformValidation import validate_registration_form
@@ -36,9 +43,6 @@ validated_fields = {
     "verification_id": "",
     "verification_method": "",
 }
-
-# initialize the errors dictionary in order to store the errors for each input fields
-register_errors = {}
 
 # define a resource fields to serialize the object (user's login information) to make sure that all the identifications have been inserted success
 _user_resource_fields = {
@@ -62,7 +66,7 @@ class RegistrationResource(Resource):
                     raise NotFound
 
             except NotFound as not_found_error:
-                abort(HTTPStatus.NOT_FOUND, message=f"{not_found_error}")
+                abort(HTTPStatus.NOT_FOUND, message="No user found")
 
             except Exception as internal_server_error:
                 abort(
@@ -82,6 +86,7 @@ class RegistrationResource(Resource):
             try:
                 # get the registration form data and validate them before inserting into the database
                 registerForm = reqparse.RequestParser()
+
                 registerForm.add_argument(
                     "username", type=str, help="Username is required", required=True
                 )
@@ -116,6 +121,9 @@ class RegistrationResource(Resource):
                 areacode_id = args["areacode_id"]
                 verification = args["verification"]
 
+                # initialize the errors dictionary in order to store the errors for each input fields
+                register_errors = {}
+
                 new_user = [username, password, password_confirmation, verification]
 
                 # validate the form data, if not -> send error messages to the website
@@ -136,16 +144,31 @@ class RegistrationResource(Resource):
 
                     decoded_hashed_password = hashed_password.decode("utf-8")
 
+                    print(decoded_hashed_password)
+
+                    # check if the password has been used by other users
+                    # query all the hash password
+                    all_users = Users.query.all()
+
+                    for user in all_users:
+                        if bcrypt.checkpw(
+                            password.encode("utf-8"), (user.password).encode("utf-8")
+                        ):
+                            register_errors[
+                                "password"
+                            ] = f"Sorry! This password already exists!"
+                            response_data = {"message": register_errors}
+                            response_json = json.dumps(response_data)
+                            response = Response(
+                                response=response_json,
+                                status=HTTPStatus.CONFLICT,
+                                mimetype="application/json",
+                            )
+                            return response
+
                     # query each field to make sure each of them is unique
                     username_taken = (
                         Users.query.filter(Users.username == username).first()
-                        is not None
-                    )
-
-                    password_taken = (
-                        Users.query.filter(
-                            Users.password == decoded_hashed_password
-                        ).first()
                         is not None
                     )
 
@@ -162,19 +185,6 @@ class RegistrationResource(Resource):
                         register_errors[
                             "username"
                         ] = f"Sorry! This username already exists!"
-                        response_data = {"message": register_errors}
-                        response_json = json.dumps(response_data)
-                        response = Response(
-                            response=response_json,
-                            status=HTTPStatus.CONFLICT,
-                            mimetype="application/json",
-                        )
-                        return response
-
-                    elif password_taken:
-                        register_errors[
-                            "password"
-                        ] = f"Sorry! This password already exists!"
                         response_data = {"message": register_errors}
                         response_json = json.dumps(response_data)
                         response = Response(
@@ -262,7 +272,10 @@ class RegistrationResource(Resource):
             # catch the 400 bad request error
             except BadRequest as bad_request_error:
                 db.session.rollback()
-                abort(HTTPStatus.BAD_REQUEST, message=f"{bad_request_error}")
+                abort(
+                    HTTPStatus.BAD_REQUEST,
+                    message=f"{bad_request_error} errors: {register_errors}",
+                )
 
             # handle the errors if there is any errors when validating the inputs on the form
             except Exception as server_error:
@@ -390,7 +403,7 @@ class RegistrationResource(Resource):
             # catch the not found error
             except NotFound as not_found_error:
                 db.session.rollback()
-                abort(HTTPStatus.NOT_FOUND, message=f"{not_found_error}")
+                abort(HTTPStatus.NOT_FOUND, message=f"No user found")
 
             # catch the conflict error
             except Conflict as conflict_error:
@@ -422,8 +435,8 @@ class RegistrationResource(Resource):
                     "username", type=str, help="Username is required", required=True
                 )  # get the username
 
-                user_account_delete_form.parse_args()
-                username = user_account_delete_form["username"]
+                delete_args = user_account_delete_form.parse_args()
+                username = delete_args["username"]
 
                 # query the database to get the user
                 find_user_query = Users.query.filter_by(username=username).first()
@@ -447,7 +460,7 @@ class RegistrationResource(Resource):
                         user_email=find_user_query.verification,
                         studyhub_code=self.__generate_otp(),
                         request_type="delete",
-                        user_id=find_user_query.user_id,
+                        user_id=str(find_user_query.user_id),
                     )
 
                     # store the user's temporary token into the database
@@ -483,7 +496,7 @@ class RegistrationResource(Resource):
             # catch the not found error
             except NotFound as not_found_error:
                 db.session.rollback()
-                abort(HTTPStatus.NOT_FOUND, message=f"{not_found_error}")
+                abort(HTTPStatus.NOT_FOUND, message=f"No user found")
 
             # catch the internal server error
             except Exception as server_error:
@@ -627,11 +640,14 @@ def confirm_account_deletion():
             user_id = decoded_token["user_id"]
 
             # query the database to see if the user_email contains the correct token
-            result = Users.query.filter_by(verification=user_email).first()
+            result = Users.query.filter_by(
+                verification=user_email, user_id=user_id
+            ).first()
 
             if result.temp_token == token:
-                # procceed to account deletion
-                db.session.query(Users).filter(Users.user_id == user_id).delete()
+                # deleting the user
+                db.session.delete(result)
+
                 # commit the change to the database
                 db.session.commit()
 
@@ -648,6 +664,9 @@ def confirm_account_deletion():
             # if the user email is invalid -> not verified
             else:
                 raise Unauthorized
+
+        else:
+            raise jwt.ExpiredSignatureError
 
     except Unauthorized as unauthorized_error:
         db.session.rollback()

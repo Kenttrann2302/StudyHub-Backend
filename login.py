@@ -25,7 +25,7 @@ from jwt.exceptions import ExpiredSignatureError, InvalidSignatureError
 from oauthlib.oauth2 import WebApplicationClient
 
 # import the users models from the models.py
-from database.users_models import Permission, Users, db
+from database.users_models import Permission, Users, UserInformation, db
 from get_env import (
     aws_sending_otp,
     aws_verify_otp,
@@ -174,11 +174,7 @@ class SignInResource(Resource):
                                 if response.status_code == HTTPStatus.OK:
                                     # object serialize for REST API
                                     response_data = {
-                                        "message": f"An OTP code to verify {user.user_id} with email: {user.verification} has been sent successfully!",
-                                        "user_id": str(user.user_id),
-                                        "username": user.username,
-                                        "verification_method": user.verification_method,
-                                        "verification": user.verification,
+                                        "message": f"An OTP code to verify email has been sent successfully!",
                                         "permissions": permissions,
                                         "token": token,
                                     }
@@ -319,10 +315,16 @@ class verifyOTP(Resource):
                 # query the permissions list in the user table with the user id
                 permissions = [permission.name for permission in user.permissions]
 
+                # query the user information table to get the id
+                find_user_profile = UserInformation.query.filter_by(
+                    user_id=user.user_id
+                ).first()
+
                 # generate a new jwt token with new permissions to authenticate the user if the user has the permission to visit some certain protected resources using a middleware function
                 new_token = jwt.encode(
                     {
                         "id": str(user.user_id),
+                        "user_information_id": str(find_user_profile.id),
                         "permissions": permissions,
                         "exp": datetime.now(pytz.timezone("EST"))
                         + timedelta(
