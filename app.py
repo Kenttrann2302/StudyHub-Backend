@@ -31,6 +31,9 @@ from user_profile import (
 from study_preferences import (
     StudyPreferencesResource,  # -> REST API for user to post their study preferences
 )
+from availability_schedule import (
+    AvailabilityScheduleResource,  # -> REST API for user to
+)
 
 app = Flask(__name__)
 app.config["APPLICATION_ROOT"] = "/"
@@ -46,7 +49,6 @@ app.config["WTF_CSRF_ENABLED"] = False
 app.config[
     "SQLALCHEMY_DATABASE_URI"
 ] = f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
-# raise ValueError(f"{database_type}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}")
 db.init_app(app)
 
 
@@ -63,6 +65,9 @@ api.add_resource(SignInResource, "/studyhub/validateuser/")
 api.add_resource(verifyOTP, "/studyhub/verify-otp/<int:otp_code>/")
 api.add_resource(UserInformationResource, "/studyhub/user-profile/user-information/")
 api.add_resource(StudyPreferencesResource, "/studyhub/user-profile/study-preferences/")
+api.add_resource(
+    AvailabilityScheduleResource, "/studyhub/user-profile/availability-schedule/"
+)
 
 # blueprint routes
 app.register_blueprint(registration_routes)

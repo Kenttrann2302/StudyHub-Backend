@@ -153,7 +153,7 @@ class StudyPreferencesResource(Resource):
             except Exception as server_error:  # try to catch any internal server error
                 abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
 
-    # a POST method to get the user study preferences from the form data that was sent by the client
+    # a POST method to create the user study preferences from the form data that was sent by the client
     @token_required(
         permission_list=[
             "can_view_dashboard",
@@ -173,8 +173,8 @@ class StudyPreferencesResource(Resource):
                 # decode the token to get the user information
                 decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
                 user_information_id = decoded_token["user_information_id"]
-                # get the users input from the post form data
 
+                # get the users input from the post form data
                 post_form_data = reqparse.RequestParser()
                 self.__post_form_data_add_arguments(
                     post_form_data
@@ -245,7 +245,7 @@ class StudyPreferencesResource(Resource):
 
             # catch the server error
             except Exception as server_error:
-                db.session.rollback
+                db.session.rollback()
                 abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
 
     # a PATCH method to update the user study preferences from the update form data that was sent by the client

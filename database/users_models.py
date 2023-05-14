@@ -349,13 +349,12 @@ class AvailabilitySchedule(db.Model):
         db.ForeignKey("user_information.id", ondelete="CASCADE"),
         nullable=False,
     )
-    timezone = db.Column(db.Integer, nullable=False)
-    schedule = db.Column(
-        db.JSON, nullable=False
-    )  # a json object that stores the user's weekly schedule, with each day of the week represented as a key and list of time ranges as the value
-    preferred_times = db.Column(
-        db.JSON, nullable=False
-    )  # a json object that stores the user's preferred study times, with each time represented as a key and a boolean value indicating whether the user is avalable at that time
+    timezone = db.Column(
+        db.String(10), nullable=False
+    )  # this can be achieved using the Geolocation API
+    availability_time = db.Column(
+        db.String(10000), nullable=False
+    )  # a string that represents the user's preferred study times, with each time represented as a key and a boolean value indicating whether the user is avalable at that time
     created_at = db.Column(
         db.DateTime, default=datetime.now(pytz.timezone("EST")), nullable=False
     )
