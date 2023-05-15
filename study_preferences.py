@@ -32,6 +32,15 @@ _study_preferences_resource_fields = {
 
 # REST API for CRUD for user to interact with Study Preferences resources
 class StudyPreferencesResource(Resource):
+    _fields_list = [
+        "study_env_preferences",
+        "study_time_preferences",
+        "time_management_preferences",
+        "study_techniques_preferences",
+        "courses_preferences",
+        "communication_preferences",
+    ]
+
     # private method that abort if user's study preferences record has already existed in the database -> post
     def __abort_if_user_profile_exists(self, user_id) -> None:
         if user_id:
@@ -169,6 +178,9 @@ class StudyPreferencesResource(Resource):
         with current_app.app_context():
             # get the token from cookies
             try:
+                # Initialize the errors dictionary to store the errors from the form data
+                errors = {}
+
                 token = request.cookies.get("token")
                 # decode the token to get the user information
                 decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
@@ -187,9 +199,6 @@ class StudyPreferencesResource(Resource):
                 study_techniques_pref = args["study_techniques_preferences"]
                 courses_pref = args["courses_preferences"]
                 communication_pref = args["communication_preferences"]
-
-                # Initialize the errors dictionary to store the errors from the form data
-                errors = {}
 
                 # Validate the form data, if not -> send the error messages to front-end
                 # validate the users input before inserting the data into the database
@@ -266,6 +275,9 @@ class StudyPreferencesResource(Resource):
         with current_app.app_context():
             # get the token from cookies
             try:
+                # initialize an empty errors dictionary to catch the client field error
+                errors = {}
+
                 token = request.cookies.get("token")
                 # decode the token to get the user's study preferences
                 decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
@@ -286,9 +298,6 @@ class StudyPreferencesResource(Resource):
 
                 # parse the arguments from the form data
                 update_args = update_form_data.parse_args()
-
-                # initialize an empty errors dictionary to catch the client field error
-                errors = {}
 
                 # check if each argument is in the update_args -> if yes -> update the database field, if no -> leave
 

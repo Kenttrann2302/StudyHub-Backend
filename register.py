@@ -84,6 +84,9 @@ class RegistrationResource(Resource):
     def post(self) -> None:
         with current_app.app_context():
             try:
+                # initialize the errors dictionary in order to store the errors for each input fields
+                register_errors = {}
+
                 # get the registration form data and validate them before inserting into the database
                 registerForm = reqparse.RequestParser()
 
@@ -120,9 +123,6 @@ class RegistrationResource(Resource):
                 verification_method = args["verification_method"]
                 areacode_id = args["areacode_id"]
                 verification = args["verification"]
-
-                # initialize the errors dictionary in order to store the errors for each input fields
-                register_errors = {}
 
                 new_user = [username, password, password_confirmation, verification]
 
@@ -286,6 +286,10 @@ class RegistrationResource(Resource):
     def patch(self):
         with current_app.app_context():
             try:
+                # initialize a validate fields for validate the new password
+                validate_new_user = []
+                errors = {}
+
                 # get the form data and parse it to get the value of the key
                 update_data_form = reqparse.RequestParser()
                 update_data_form.add_argument(
@@ -313,10 +317,6 @@ class RegistrationResource(Resource):
                 # abort if the user doesn't exist
                 if not find_user_query:
                     raise NotFound
-
-                # initialize a validate fields for validate the new password
-                validate_new_user = []
-                errors = {}
 
                 # if user is found in the database
                 # validate the password and password confirmation before change them in the database

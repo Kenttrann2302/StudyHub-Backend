@@ -51,7 +51,7 @@ class AvailabilityScheduleResource(Resource):
         )
 
         post_form_data.add_argument(
-            "availabilty_time",
+            "availability_time",
             type=str,
             help="Student has to choose their availabilty schedule",
             required=True,
@@ -68,14 +68,14 @@ class AvailabilityScheduleResource(Resource):
             # validate timezone
             if key == "timezone" and value:
                 # if the value is null
-                if value == "":
+                if value == "" or value == "None" or value == "Null":
                     print("Timezone can not be null")
-                    errors[key] = f"Student must update their timezone"
+                    errors[key] = f"Student must have their timezone"
             # validate avalabilty schedule
             else:
-                if value == "":
+                if value == "" or value == "None" or value == "Null":
                     print("Schedule cannot be null")
-                    errors[key] = f"Student must update their availability schedule"
+                    errors[key] = f"Student must have their availability schedule"
         return
 
     # a GET method to get the user availabilty schedule from the database and return it to the client
@@ -135,6 +135,9 @@ class AvailabilityScheduleResource(Resource):
         with current_app.app_context():
             # get the token from cookies
             try:
+                # Intialize the errors dictionary to store the errors from the form data
+                errors = {}
+
                 token = request.cookies.get("token")
                 # decode the token to get the user information
                 decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
@@ -148,10 +151,7 @@ class AvailabilityScheduleResource(Resource):
 
                 args = post_form_data.parse_args()  # parse all the form data fields
                 timezone = args["timezone"]
-                availabilty_time = args["availability_time"]
-
-                # Intialize the errors dictionary to store the errors from the form data
-                errors = {}
+                availability_time = args["availability_time"]
 
                 # Validate the form data
                 self.__validate_form_data(errors, **args)
@@ -161,7 +161,7 @@ class AvailabilityScheduleResource(Resource):
                     # query the database to check if this user already has the availabilty schedule
                     result = AvailabilitySchedule.query.filter_by(
                         user_id=user_information_id
-                    )
+                    ).first()
 
                     # abort if the result is True
                     self.__abort_if_schedule_exists(result)
@@ -171,7 +171,7 @@ class AvailabilityScheduleResource(Resource):
                     new_availabilty_schedule = AvailabilitySchedule(
                         user_id=user_information_id,
                         timezone=timezone,
-                        availabilty_time=availabilty_time,
+                        availability_time=availability_time,
                     )
 
                     # add new study preferences for this user to the database
@@ -225,6 +225,9 @@ class AvailabilityScheduleResource(Resource):
         with current_app.app_context():
             # get the token from cookies
             try:
+                # initialize an empty errors dictionary to catch the client side errors
+                errors = {}
+
                 token = request.cookies.get("token")
                 # decode the token to get the user's availabilty schedule
                 decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
@@ -245,9 +248,6 @@ class AvailabilityScheduleResource(Resource):
 
                 # parse the arguments from the form data
                 update_args = update_form_data.parse_args()
-
-                # initialize an empty errors dictionary to catch the client side errors
-                errors = {}
 
                 # validate the update form data
                 self.__validate_form_data(errors, **update_args)
