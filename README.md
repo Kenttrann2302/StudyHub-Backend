@@ -122,3 +122,29 @@ docker compose exec backend flask db migrate -m <migration-message>
 docker compose exec backend flask db upgrade
 ```
 
+> We recommend creating alias(es) to shorten the above commands
+
+
+## Common Issues
+
+**Database is not up to date after running migration scripts**
+
+```bash
+# By running this command, the database will be up to date with the latest migration
+docker compose exec backend flask db stamp head
+```
+
+**Import "{framework/library-name}" could not be resolved error from Pylance**
+
+If you're using VSCode and see this error. This mean the framework/library was not installed globally or installed in the virtual environment you're using. We highly recommend setting up a new virtual environment. So remove your existing environment in the root of this repository. Then run the following commands
+
+```bash
+# Ensure you are in the root of this repository
+python3 -m venv env # Our gitignore assumes the virtual environment name is env
+source env/bin/activate
+pip install -r backend/requirements.txt
+```
+
+Then select the interpreter in `env/bin/`. The issue should disappears.
+
+Note: We assumed you're using MacOS or Linux. For Windows, please find the corresponding command for setting up Python virtual environment.
