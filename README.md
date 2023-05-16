@@ -41,7 +41,7 @@ StudyHub is an online tool that facilitates the development of efficient and pro
 <!-- List the features of your application or follow the template. Don't share the figma file here :) -->
 
 - User Registration and Authentication: StudyHub provides a user-friendly registration process and secure authentication mechanism, allowing users to create accounts and access the platform securely.
-![screenshot](https://ibb.co/vv8rTqq)
+<img width="1685" alt="Screenshot 2023-05-15 at 10 58 04 PM" src="https://github.com/Kenttrann2302/StudyHub-Backend/assets/110959350/3d65f58a-388e-4a36-8174-e675c4a73549">
 - User Profiles and Preferences: Users can create personalized profiles, including study preferences, courses, and availability schedules. This information is used to match users with compatible study groups.
 - Study Group Matching Algorithm: StudyHub employs a neural network-based matching algorithm that analyzes user preferences and behavior to suggest the most suitable study groups. This algorithm ensures optimal group formations based on compatibility factors.
 - Google OAuth 2.0 Integration: StudyHub integrates with Google OAuth 2.0 for seamless user authentication, enabling users to sign in using their Google accounts.
