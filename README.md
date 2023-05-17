@@ -35,6 +35,9 @@ StudyHub is an online tool that facilitates the development of efficient and pro
 
 ## Architecture
 
+- Below is the snippet of the UML Diagram of our server:
+<img width="1388" alt="Screenshot 2023-05-16 at 10 09 30 PM" src="https://github.com/Kenttrann2302/StudyHub-Backend/assets/110959350/3770ea50-7b7a-4525-a03f-9516653ace51">
+
 
 ## Features
 
