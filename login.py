@@ -56,7 +56,6 @@ user_resource_fields = {
 token = None
 user_email = None
 
-
 class SignInResource(Resource):
     # this is a function to handle the GET request to get the token
     def get(self) -> None:
@@ -72,7 +71,7 @@ class SignInResource(Resource):
                 )
                 return response
 
-            # catch the errors if found
+            # catch the internal server errors if found
             except Exception as error:
                 response_data = {"message": f"Server error: {error}"}
                 response_json = json.dumps(response_data)

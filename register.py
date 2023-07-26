@@ -16,11 +16,7 @@ from werkzeug.exceptions import Conflict, NotFound, BadRequest, Forbidden, Unaut
 # import from files
 from database.users_models import (
     Users,
-    Permission,
-    UserInformation,
-    StudyPreferences,
-    AvailabilitySchedule,
-    db,
+    db
 )
 from get_env import secret_key
 from helper_functions.registerformValidation import checkpassword, checkpasswordconfirm
@@ -425,7 +421,7 @@ class RegistrationResource(Resource):
                 db.session.rollback()
                 abort(HTTPStatus.INTERNAL_SERVER_ERROR, message=f"{server_error}")
 
-    # a delete method for user to delete the account, this method
+    # a delete method for user to delete the account
     def delete(self):
         with current_app.app_context():
             try:
