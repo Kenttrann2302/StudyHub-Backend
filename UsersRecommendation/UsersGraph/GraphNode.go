@@ -2,7 +2,7 @@ package main
 
 // create a class node to represent each user 
 import (
-	
+	"github.com/google/uuid"
 )
 
 // user information object
@@ -45,7 +45,8 @@ type AvailabilityTime struct {
 // create a struct type Node to represent each user
 type User_GraphNode struct {
 	// user identifier
-	User_id string
+	User_node_key int16 // each user will be assigned an integer key to specified the index of the node in the graph
+	user_id uuid.UUID
 	username string
 
 	// user information
@@ -105,9 +106,10 @@ func NewAvailabilityTime(AvailabilityTime_in string) *AvailabilityTime {
 	}
 }
 
-func NewUserGraphNode(User_id_in string, username_in string, user_info *User_Information, user_address *User_Address, user_study_pref *User_Study_Preferences, availability_time *AvailabilityTime) *User_GraphNode {
+func NewUserGraphNode(User_node_key_in int16, user_id_in uuid.UUID, username_in string, user_info *User_Information, user_address *User_Address, user_study_pref *User_Study_Preferences, availability_time *AvailabilityTime) *User_GraphNode {
 	return &User_GraphNode{
-		User_id: User_id_in,
+		User_node_key: User_node_key_in,
+		user_id: user_id_in,
 		username: username_in,
 		user_information: *user_info,
 		user_address: *user_address,
