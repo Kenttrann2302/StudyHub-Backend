@@ -345,18 +345,18 @@ class UserInformationResource(Resource):
 
                 # after getting the address, check for the validation using Google Maps Geocoding API before execute the insert the element
                 # if the address is not valid
-                addressChecking = LocationValidator(
-                    errors,
-                    address_line_1=address_line_1,
-                    address_line_2=address_line_2,
-                    city=city,
-                    province=province,
-                    country=country,
-                    postal_code=postal_code,
-                )
+                # addressChecking = LocationValidator(
+                #     errors,
+                #     address_line_1=address_line_1,
+                #     address_line_2=address_line_2,
+                #     city=city,
+                #     province=province,
+                #     country=country,
+                #     postal_code=postal_code,
+                # )
 
                 # if all the fields are valid
-                if not errors and addressChecking.is_valid_address():
+                if not errors:
                     # query the database to check if there is any user that already exists with the same information
                     result = UserInformation.query.filter_by(
                         user_id=user_id,
